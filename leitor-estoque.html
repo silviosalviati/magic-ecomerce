@@ -91,6 +91,15 @@
     line-height: 1;
   }
 
+  .logo-sub {
+    margin-top: 4px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
   .status-dot {
     position: relative;
     width: 8px; height: 8px;
@@ -682,24 +691,24 @@
     max-width: 620px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: flex-end;
   }
 
-  .config-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
-
-  .config-bar input {
-    flex: 1;
+  .api-badge {
     padding: 8px 12px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 12px;
-    font-family: 'SF Mono', monospace;
-    outline: none;
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-
-  .config-bar input:focus { border-color: var(--accent); }
 
   @media (min-width: 768px) {
     body {
@@ -725,14 +734,16 @@
         <path d="M4 19L7 5l5 10 5-10 3 14" />
       </svg>
     </div>
-    <div class="logo">MAGI.C</div>
+    <div>
+      <div class="logo">MAGI.C</div>
+      <div class="logo-sub">Leitor de Estoque</div>
+    </div>
   </div>
   <div class="status-dot"></div>
 </header>
 
-<div class="config-bar">
-  <label>API:</label>
-  <input type="text" id="apiUrl" value="https://lpb3pcd9-3001.brs.devtunnels.ms" placeholder="https://lpb3pcd9-3001.brs.devtunnels.ms">
+<div class="config-bar" id="apiBar">
+  <div class="api-badge" id="apiBadge">API automática</div>
 </div>
 
 <div class="camera-section" id="cameraSection">
@@ -1046,18 +1057,34 @@
     return result;
   }
 
-  function getApi() {
-    if (!window.location.href.includes('file:///')) {
-      return window.location.origin;
+  let apiBase = '';
+
+  function normalizeApi(value) {
+    return String(value || '').trim().replace(/\/$/, '');
+  }
+
+  function detectApiBase() {
+    const fromQuery = new URLSearchParams(window.location.search).get('api');
+    if (fromQuery) return normalizeApi(fromQuery);
+
+    if (window.location.protocol !== 'file:') {
+      return normalizeApi(window.location.origin);
     }
-    return document.getElementById('apiUrl').value.trim().replace(/\/$/, '') || 'http://localhost:3001';
+
+    return 'http://localhost:3001';
+  }
+
+  function getApi() {
+    return apiBase || detectApiBase();
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    if (!window.location.href.includes('file:///')) {
-      document.getElementById('apiUrl').value = window.location.origin;
-    } else {
-      document.getElementById('apiUrl').value = 'http://localhost:3001';
+    apiBase = detectApiBase();
+    const apiBadge = document.getElementById('apiBadge');
+    if (apiBadge) {
+      const host = apiBase.replace(/^https?:\/\//, '');
+      apiBadge.textContent = `API: ${host}`;
+      apiBadge.title = apiBase;
     }
   });
 
