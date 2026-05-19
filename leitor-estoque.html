@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MAGI.C — Leitor de Estoque</title>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0ede8;
+    --muted: #888;
+    --accent: #c8f560;
+    --accent-dim: rgba(200,245,96,0.12);
+    --red: #ff5252;
+    --red-dim: rgba(255,82,82,0.12);
+    --blue: #60b5f5;
+    --blue-dim: rgba(96,181,245,0.12);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .camera-section {
+    margin: 0 16px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    aspect-ratio: 1;
+  }
+
+  #video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .camera-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .scan-frame {
+    width: 65%;
+    aspect-ratio: 1.8;
+    border-radius: 8px;
+    position: relative;
+  }
+
+  .scan-frame::before, .scan-frame::after,
+  .scan-frame span::before, .scan-frame span::after {
+    content: '';
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+
+  .scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .scan-frame::after  { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .scan-frame span::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .scan-frame span::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+  .scan-line {
+    position: absolute;
+    left: 4px; right: 4px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanline 2s ease-in-out infinite;
+    top: 0;
+  }
+
+  @keyframes scanline {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .camera-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+
+  .camera-placeholder svg { opacity: 0.3; }
+
+  .camera-placeholder p {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 32px;
+  }
+
+  .btn-start {
+    margin: 16px;
+    padding: 16px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    width: calc(100% - 32px);
+    cursor: pointer;
+    letter-spacing: -0.2px;
+    transition: opacity 0.15s;
+  }
+
+  .btn-start:active { opacity: 0.8; }
+
+  .btn-stop {
+    background: var(--surface2);
+    color: var(--red);
+    border: 1px solid var(--red-dim);
+  }
+
+  .manual-section {
+    margin: 0 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .camera-tools {
+    margin: 10px 16px 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .camera-tools-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn {
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    min-width: 110px;
+  }
+
+  .tool-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .zoom-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .zoom-wrap label {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .zoom-wrap input[type='range'] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  .scan-tips {
+    margin: 2px 16px 10px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .scan-tips strong { color: var(--accent); }
+
+  .manual-section input {
+    flex: 1;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+  }
+
+  .manual-section input:focus {
+    border-color: var(--accent);
+  }
+
+  .manual-section input::placeholder { color: var(--muted); }
+
+  .btn-search {
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 16px;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .divider span { font-size: 12px; color: var(--muted); }
+
+  .result-section { margin: 0 16px 24px; }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-header h2 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-ok { background: var(--accent-dim); color: var(--accent); }
+  .badge-out { background: var(--red-dim); color: var(--red); }
+  .badge-low { background: rgba(255,180,50,0.12); color: #ffb432; }
+
+  .result-rows { padding: 4px 0; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-row:last-child { border-bottom: none; }
+
+  .row-label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .row-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: right;
+    max-width: 60%;
+  }
+
+  .stock-big {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--accent);
+  }
+
+  .stock-big.low { color: #ffb432; }
+  .stock-big.zero { color: var(--red); }
+
+  .not-found-card {
+    background: var(--red-dim);
+    border: 1px solid rgba(255,82,82,0.2);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    text-align: center;
+    animation: slideUp 0.3s ease;
+  }
+
+  .not-found-card p { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .not-found-card h3 { font-size: 16px; color: var(--red); }
+
+  .barcode-chip {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-family: 'SF Mono', monospace;
+    color: var(--blue);
+    margin-top: 10px;
+  }
+
+  .error-msg {
+    text-align: center;
+    padding: 16px;
+    font-size: 14px;
+    color: var(--red);
+  }
+
+  .btn-create {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #0a0a0a;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .register-section {
+    margin: 0 16px 24px;
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    animation: slideUp 0.25s ease;
+  }
+
+  .register-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .register-head h3 {
+    font-size: 16px;
+    letter-spacing: -0.2px;
+  }
+
+  .btn-close {
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+
+  .register-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .register-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .register-field.full {
+    grid-column: 1 / -1;
+  }
+
+  .register-field label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .register-field input,
+  .register-field select,
+  .register-field textarea {
+    width: 100%;
+    padding: 11px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+
+  .register-field textarea {
+    min-height: 70px;
+    resize: vertical;
+  }
+
+  .register-field select {
+    appearance: none;
+  }
+
+  .register-field input:focus,
+  .register-field select:focus,
+  .register-field textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .register-footer {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-submit {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    background: var(--accent);
+    color: #0a0a0a;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .register-msg {
+    margin-top: 10px;
+    font-size: 13px;
+    min-height: 18px;
+    color: var(--muted);
+  }
+
+  .register-msg.success { color: var(--accent); }
+  .register-msg.error { color: var(--red); }
+
+  @media (max-width: 420px) {
+    .register-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .loading::after {
+    content: '';
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .config-bar {
+    margin: 8px 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .config-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  .config-bar input {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: 'SF Mono', monospace;
+    outline: none;
+  }
+
+  .config-bar input:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MAGI<span>.</span>C</div>
+  <div class="status-dot"></div>
+</header>
+
+<div class="config-bar">
+  <label>API:</label>
+  <input type="text" id="apiUrl" value="https://lpb3pcd9-3001.brs.devtunnels.ms" placeholder="https://lpb3pcd9-3001.brs.devtunnels.ms">
+</div>
+
+<div class="camera-section" id="cameraSection">
+  <video id="video" autoplay muted playsinline></video>
+  <div class="camera-overlay">
+    <div class="scan-frame">
+      <span></span>
+      <div class="scan-line"></div>
+    </div>
+  </div>
+  <div class="camera-placeholder" id="placeholder">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+      <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+      <rect x="7" y="7" width="3" height="10" rx="1"/>
+      <rect x="11" y="7" width="1.5" height="10" rx="0.5"/>
+      <rect x="14" y="7" width="3" height="10" rx="1"/>
+    </svg>
+    <p>Toque em "Iniciar câmera" e aponte para o código de barras</p>
+  </div>
+</div>
+
+<button class="btn-start" id="btnCamera" onclick="toggleCamera()">Iniciar câmera</button>
+
+<div class="camera-tools" id="cameraTools" style="display: none;">
+  <div class="camera-tools-row">
+    <button class="tool-btn" id="btnMacro" onclick="toggleMacroMode()">Modo macro</button>
+    <button class="tool-btn" id="btnTorch" onclick="toggleTorch()" style="display: none;">Lanterna</button>
+    <div class="zoom-wrap" id="zoomWrap" style="display: none;">
+      <label for="zoomControl">Zoom</label>
+      <input type="range" id="zoomControl" min="1" max="3" step="0.1" value="1" oninput="applyZoom(this.value)">
+    </div>
+  </div>
+</div>
+
+<div class="scan-tips" id="scanTips">
+  Dica: mantenha 10 a 20 cm de distância, etiqueta reta e boa luz. Use zoom e lanterna para códigos apagados.
+</div>
+
+<div class="divider"><span>ou digite manualmente</span></div>
+
+<div class="manual-section">
+  <input type="text" id="manualCode" placeholder="Ex: 0042778M0002" inputmode="text">
+  <button class="btn-search" onclick="buscarManual()">Buscar</button>
+</div>
+
+<div style="height: 16px;"></div>
+<div class="result-section" id="resultSection"></div>
+
+<div class="register-section" id="registerSection" style="display: none;">
+  <div class="register-head">
+    <h3>Cadastrar Produto no Estoque</h3>
+    <button class="btn-close" type="button" onclick="closeRegisterForm()">Fechar</button>
+  </div>
+
+  <form id="registerForm" onsubmit="submitRegisterForm(event)">
+    <div class="register-grid">
+      <div class="register-field full">
+        <label for="regBarcode">Barcode</label>
+        <input id="regBarcode" name="barcode" required>
+      </div>
+
+      <div class="register-field full">
+        <label for="regName">Nome do produto</label>
+        <input id="regName" name="name" required>
+      </div>
+
+      <div class="register-field full">
+        <label for="regCategory">Categoria</label>
+        <select id="regCategory" name="category" required>
+          <option value="Masculino">Masculino</option>
+          <option value="Feminino">Feminino</option>
+        </select>
+      </div>
+
+      <div class="register-field full">
+        <label for="regDescription">Descrição (opcional)</label>
+        <textarea id="regDescription" name="description"></textarea>
+      </div>
+
+      <div class="register-field">
+        <label for="regSize">Tamanho</label>
+        <select id="regSize" name="size" required>
+          <option value="U">U</option>
+          <option value="P">P</option>
+          <option value="M">M</option>
+          <option value="G">G</option>
+          <option value="GG">GG</option>
+        </select>
+      </div>
+
+      <div class="register-field">
+        <label for="regColor">Cor</label>
+        <input id="regColor" name="color" required>
+      </div>
+
+      <div class="register-field">
+        <label for="regCostPrice">Custo</label>
+        <input id="regCostPrice" name="costPrice" type="number" step="0.01" min="0.01" placeholder="Lido do QR ou calculado">
+      </div>
+
+      <div class="register-field">
+        <label for="regMarginPercent">Margem de lucro (%)</label>
+        <input id="regMarginPercent" name="marginPercent" type="number" step="1" min="0" value="100" required>
+      </div>
+
+      <div class="register-field full">
+        <label for="regStock">Estoque inicial</label>
+        <input id="regStock" name="stock" type="number" step="1" min="0" value="1" required>
+      </div>
+
+    </div>
+
+    <div class="register-footer">
+      <button class="btn-submit" id="btnRegisterSubmit" type="submit">Salvar produto</button>
+      <button class="btn-secondary" type="button" onclick="prefillQuickValues()">Preencher rápido</button>
+    </div>
+    <div class="register-msg" id="registerMsg"></div>
+  </form>
+</div>
+
+<script>
+  let codeReader = null;
+  let scanning = false;
+  let lastCode = '';
+  let lastSearch = 0;
+  let activeTrack = null;
+  let torchOn = false;
+  let lastDetectedCode = '';
+  let sameReadCount = 0;
+  let macroMode = false;
+  let lastMissingBarcode = '';
+  let lastMissingParsed = null;
+  let lastQrSalePriceHint = null;
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function toErrorMessage(err) {
+    if (err instanceof Error) return err.message;
+    return String(err);
+  }
+
+  function parseNumeric(value) {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).replace(',', '.').trim();
+    const number = Number(normalized);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function extractCompactCodeHints(code) {
+    const normalized = String(code || '').trim().toUpperCase();
+    const compact = normalized.match(/^(\d{4,})([A-Z]{1,3})(\d{2,4})$/);
+    if (!compact) return null;
+
+    return {
+      ref: compact[1],
+      size: compact[2],
+      colorCode: compact[3],
+    };
+  }
+
+  function parseScannedPayload(rawCode) {
+    const code = String(rawCode || '').trim();
+    const result = {
+      barcode: code,
+      name: '',
+      category: '',
+      description: '',
+      size: '',
+      color: '',
+      costPrice: null,
+      salePrice: null,
+      marginPercent: null,
+    };
+
+    if (!code) return result;
+
+    const normalizeKey = (key) =>
+      String(key)
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    const assignValue = (key, value) => {
+      const k = normalizeKey(key);
+      const v = String(value ?? '').trim();
+      if (!v) return;
+
+      if (['barcode', 'codigo', 'code', 'ean', 'gtin'].includes(k)) result.barcode = v;
+      if (['name', 'nome', 'produto', 'product'].includes(k)) result.name = v;
+      if (['category', 'categoria', 'grupo'].includes(k)) result.category = v;
+      if (['description', 'descricao', 'desc'].includes(k)) result.description = v;
+      if (['size', 'tamanho', 'tam'].includes(k)) result.size = v;
+      if (['color', 'cor'].includes(k)) result.color = v;
+      if (['cost', 'custo', 'costprice', 'preco_custo', 'preco-custo'].includes(k)) result.costPrice = parseNumeric(v);
+      if (['price', 'saleprice', 'preco', 'preco_venda', 'preco-venda'].includes(k)) result.salePrice = parseNumeric(v);
+      if (['margin', 'margem', 'margemlucro', 'lucro'].includes(k)) result.marginPercent = parseNumeric(v);
+    };
+
+    if (code.startsWith('{') && code.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(code);
+        Object.entries(parsed).forEach(([k, v]) => assignValue(k, v));
+      } catch (_) {}
+    }
+
+    if (!result.name && (code.includes(';') || code.includes('|') || code.includes('='))) {
+      const chunks = code.split(/[;|\n]/).map((p) => p.trim()).filter(Boolean);
+      chunks.forEach((chunk) => {
+        const parts = chunk.split(/[:=]/);
+        if (parts.length < 2) return;
+        const key = parts.shift();
+        const value = parts.join(':');
+        assignValue(key, value);
+      });
+    }
+
+    try {
+      if ((code.startsWith('http://') || code.startsWith('https://')) && (!result.name || !result.barcode)) {
+        const url = new URL(code);
+        url.searchParams.forEach((value, key) => assignValue(key, value));
+      }
+    } catch (_) {}
+
+    const compactHints = extractCompactCodeHints(result.barcode || code);
+
+    if (!result.name) {
+      const shortCode = (result.barcode || code).replace(/\s+/g, '').slice(0, 10);
+      result.name = shortCode ? `Produto ${shortCode}` : 'Produto sem nome';
+    }
+
+    if (!result.category) result.category = 'GERAL';
+    if (!result.size) result.size = compactHints?.size || 'U';
+    if (!result.color) result.color = compactHints?.colorCode ? `Cor ${compactHints.colorCode}` : 'Padrão';
+    if (!result.description) {
+      const ref = compactHints?.ref ? `Ref ${compactHints.ref}` : `Lido do código ${result.barcode || code}`;
+      result.description = ref;
+    }
+
+    return result;
+  }
+
+  function getApi() {
+    if (!window.location.href.includes('file:///')) {
+      return window.location.origin;
+    }
+    return document.getElementById('apiUrl').value.trim().replace(/\/$/, '') || 'http://localhost:3001';
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!window.location.href.includes('file:///')) {
+      document.getElementById('apiUrl').value = window.location.origin;
+    } else {
+      document.getElementById('apiUrl').value = 'http://localhost:3001';
+    }
+  });
+
+  function setRegisterMessage(text, type) {
+    const msg = document.getElementById('registerMsg');
+    msg.textContent = text;
+    msg.className = type ? `register-msg ${type}` : 'register-msg';
+  }
+
+  async function buscar(code) {
+  }
+
+  function openRegisterForm(barcode, parsedPayload) {
+    const section = document.getElementById('registerSection');
+    const barcodeInput = document.getElementById('regBarcode');
+    const parsed = parsedPayload || parseScannedPayload(barcode);
+    const marginInput = document.getElementById('regMarginPercent');
+
+    section.style.display = 'block';
+    barcodeInput.value = String(parsed.barcode || barcode || '').trim();
+    document.getElementById('regName').value = parsed.name || '';
+    document.getElementById('regCategory').value = parsed.category || 'GERAL';
+    document.getElementById('regDescription').value = parsed.description || '';
+    document.getElementById('regSize').value = parsed.size || 'U';
+    document.getElementById('regColor').value = parsed.color || 'Padrão';
+
+    const parsedCost = Number(parsed.costPrice);
+    document.getElementById('regCostPrice').value = Number.isFinite(parsedCost) && parsedCost > 0
+      ? parsedCost.toFixed(2)
+      : '';
+
+    marginInput.value = Number.isFinite(Number(parsed.marginPercent)) && Number(parsed.marginPercent) >= 0
+      ? String(Math.round(Number(parsed.marginPercent)))
+      : '100';
+
+    lastQrSalePriceHint = Number.isFinite(Number(parsed.salePrice)) ? Number(parsed.salePrice) : null;
+
+    setRegisterMessage('Campos do código preenchidos. Informe estoque e margem para salvar.', '');
+    document.getElementById('regStock').focus();
+
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function closeRegisterForm() {
+    document.getElementById('registerSection').style.display = 'none';
+  }
+
+  function prefillQuickValues() {
+    if (!document.getElementById('regCategory').value.trim()) {
+      document.getElementById('regCategory').value = 'GERAL';
+    }
+    if (!document.getElementById('regSize').value.trim()) {
+      document.getElementById('regSize').value = 'U';
+    }
+    if (!document.getElementById('regColor').value.trim()) {
+      document.getElementById('regColor').value = 'Padrão';
+    }
+  }
+
+  async function submitRegisterForm(event) {
+    event.preventDefault();
+
+    const btn = document.getElementById('btnRegisterSubmit');
+
+    const marginPercent = Number(document.getElementById('regMarginPercent').value);
+    let costPriceValue = Number(document.getElementById('regCostPrice').value);
+
+    if ((!Number.isFinite(costPriceValue) || costPriceValue <= 0) && Number.isFinite(lastQrSalePriceHint) && marginPercent >= 0) {
+      costPriceValue = lastQrSalePriceHint / (1 + (marginPercent / 100));
+    }
+
+    const markupFactor = 1 + (marginPercent / 100);
+
+    const payload = {
+      barcode: document.getElementById('regBarcode').value.trim(),
+      name: document.getElementById('regName').value.trim(),
+      category: document.getElementById('regCategory').value.trim(),
+      description: document.getElementById('regDescription').value.trim() || null,
+      size: document.getElementById('regSize').value.trim(),
+      color: document.getElementById('regColor').value.trim(),
+      costPrice: Number.isFinite(costPriceValue) ? Number(costPriceValue.toFixed(2)) : NaN,
+      markup: Number.isFinite(markupFactor) ? Number(markupFactor.toFixed(4)) : NaN,
+      stock: Number(document.getElementById('regStock').value)
+    };
+
+    if (!payload.barcode || !payload.name || !payload.category || !payload.size || !payload.color) {
+      setRegisterMessage('Preencha todos os campos obrigatórios.', 'error');
+      return;
+    }
+
+    if (!Number.isFinite(payload.costPrice) || payload.costPrice <= 0) {
+      setRegisterMessage('Custo deve ser maior que zero.', 'error');
+      return;
+    }
+
+    if (!Number.isFinite(marginPercent) || marginPercent < 0) {
+      setRegisterMessage('Margem deve ser maior ou igual a zero.', 'error');
+      return;
+    }
+
+    if (!Number.isFinite(payload.markup) || payload.markup <= 0) {
+      setRegisterMessage('Margem inválida para cálculo do markup.', 'error');
+      return;
+    }
+
+    if (!Number.isInteger(payload.stock) || payload.stock < 0) {
+      setRegisterMessage('Estoque deve ser inteiro maior ou igual a zero.', 'error');
+      return;
+    }
+
+    setRegisterMessage('Salvando produto...', '');
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${getApi()}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tunnel-Skip-AntiPhishing-Page': 'true'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errors = Array.isArray(data.errors) ? data.errors.join(' ') : (data.error || 'Falha no cadastro.');
+        throw new Error(errors);
+      }
+
+      const productId = data?.product?.id;
+
+      if (!productId) {
+        throw new Error('Produto cadastrado sem ID de retorno.');
+      }
+
+      setRegisterMessage('Produto cadastrado com sucesso. Conferindo estoque...', 'success');
+
+      const barcode = payload.barcode;
+      document.getElementById('registerForm').reset();
+      document.getElementById('regMarginPercent').value = '100';
+      document.getElementById('regStock').value = '1';
+      document.getElementById('regBarcode').value = barcode;
+
+      await buscar(barcode);
+    } catch (err) {
+      setRegisterMessage(`Erro ao cadastrar: ${toErrorMessage(err)}`, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function setupCameraTools() {
+    const tools = document.getElementById('cameraTools');
+    const btnTorch = document.getElementById('btnTorch');
+    const zoomWrap = document.getElementById('zoomWrap');
+    const zoomControl = document.getElementById('zoomControl');
+
+    tools.style.display = 'grid';
+    btnTorch.style.display = 'none';
+    zoomWrap.style.display = 'none';
+
+    const video = document.getElementById('video');
+    const stream = video.srcObject;
+    activeTrack = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+
+    if (!activeTrack) return;
+
+    try {
+      await activeTrack.applyConstraints({
+        advanced: [{ focusMode: 'continuous' }]
+      });
+    } catch (_) {}
+
+    const capabilities = typeof activeTrack.getCapabilities === 'function'
+      ? activeTrack.getCapabilities()
+      : null;
+
+    if (capabilities && capabilities.torch) {
+      btnTorch.style.display = 'inline-block';
+    }
+
+    if (capabilities && capabilities.zoom) {
+      const min = Number(capabilities.zoom.min ?? 1);
+      const max = Number(capabilities.zoom.max ?? 3);
+      const step = Number(capabilities.zoom.step ?? 0.1);
+      const start = macroMode
+        ? Math.min(Math.max(min + (max - min) * 0.7, min), max)
+        : Math.min(Math.max(min + (max - min) * 0.25, min), max);
+
+      zoomControl.min = String(min);
+      zoomControl.max = String(max);
+      zoomControl.step = String(step);
+      zoomControl.value = String(start);
+      zoomWrap.style.display = 'flex';
+
+      try {
+        await activeTrack.applyConstraints({ advanced: [{ zoom: start }] });
+      } catch (_) {}
+    }
+  }
+
+  async function toggleMacroMode() {
+    macroMode = !macroMode;
+
+    const btnMacro = document.getElementById('btnMacro');
+    const scanTips = document.getElementById('scanTips');
+    const scanFrame = document.querySelector('.scan-frame');
+
+    btnMacro.classList.toggle('active', macroMode);
+    btnMacro.textContent = macroMode ? 'Macro ligado' : 'Modo macro';
+
+    if (macroMode) {
+      scanTips.innerHTML = '<strong>Macro ativo:</strong> aproxime para 6 a 12 cm e mova lentamente até ficar nítido.';
+      scanFrame.style.width = '78%';
+    } else {
+      scanTips.textContent = 'Dica: mantenha 10 a 20 cm de distância, etiqueta reta e boa luz. Use zoom e lanterna para códigos apagados.';
+      scanFrame.style.width = '65%';
+    }
+
+    if (activeTrack) {
+      const zoomControl = document.getElementById('zoomControl');
+      const min = Number(zoomControl.min || '1');
+      const max = Number(zoomControl.max || '3');
+      const macroTarget = Math.min(Math.max(min + (max - min) * 0.75, min), max);
+      const normalTarget = Math.min(Math.max(min + (max - min) * 0.25, min), max);
+      zoomControl.value = String(macroMode ? macroTarget : normalTarget);
+      await applyZoom(zoomControl.value);
+    }
+  }
+
+  async function toggleTorch() {
+    if (!activeTrack) return;
+    const btnTorch = document.getElementById('btnTorch');
+
+    try {
+      torchOn = !torchOn;
+      await activeTrack.applyConstraints({ advanced: [{ torch: torchOn }] });
+      btnTorch.classList.toggle('active', torchOn);
+      btnTorch.textContent = torchOn ? 'Lanterna ligada' : 'Lanterna';
+    } catch (_) {
+      torchOn = false;
+      btnTorch.classList.remove('active');
+      btnTorch.textContent = 'Lanterna';
+    }
+  }
+
+  async function applyZoom(value) {
+    if (!activeTrack) return;
+    const zoom = Number(value);
+    if (!Number.isFinite(zoom)) return;
+
+    try {
+      await activeTrack.applyConstraints({ advanced: [{ zoom }] });
+    } catch (_) {}
+  }
+
+  function buscarManual() {
+    const code = document.getElementById('manualCode').value.trim();
+    if (!code) return;
+    lastCode = '';
+    buscar(code);
+  }
+
+  document.getElementById('manualCode').addEventListener('keydown', e => {
+    if (e.key === 'Enter') buscarManual();
+  });
+
+  async function toggleCamera() {
+    if (scanning) {
+      stopCamera();
+    } else {
+      startCamera();
+    }
+  }
+
+  async function startCamera() {
+    const btn = document.getElementById('btnCamera');
+    const placeholder = document.getElementById('placeholder');
+
+    try {
+      const hints = new Map();
+      // 🎯 Configura os formatos específicos de etiquetas físicas de roupas
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+        ZXing.BarcodeFormat.QR_CODE,
+        ZXing.BarcodeFormat.CODE_128, // Formato exato da etiqueta do Casaco Maya
+        ZXing.BarcodeFormat.EAN_13,
+        ZXing.BarcodeFormat.CODE_39,
+        ZXing.BarcodeFormat.ITF,
+        ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.UPC_A
+      ]);
+      
+      // 🔥 ATIVAÇÃO CRÍTICA: Força a leitura profunda para ignorar dobras, amassados e vincos na etiqueta
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+      codeReader = new ZXing.BrowserMultiFormatReader(hints);
+
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30, max: 60 }
+        }
+      };
+
+      await codeReader.decodeFromConstraints(constraints, 'video', (result, err) => {
+        if (result) {
+          const code = String(result.getText() || '').trim();
+          if (!code) return;
+
+          if (code === lastDetectedCode) {
+            sameReadCount += 1;
+          } else {
+            lastDetectedCode = code;
+            sameReadCount = 1;
+          }
+
+          const confirmationReads = macroMode ? 3 : 2;
+          if (sameReadCount >= confirmationReads) {
+            sameReadCount = 0;
+            buscar(code);
+            if (navigator.vibrate) navigator.vibrate(60);
+          }
+        }
+      });
+
+      placeholder.style.display = 'none';
+      btn.textContent = 'Parar câmera';
+      btn.classList.add('btn-stop');
+      scanning = true;
+      await setupCameraTools();
+    } catch (err) {
+      document.getElementById('resultSection').innerHTML =
+        `<div class="error-msg">Câmera não disponível: ${escapeHtml(toErrorMessage(err))}</div>`;
+    }
+  }
+
+  function stopCamera() {
+    if (codeReader) {
+      codeReader.reset();
+      codeReader = null;
+    }
+    const video = document.getElementById('video');
+    if (video && video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+    }
+    document.getElementById('placeholder').style.display = 'flex';
+    document.getElementById('cameraTools').style.display = 'none';
+
+    const btnTorch = document.getElementById('btnTorch');
+    btnTorch.classList.remove('active');
+    btnTorch.textContent = 'Lanterna';
+
+    const btnMacro = document.getElementById('btnMacro');
+    btnMacro.classList.remove('active');
+    btnMacro.textContent = 'Modo macro';
+
+    const btn = document.getElementById('btnCamera');
+    btn.textContent = 'Iniciar câmera';
+    btn.classList.remove('btn-stop');
+
+    activeTrack = null;
+    torchOn = false;
+    macroMode = false;
+    lastDetectedCode = '';
+    sameReadCount = 0;
+    document.getElementById('scanTips').textContent = 'Dica: mantenha 10 a 20 cm de distância, etiqueta reta e boa luz. Use zoom e lanterna para códigos apagados.';
+    const scanFrame = document.querySelector('.scan-frame');
+    scanFrame.style.width = '65%';
+    scanning = false;
+  }
+</script>
+</body>
+</html>
