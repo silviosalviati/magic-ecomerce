@@ -61,27 +61,16 @@ export class ProductsController {
           throw new Error('BARCODE_CONFLICT');
         }
 
-        let product = await tx.product.findFirst({
-          where: {
+        const product = await tx.product.create({
+          data: {
             name: normalizedName,
+            description: normalizedDescription,
             category: normalizedCategory,
             costPrice: costPriceDecimal,
             markup: markupDecimal,
+            basePrice: calculatedPrice,
           },
         });
-
-        if (!product) {
-          product = await tx.product.create({
-            data: {
-              name: normalizedName,
-              description: normalizedDescription,
-              category: normalizedCategory,
-              costPrice: costPriceDecimal,
-              markup: markupDecimal,
-              basePrice: calculatedPrice,
-            },
-          });
-        }
 
         const variant = await tx.variant.create({
           data: {
