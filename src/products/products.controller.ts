@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import {
   isAllowedImageMimeType,
@@ -15,10 +14,10 @@ function clientError(error: unknown): string {
 }
 
 function isUniqueBarcodeError(error: unknown): boolean {
+  const prismaError = error as { code?: string; meta?: { target?: unknown } };
   return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2002' &&
-    String(error.meta?.['target'] ?? '').includes('barcode')
+    prismaError.code === 'P2002' &&
+    String(prismaError.meta?.target ?? '').includes('barcode')
   );
 }
 
@@ -46,13 +45,21 @@ export class ProductsController {
       const normalizedColor = String(color).trim();
       const normalizedStock = Number(stock);
 
-      const costPriceDecimal = new Prisma.Decimal(String(costPrice));
-      const markupDecimal = new Prisma.Decimal(String(markup));
-      const calculatedPrice = costPriceDecimal
-        .mul(markupDecimal)
-        .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+      const costPriceNumber = Number(costPrice);
+      const markupNumber = Number(markup);
+      const calculatedPriceNumber = Number((costPriceNumber * markupNumber).toFixed(2));
 
-      const { product, variant } = await prisma.$transaction(async (tx) => {
+      if (!Number.isFinite(costPriceNumber) || costPriceNumber <= 0) {
+        res.status(400).json({ error: 'Custo inválido.' });
+        return;
+      }
+
+      if (!Number.isFinite(markupNumber) || markupNumber <= 0) {
+        res.status(400).json({ error: 'Markup inválido.' });
+        return;
+      }
+
+      const { product, variant } = await prisma.$transaction(async (tx: any) => {
         const existingVariant = await tx.variant.findUnique({
           where: { barcode: normalizedBarcode },
         });
@@ -66,9 +73,9 @@ export class ProductsController {
             name: normalizedName,
             description: normalizedDescription,
             category: normalizedCategory,
-            costPrice: costPriceDecimal,
-            markup: markupDecimal,
-            basePrice: calculatedPrice,
+            costPrice: costPriceNumber,
+            markup: markupNumber,
+            basePrice: calculatedPriceNumber,
           },
         });
 
@@ -165,7 +172,7 @@ export class ProductsController {
       if (!variant.product) {
         const orphanProductId = variant.productId;
 
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
           const existingProduct = await tx.product.findUnique({
             where: { id: orphanProductId },
           });
@@ -177,9 +184,9 @@ export class ProductsController {
                 name: `Produto ${code}`,
                 description: `Registro recriado automaticamente a partir da variante ${code}.`,
                 category: 'GERAL',
-                costPrice: new Prisma.Decimal('0.01'),
-                markup: new Prisma.Decimal('1'),
-                basePrice: new Prisma.Decimal('0.01'),
+                costPrice: 0.01,
+                markup: 1,
+                basePrice: 0.01,
               },
             });
           }
