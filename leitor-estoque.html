@@ -1187,7 +1187,7 @@
         throw new Error('Produto cadastrado sem ID de retorno.');
       }
 
-      setRegisterMessage('Produto cadastrado com sucesso. Conferindo estoque...', 'success');
+      setRegisterMessage('Produto cadastrado com sucesso. Reiniciando leitor...', 'success');
 
       // Persistir cor nova no lookup se veio de variantCode desconhecido
       if (pendingHeltonVariantCode && payload.color) {
@@ -1196,13 +1196,9 @@
         pendingHeltonVariantCode = null;
       }
 
-      const barcode = payload.barcode;
-      document.getElementById('registerForm').reset();
-      document.getElementById('regMarginPercent').value = '100';
-      document.getElementById('regStock').value = '1';
-      document.getElementById('regBarcode').value = barcode;
-
-      await buscar(barcode);
+      setTimeout(() => {
+        window.location.reload();
+      }, 700);
     } catch (err) {
       setRegisterMessage(`Erro ao cadastrar: ${toErrorMessage(err)}`, 'error');
     } finally {
@@ -1470,9 +1466,11 @@
         display.className = `row-value stock-big ${newStock === 0 ? 'zero' : newStock <= 3 ? 'low' : ''}`;
       }
 
-      msg.textContent = 'Estoque atualizado!';
+      msg.textContent = 'Estoque atualizado! Reiniciando leitor...';
       msg.className = 'stock-edit-msg success';
-      setTimeout(() => { msg.textContent = ''; msg.className = 'stock-edit-msg'; }, 2500);
+      setTimeout(() => {
+        window.location.reload();
+      }, 700);
     } catch (err) {
       msg.textContent = toErrorMessage(err);
       msg.className = 'stock-edit-msg error';
