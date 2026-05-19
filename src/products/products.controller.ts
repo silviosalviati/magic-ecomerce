@@ -188,6 +188,35 @@ export class ProductsController {
     }
   }
 
+  // PATCH /products/barcode/:code/stock
+  async updateStock(req: Request, res: Response): Promise<void> {
+    try {
+      const code = String(req.params['code']).trim();
+      const { stock } = req.body;
+
+      const newStock = Number(stock);
+      if (!Number.isInteger(newStock) || newStock < 0) {
+        res.status(400).json({ error: 'Estoque deve ser um inteiro maior ou igual a zero.' });
+        return;
+      }
+
+      const variant = await prisma.variant.findFirst({ where: { barcode: code } });
+      if (!variant) {
+        res.status(404).json({ error: 'Variante não encontrada.' });
+        return;
+      }
+
+      const updated = await prisma.variant.update({
+        where: { id: variant.id },
+        data: { stock: newStock },
+      });
+
+      res.json({ barcode: code, stock: updated.stock });
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
   // POST /products/images/upload-url
   async createUploadUrl(req: Request, res: Response): Promise<void> {
     try {

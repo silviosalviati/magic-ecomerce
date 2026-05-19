@@ -398,6 +398,52 @@
     cursor: pointer;
   }
 
+  .stock-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stock-edit-row input[type='number'] {
+    width: 80px;
+    padding: 9px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
+    outline: none;
+  }
+
+  .stock-edit-row input[type='number']:focus { border-color: var(--accent); }
+
+  .btn-stock-save {
+    flex: 1;
+    padding: 10px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn-stock-save:disabled { opacity: 0.5; }
+
+  .stock-edit-msg {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 0 20px 12px;
+    min-height: 16px;
+  }
+
+  .stock-edit-msg.success { color: var(--accent); }
+  .stock-edit-msg.error   { color: var(--red); }
+
   .register-section {
     margin: 0 16px 24px;
     padding: 16px;
@@ -952,7 +998,7 @@
             <div class="result-rows">
               <div class="result-row">
                 <span class="row-label">Estoque</span>
-                <span class="row-value stock-big ${escapeHtml(stockClass)}">${estoque}</span>
+                <span class="row-value stock-big ${escapeHtml(stockClass)}" id="stockDisplay">${estoque}</span>
               </div>
               <div class="result-row">
                 <span class="row-label">Tamanho</span>
@@ -975,6 +1021,13 @@
                 <span class="row-value"><span class="barcode-chip">${escapeHtml(d.barcode ?? code)}</span></span>
               </div>
             </div>
+            <div class="stock-edit-row">
+              <input type="number" id="stockInput" value="${estoque}" min="0" step="1" inputmode="numeric">
+              <button class="btn-stock-save" id="btnStockSave" onclick="salvarEstoque(${JSON.stringify(d.barcode ?? code)})">
+                Salvar estoque
+              </button>
+            </div>
+            <div class="stock-edit-msg" id="stockEditMsg"></div>
           </div>`;
 
       } else if (res.status === 404) {
@@ -1376,6 +1429,54 @@
     const scanFrame = document.querySelector('.scan-frame');
     scanFrame.style.width = '65%';
     scanning = false;
+  }
+
+  async function salvarEstoque(barcode) {
+    const input   = document.getElementById('stockInput');
+    const btn     = document.getElementById('btnStockSave');
+    const msg     = document.getElementById('stockEditMsg');
+    const display = document.getElementById('stockDisplay');
+
+    const newStock = Number(input.value);
+    if (!Number.isInteger(newStock) || newStock < 0) {
+      msg.textContent = 'Valor inválido.';
+      msg.className = 'stock-edit-msg error';
+      return;
+    }
+
+    btn.disabled = true;
+    msg.textContent = 'Salvando...';
+    msg.className = 'stock-edit-msg';
+
+    try {
+      const res = await fetch(`${getApi()}/products/barcode/${encodeURIComponent(barcode)}/stock`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tunnel-Skip-AntiPhishing-Page': 'true'
+        },
+        body: JSON.stringify({ stock: newStock })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+
+      // Atualiza o número grande sem recarregar o card
+      if (display) {
+        display.textContent = newStock;
+        display.className = `row-value stock-big ${newStock === 0 ? 'zero' : newStock <= 3 ? 'low' : ''}`;
+      }
+
+      msg.textContent = 'Estoque atualizado!';
+      msg.className = 'stock-edit-msg success';
+      setTimeout(() => { msg.textContent = ''; msg.className = 'stock-edit-msg'; }, 2500);
+    } catch (err) {
+      msg.textContent = toErrorMessage(err);
+      msg.className = 'stock-edit-msg error';
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   // Capitaliza primeira letra de cada palavra (Nome, Cor)

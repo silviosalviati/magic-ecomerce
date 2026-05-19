@@ -31,6 +31,10 @@ productsRouter.get('/barcode/:code', (req: Request, res: Response) =>
   controller.getByBarcode(req, res)
 );
 
+productsRouter.patch('/barcode/:code/stock', (req: Request, res: Response) =>
+  controller.updateStock(req, res)
+);
+
 // POST /products/:barcode/generate-preview — gera preview com manequim
 productsRouter.post('/:barcode/generate-preview', (req: Request, res: Response) =>
   controller.generatePreview(req, res)
