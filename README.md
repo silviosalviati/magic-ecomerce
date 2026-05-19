@@ -92,4 +92,4 @@ GOOGLE_APPLICATION_CREDENTIALS="./secrets/gcp-key.json"
 
 ## Licença
 
-ISC
+MIT
