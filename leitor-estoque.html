@@ -110,7 +110,7 @@
   }
 
   .status-dot::after {
-    content: 'ON';
+    content: 'ONLINE';
     position: absolute;
     margin-left: 12px;
     margin-top: -4px;
@@ -686,12 +686,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .config-bar {
-    margin: 8px auto 0;
-    width: calc(100% - 28px);
-    max-width: 620px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
+    display: none;
   }
 
   .api-badge {
