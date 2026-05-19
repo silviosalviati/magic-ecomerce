@@ -710,6 +710,28 @@
   let lastMissingParsed = null;
   let lastQrSalePriceHint = null;
 
+  // ─── Helton Malhas — lookup de cor por variantCode ───────────────────────────
+  const HELTON_COLOR_LOOKUP_KEY = 'helton_color_lookup';
+  let pendingHeltonVariantCode = null;
+
+  function loadColorLookup() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(HELTON_COLOR_LOOKUP_KEY) || '{}');
+      return new Map(Object.entries(stored));
+    } catch { return new Map(); }
+  }
+
+  function saveColorLookup(map) {
+    localStorage.setItem(HELTON_COLOR_LOOKUP_KEY, JSON.stringify(Object.fromEntries(map)));
+  }
+
+  const colorLookup = loadColorLookup();
+  // Seed com códigos confirmados se ainda não estiverem gravados
+  [['0044', 'Cinza'], ['0026', 'Azul']].forEach(([code, color]) => {
+    if (!colorLookup.has(code)) colorLookup.set(code, color);
+  });
+  saveColorLookup(colorLookup);
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, '&amp;')
@@ -743,6 +765,24 @@
     };
   }
 
+  // Helton Malhas — padrão {REF}&{TAMANHO}{COD_VARIANTE}  ex: 009108&G0044
+  function parseHeltonBarcode(code) {
+    const match = String(code || '').trim().match(/^(\d+)&([A-Z]{1,3})(\d{2,})$/);
+    if (!match) return null;
+    const [, ref, size, variantCode] = match;
+    return { ref, size, variantCode };
+  }
+
+  // Helton Malhas — extrai preço de tabela do campo REF
+  // ex: "009266 0007990" → { ref: '009266', salePrice: 79.90 }
+  function parseHeltonRef(code) {
+    const match = String(code || '').trim().match(/^(\d{4,})\s+0*(\d+)$/);
+    if (!match) return null;
+    const [, ref, priceStr] = match;
+    const salePrice = parseInt(priceStr, 10) / 100;
+    return Number.isFinite(salePrice) && salePrice > 0 ? { ref, salePrice } : null;
+  }
+
   function parseScannedPayload(rawCode) {
     const code = String(rawCode || '').trim();
     const result = {
@@ -758,6 +798,30 @@
     };
 
     if (!code) return result;
+
+    // ── Helton Malhas: {REF}&{TAMANHO}{COD_VARIANTE} ─────────────────────────
+    const helton = parseHeltonBarcode(code);
+    if (helton) {
+      const knownColor = colorLookup.get(helton.variantCode);
+      result.size        = helton.size;
+      result.color       = knownColor || '';
+      result.description = `Ref ${helton.ref}`;
+      result.name        = `Produto Ref ${helton.ref}`;
+      result.category    = 'GERAL';
+      pendingHeltonVariantCode = knownColor ? null : helton.variantCode;
+      return result;
+    }
+
+    // ── Helton Malhas: {REF} {PRICE_CENTS}  ex: "009266 0007990" ─────────────
+    const heltonRef = parseHeltonRef(code);
+    if (heltonRef) {
+      result.salePrice   = heltonRef.salePrice;
+      result.description = `Ref ${heltonRef.ref}`;
+      result.name        = `Produto Ref ${heltonRef.ref}`;
+      result.category    = 'GERAL';
+      pendingHeltonVariantCode = null;
+      return result;
+    }
 
     const normalizeKey = (key) =>
       String(key)
@@ -861,7 +925,7 @@
     document.getElementById('regCategory').value = parsed.category || 'GERAL';
     document.getElementById('regDescription').value = parsed.description || '';
     document.getElementById('regSize').value = parsed.size || 'U';
-    document.getElementById('regColor').value = parsed.color || 'Padrão';
+    document.getElementById('regColor').value = parsed.color || '';
 
     const parsedCost = Number(parsed.costPrice);
     document.getElementById('regCostPrice').value = Number.isFinite(parsedCost) && parsedCost > 0
@@ -874,13 +938,20 @@
 
     lastQrSalePriceHint = Number.isFinite(Number(parsed.salePrice)) ? Number(parsed.salePrice) : null;
 
-    setRegisterMessage('Campos do código preenchidos. Informe estoque e margem para salvar.', '');
-    document.getElementById('regStock').focus();
+    if (!parsed.color) {
+      // variantCode desconhecido — pede cor ao usuário e memoriza após save
+      setRegisterMessage('Cor desconhecida para este código de variante. Preencha o campo Cor para memorizar.', '');
+      setTimeout(() => document.getElementById('regColor').focus(), 300);
+    } else {
+      setRegisterMessage('Campos do código preenchidos. Informe estoque e margem para salvar.', '');
+      document.getElementById('regStock').focus();
+    }
 
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function closeRegisterForm() {
+    pendingHeltonVariantCode = null;
     document.getElementById('registerSection').style.display = 'none';
   }
 
@@ -974,6 +1045,13 @@
       }
 
       setRegisterMessage('Produto cadastrado com sucesso. Conferindo estoque...', 'success');
+
+      // Persistir cor nova no lookup se veio de variantCode desconhecido
+      if (pendingHeltonVariantCode && payload.color) {
+        colorLookup.set(pendingHeltonVariantCode, payload.color);
+        saveColorLookup(colorLookup);
+        pendingHeltonVariantCode = null;
+      }
 
       const barcode = payload.barcode;
       document.getElementById('registerForm').reset();
