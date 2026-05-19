@@ -639,7 +639,7 @@
 
       <div class="register-field full">
         <label for="regName">Nome do produto</label>
-        <input id="regName" name="name" required>
+        <input id="regName" name="name" required autocapitalize="words" oninput="capitalizeWords(this)">
       </div>
 
       <div class="register-field full">
@@ -652,7 +652,7 @@
 
       <div class="register-field full">
         <label for="regDescription">Descrição (opcional)</label>
-        <textarea id="regDescription" name="description"></textarea>
+        <textarea id="regDescription" name="description" autocapitalize="sentences" oninput="capitalizeFirst(this)"></textarea>
       </div>
 
       <div class="register-field">
@@ -668,7 +668,7 @@
 
       <div class="register-field">
         <label for="regColor">Cor</label>
-        <input id="regColor" name="color" required>
+        <input id="regColor" name="color" required autocapitalize="words" oninput="capitalizeWords(this)">
       </div>
 
       <div class="register-field">
@@ -1376,6 +1376,20 @@
     const scanFrame = document.querySelector('.scan-frame');
     scanFrame.style.width = '65%';
     scanning = false;
+  }
+
+  // Capitaliza primeira letra de cada palavra (Nome, Cor)
+  function capitalizeWords(el) {
+    const pos = el.selectionStart;
+    el.value = el.value.replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+    el.setSelectionRange(pos, pos);
+  }
+
+  // Capitaliza apenas a primeira letra do campo (Descrição)
+  function capitalizeFirst(el) {
+    const pos = el.selectionStart;
+    el.value = el.value.charAt(0).toUpperCase() + el.value.slice(1);
+    el.setSelectionRange(pos, pos);
   }
 </script>
 </body>
