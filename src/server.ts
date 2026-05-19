@@ -57,12 +57,12 @@ app.use('/admin', adminRouter);
 
 // 🧶 ROTA: Serve o HTML do leitor direto pelo backend (Bypassa o Preflight do celular)
 app.get('/leitor', (_req: Request, res: Response) => {
-  res.sendFile(path.resolve(__dirname, '../leitor-estoque.html'));
+  res.sendFile(path.resolve(process.cwd(), 'leitor-estoque.html'));
 });
 
 // 🧶 ROTA: Serve o HTML de captura de fotos
 app.get('/fotos', (_req: Request, res: Response) => {
-  res.sendFile(path.resolve(__dirname, '../fotos-produtos.html'));
+  res.sendFile(path.resolve(process.cwd(), 'fotos-produtos.html'));
 });
 
 app.get('/health', (_req: Request, res: Response) => {
