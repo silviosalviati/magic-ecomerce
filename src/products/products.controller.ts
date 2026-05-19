@@ -144,7 +144,7 @@ export class ProductsController {
     try {
       const code = String(req.params['code']).trim();
 
-      const variant = await prisma.variant.findFirst({
+      let variant = await prisma.variant.findFirst({
         where: { barcode: code },
         include: {
           product: true,
@@ -158,6 +158,44 @@ export class ProductsController {
           barcode: code,
         });
         return;
+      }
+
+      // Autocorreção: se a variante existir sem product associado no banco,
+      // recria o product com o mesmo id referenciado pela variante.
+      if (!variant.product) {
+        const orphanProductId = variant.productId;
+
+        await prisma.$transaction(async (tx) => {
+          const existingProduct = await tx.product.findUnique({
+            where: { id: orphanProductId },
+          });
+
+          if (!existingProduct) {
+            await tx.product.create({
+              data: {
+                id: orphanProductId,
+                name: `Produto ${code}`,
+                description: `Registro recriado automaticamente a partir da variante ${code}.`,
+                category: 'GERAL',
+                costPrice: new Prisma.Decimal('0.01'),
+                markup: new Prisma.Decimal('1'),
+                basePrice: new Prisma.Decimal('0.01'),
+              },
+            });
+          }
+        });
+
+        variant = await prisma.variant.findFirst({
+          where: { barcode: code },
+          include: {
+            product: true,
+          },
+        });
+
+        if (!variant || !variant.product) {
+          res.status(500).json({ error: 'Não foi possível reconstruir o produto associado à variante.' });
+          return;
+        }
       }
 
       res.json({
