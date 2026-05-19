@@ -911,6 +911,94 @@
   }
 
   async function buscar(code) {
+    if (!code) return;
+
+    // Debounce: ignora leituras repetidas em menos de 1,5s
+    const now = Date.now();
+    if (code === lastCode && now - lastSearch < 1500) return;
+    lastCode = code;
+    lastSearch = now;
+
+    const resultSection = document.getElementById('resultSection');
+    resultSection.innerHTML = '<div class="loading">Buscando</div>';
+    document.getElementById('registerSection').style.display = 'none';
+
+    const parsed = parseScannedPayload(code);
+
+    try {
+      const res = await fetch(`${getApi()}/products/barcode/${encodeURIComponent(code)}`, {
+        headers: { 'X-Tunnel-Skip-AntiPhishing-Page': 'true' }
+      });
+
+      if (res.ok) {
+        const d = await res.json();
+
+        const estoque = Number(d.estoque ?? 0);
+        const stockClass = estoque === 0 ? 'zero' : estoque <= 3 ? 'low' : '';
+        const badgeClass = estoque === 0 ? 'badge-out' : estoque <= 3 ? 'badge-low' : 'badge-ok';
+        const badgeText  = estoque === 0 ? 'Sem estoque' : estoque <= 3 ? 'Estoque baixo' : 'Em estoque';
+
+        const preco = Number(d.precoVenda);
+        const precoStr = Number.isFinite(preco) && preco > 0
+          ? preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+          : '—';
+
+        resultSection.innerHTML = `
+          <div class="result-card">
+            <div class="result-header">
+              <h2>${escapeHtml(d.produto)}</h2>
+              <span class="badge ${escapeHtml(badgeClass)}">${escapeHtml(badgeText)}</span>
+            </div>
+            <div class="result-rows">
+              <div class="result-row">
+                <span class="row-label">Estoque</span>
+                <span class="row-value stock-big ${escapeHtml(stockClass)}">${estoque}</span>
+              </div>
+              <div class="result-row">
+                <span class="row-label">Tamanho</span>
+                <span class="row-value">${escapeHtml(d.tamanho)}</span>
+              </div>
+              <div class="result-row">
+                <span class="row-label">Cor</span>
+                <span class="row-value">${escapeHtml(d.cor)}</span>
+              </div>
+              <div class="result-row">
+                <span class="row-label">Categoria</span>
+                <span class="row-value">${escapeHtml(d.categoria)}</span>
+              </div>
+              <div class="result-row">
+                <span class="row-label">Preço de venda</span>
+                <span class="row-value">${escapeHtml(precoStr)}</span>
+              </div>
+              <div class="result-row">
+                <span class="row-label">Barcode</span>
+                <span class="row-value"><span class="barcode-chip">${escapeHtml(d.barcode ?? code)}</span></span>
+              </div>
+            </div>
+          </div>`;
+
+      } else if (res.status === 404) {
+        lastMissingBarcode = code;
+        lastMissingParsed = parsed;
+
+        resultSection.innerHTML = `
+          <div class="not-found-card">
+            <h3>Produto não encontrado</h3>
+            <p>Este barcode ainda não está cadastrado no estoque.</p>
+            <div class="barcode-chip">${escapeHtml(code)}</div><br>
+            <button class="btn-create" onclick="openRegisterForm(lastMissingBarcode, lastMissingParsed)">
+              + Cadastrar produto
+            </button>
+          </div>`;
+
+      } else {
+        const data = await res.json().catch(() => ({}));
+        resultSection.innerHTML = `<div class="error-msg">${escapeHtml(data.error || `Erro ${res.status}`)}</div>`;
+      }
+
+    } catch (err) {
+      resultSection.innerHTML = `<div class="error-msg">Sem conexão com a API: ${escapeHtml(toErrorMessage(err))}</div>`;
+    }
   }
 
   function openRegisterForm(barcode, parsedPayload) {
