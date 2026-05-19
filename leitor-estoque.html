@@ -1023,7 +1023,9 @@
             </div>
             <div class="stock-edit-row">
               <input type="number" id="stockInput" value="${estoque}" min="0" step="1" inputmode="numeric">
-              <button class="btn-stock-save" id="btnStockSave" onclick="salvarEstoque(${JSON.stringify(d.barcode ?? code)})">
+              <button class="btn-stock-save" id="btnStockSave"
+                data-barcode="${escapeHtml(String(d.barcode ?? code))}"
+                onclick="salvarEstoque(this.dataset.barcode)">
                 Salvar estoque
               </button>
             </div>
