@@ -150,12 +150,13 @@ export class ProductsController {
   async getByBarcode(req: Request, res: Response): Promise<void> {
     try {
       const code = String(req.params['code']).trim();
+      if (!code) {
+        res.status(400).json({ error: 'Barcode inválido.' });
+        return;
+      }
 
-      let variant = await prisma.variant.findFirst({
+      const variant = await prisma.variant.findFirst({
         where: { barcode: code },
-        include: {
-          product: true,
-        },
       });
 
       if (!variant) {
@@ -167,9 +168,13 @@ export class ProductsController {
         return;
       }
 
+      let product = await prisma.product.findUnique({
+        where: { id: variant.productId },
+      });
+
       // Autocorreção: se a variante existir sem product associado no banco,
       // recria o product com o mesmo id referenciado pela variante.
-      if (!variant.product) {
+      if (!product) {
         const orphanProductId = variant.productId;
 
         await prisma.$transaction(async (tx: any) => {
@@ -192,14 +197,11 @@ export class ProductsController {
           }
         });
 
-        variant = await prisma.variant.findFirst({
-          where: { barcode: code },
-          include: {
-            product: true,
-          },
+        product = await prisma.product.findUnique({
+          where: { id: orphanProductId },
         });
 
-        if (!variant || !variant.product) {
+        if (!product) {
           res.status(500).json({ error: 'Não foi possível reconstruir o produto associado à variante.' });
           return;
         }
@@ -208,14 +210,14 @@ export class ProductsController {
       res.json({
         found: true,
         barcode: variant.barcode,
-        produto: variant.product.name,
-        categoria: variant.product.category,
+        produto: product.name,
+        categoria: product.category,
         tamanho: variant.size,
         cor: variant.color,
         estoque: variant.stock,
-        precoVenda: variant.product.basePrice,
-        custoProduto: variant.product.costPrice,
-        markup: variant.product.markup,
+        precoVenda: product.basePrice,
+        custoProduto: product.costPrice,
+        markup: product.markup,
       });
     } catch (error) {
       res.status(500).json({ error: clientError(error) });
