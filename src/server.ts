@@ -60,11 +60,6 @@ app.get('/leitor', (_req: Request, res: Response) => {
   res.sendFile(path.resolve(process.cwd(), 'leitor-estoque.html'));
 });
 
-// 🧶 ROTA: Serve o HTML de captura de fotos
-app.get('/fotos', (_req: Request, res: Response) => {
-  res.sendFile(path.resolve(process.cwd(), 'fotos-produtos.html'));
-});
-
 app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'online',
