@@ -33,22 +33,21 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
     variantsForColor.find((variant) => variant.size === selectedSize) || variantsForColor[0];
 
   const cartItem: CartItem = buildCartItem(product, selectedVariant);
-  const benefitLabel = selectedVariant.stock <= 3 ? 'Últimas unidades' : 'Envio rápido';
 
   return (
     <article className="product-card">
       <div className="product-media">
         <div className="product-badge-row" aria-hidden="true">
-          <span className="product-badge">{benefitLabel}</span>
+          <span className="product-badge">Restam {selectedVariant.stock}</span>
         </div>
         <img src={product.imageUrl} alt={product.name} loading="lazy" />
       </div>
       <div className="product-content">
-        <p className="category">{product.category}</p>
-        <div className="product-title-row">
-          <h3>{product.name}</h3>
-          <strong className="price-tag">{toCurrency(product.price)}</strong>
-        </div>
+        <p className="product-meta">
+          {product.category} • Ref {selectedVariant.barcode}
+        </p>
+        <h3 className="product-name">{product.name}</h3>
+        <strong className="price-tag">{toCurrency(product.price)}</strong>
         <p className="product-description">{product.description}</p>
 
         <div className="selectors-grid">
@@ -57,7 +56,8 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
               <span>Cor</span>
               <strong>{selectedColor}</strong>
             </div>
-            <div className="color-palette">
+            <div className="color-select-row">
+              <div className="color-palette">
               {colors.map((color) => (
                 <button
                   key={color}
@@ -68,6 +68,8 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
                   aria-label={`Selecionar cor ${color}`}
                 />
               ))}
+              </div>
+              <span className="selected-color-label">{selectedColor}</span>
             </div>
           </div>
 
@@ -102,7 +104,7 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
             <svg className="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M13 3L4 14h6l-1 7 9-11h-6l1-7z" />
             </svg>
-            Comprar
+            Comprar agora
           </button>
           <button
             type="button"
