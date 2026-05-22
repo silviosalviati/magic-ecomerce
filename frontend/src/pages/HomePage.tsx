@@ -31,7 +31,7 @@ export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomeP
       <section className="hero" id="novidades">
         <div className="hero-copy">
           <LogoMark />
-          <p className="eyebrow">Nova curadoria</p>
+          <p className="eyebrow">Seu Estilo, Sua Mágia</p>
           <h1>Roupas com linguagem de marca, não vitrine genérica.</h1>
           <p>
             Peças selecionadas para uma experiência de compra mais limpa, rápida e
