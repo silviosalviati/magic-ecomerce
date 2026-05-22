@@ -51,42 +51,44 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
         </div>
         <p className="product-description">{product.description}</p>
 
-        <div className="selector-group">
-          <div className="selector-head">
-            <span>Cor</span>
-            <strong>{selectedColor}</strong>
+        <div className="selectors-grid">
+          <div className="selector-group">
+            <div className="selector-head">
+              <span>Cor</span>
+              <strong>{selectedColor}</strong>
+            </div>
+            <div className="color-palette">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={color === selectedColor ? 'color-swatch active' : 'color-swatch'}
+                  style={{ backgroundColor: colorToken(color) }}
+                  onClick={() => setSelectedColor(color)}
+                  aria-label={`Selecionar cor ${color}`}
+                />
+              ))}
+            </div>
           </div>
-          <div className="color-palette">
-            {colors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                className={color === selectedColor ? 'color-swatch active' : 'color-swatch'}
-                style={{ backgroundColor: colorToken(color) }}
-                onClick={() => setSelectedColor(color)}
-                aria-label={`Selecionar cor ${color}`}
-              />
-            ))}
-          </div>
-        </div>
 
-        <div className="selector-group">
-          <div className="selector-head">
-            <span>Tamanho</span>
-            <strong>{selectedSize}</strong>
-          </div>
-          <div className="size-palette">
-            {variantsForColor.map((variant) => (
-              <button
-                key={variant.variantId}
-                type="button"
-                className={variant.size === selectedSize ? 'size-chip active' : 'size-chip'}
-                onClick={() => setSelectedSize(variant.size)}
-                disabled={variant.stock <= 0}
-              >
-                {variant.size}
-              </button>
-            ))}
+          <div className="selector-group">
+            <div className="selector-head">
+              <span>Tamanho</span>
+              <strong>{selectedSize}</strong>
+            </div>
+            <div className="size-palette">
+              {variantsForColor.map((variant) => (
+                <button
+                  key={variant.variantId}
+                  type="button"
+                  className={variant.size === selectedSize ? 'size-chip active' : 'size-chip'}
+                  onClick={() => setSelectedSize(variant.size)}
+                  disabled={variant.stock <= 0}
+                >
+                  {variant.size}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
