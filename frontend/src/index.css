@@ -64,38 +64,20 @@ body {
 .logo-wrap {
   display: flex;
   align-items: center;
-  gap: 12px;
+  width: fit-content;
 }
 
-.logo-wrap.compact .logo-word {
-  font-size: 22px;
+.logo-image {
+  display: block;
+  height: clamp(88px, 15vw, 150px);
+  width: auto;
+  max-width: min(62vw, 420px);
+  object-fit: contain;
 }
 
-.logo-symbol {
-  width: 74px;
-  height: 74px;
-}
-
-.logo-ring {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 3;
-}
-
-.logo-m {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.logo-word {
-  font-family: 'Montserrat', sans-serif;
-  letter-spacing: 0.34em;
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 28px;
+.logo-wrap.compact .logo-image {
+  height: clamp(42px, 7vw, 68px);
+  max-width: min(44vw, 240px);
 }
 
 .main-nav {
