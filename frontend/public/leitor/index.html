@@ -59,27 +59,10 @@
     gap: 12px;
   }
 
-  .brand-mark {
-    width: 44px;
-    height: 44px;
-    border: 2px solid var(--accent);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(240, 198, 208, 0.09);
-    flex-shrink: 0;
-  }
-
-  .brand-mark svg {
-    width: 24px;
-    height: 24px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 1.9;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .brand-logo {
+    display: block;
+    width: 148px;
+    height: auto;
   }
 
   .logo {
@@ -108,17 +91,6 @@
     background: var(--accent);
     box-shadow: 0 0 10px rgba(240, 198, 208, 0.9);
     animation: pulse 2s infinite;
-  }
-
-  .status-dot::after {
-    content: 'ONLINE';
-    position: absolute;
-    margin-left: 12px;
-    margin-top: -4px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    color: var(--muted);
   }
 
   @keyframes pulse {
@@ -725,15 +697,7 @@
 
 <header>
   <div class="brand">
-    <div class="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        <path d="M4 19L7 5l5 10 5-10 3 14" />
-      </svg>
-    </div>
-    <div>
-      <div class="logo">MAGI.C</div>
-      <div class="logo-sub">Leitor de Estoque</div>
-    </div>
+    <img class="brand-logo" src="/logo/logo-transparent.png" alt="MAGI.C">
   </div>
   <div class="status-dot"></div>
 </header>
