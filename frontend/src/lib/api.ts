@@ -8,6 +8,35 @@ const api = axios.create({
   timeout: 15000,
 });
 
+const DEFAULT_API_BASE_URL = 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
+
+function normalizeBaseUrl(value: string): string {
+  return value.trim().replace(/\/+$/, '');
+}
+
+function dedupeBaseUrls(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean).map(normalizeBaseUrl)));
+}
+
+function getCatalogApiBaseCandidates(): string[] {
+  const primary = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
+  const envFallback = String(import.meta.env.VITE_API_FALLBACK_BASE_URL || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  const candidates = [primary, ...envFallback];
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      candidates.push('http://localhost:3001');
+    }
+  }
+
+  return dedupeBaseUrls(candidates);
+}
+
 function toNumber(value: string | number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -43,8 +72,25 @@ export function mapProductsToCatalog(products: ApiProduct[]): CatalogProduct[] {
 }
 
 export async function fetchCatalog(): Promise<CatalogProduct[]> {
-  const response = await api.get<ApiProduct[]>('/products');
-  return mapProductsToCatalog(response.data || []);
+  const baseCandidates = getCatalogApiBaseCandidates();
+  const errors: string[] = [];
+
+  for (const baseURL of baseCandidates) {
+    try {
+      const client = axios.create({ baseURL, timeout: 15000 });
+      const response = await client.get<ApiProduct[]>('/products');
+      return mapProductsToCatalog(response.data || []);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        errors.push(status ? `${baseURL} (${status})` : `${baseURL} (sem resposta)`);
+      } else {
+        errors.push(`${baseURL} (erro desconhecido)`);
+      }
+    }
+  }
+
+  throw new Error(`Falha ao consultar catalogo em: ${errors.join(', ')}`);
 }
 
 export async function checkout(payload: CheckoutPayload): Promise<CheckoutResponse> {

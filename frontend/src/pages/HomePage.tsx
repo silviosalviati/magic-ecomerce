@@ -9,11 +9,21 @@ type HomePageProps = {
   items: CatalogProduct[];
   loading: boolean;
   error: string | null;
+  warning: string | null;
+  onRetry: () => void;
   onAddToCart: (item: CartItem) => void;
   onBuyNow: (item: CartItem) => void;
 };
 
-export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomePageProps) {
+export function HomePage({
+  items,
+  loading,
+  error,
+  warning,
+  onRetry,
+  onAddToCart,
+  onBuyNow,
+}: HomePageProps) {
   const featuredItems = useMemo(() => items.slice(0, 3), [items]);
   const heroItems = useMemo(() => items.slice(0, 5), [items]);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -153,7 +163,15 @@ export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomeP
         </div>
 
         {loading && <div className="status">Carregando produtos...</div>}
-        {error && <div className="status error">{error}</div>}
+        {warning && <div className="status warning">{warning}</div>}
+        {error && (
+          <div className="status error status-row">
+            <span>{error}</span>
+            <button type="button" className="status-action" onClick={onRetry}>
+              Tentar novamente
+            </button>
+          </div>
+        )}
 
         {!loading && !error && featuredItems.length === 0 && (
           <div className="status">Sem produtos cadastrados no momento.</div>

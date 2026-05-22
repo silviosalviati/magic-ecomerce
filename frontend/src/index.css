@@ -653,6 +653,35 @@ body {
   font-size: 13px;
 }
 
+.status.warning {
+  color: rgba(232, 180, 176, 0.9);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-action {
+  border: 0.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.status-action:hover {
+  border-color: rgba(232, 180, 176, 0.45);
+  color: var(--color-accent);
+}
+
 /* ─── FOOTER ─── */
 .site-footer {
   border-top: 0.5px solid var(--color-border);
