@@ -42,16 +42,11 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
           </button>
           <button
             type="button"
-            className="ghost-btn product-btn"
+            className="add-to-bag-btn"
             disabled={selectedVariant.stock <= 0}
             onClick={() => onAddToCart(cartItem)}
           >
-            <svg className="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 4h2l2.4 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 8H7" />
-              <circle cx="10" cy="19" r="1.6" />
-              <circle cx="17" cy="19" r="1.6" />
-            </svg>
-            Adicionar ao carrinho
+            + Sacola
           </button>
         </div>
       </div>
