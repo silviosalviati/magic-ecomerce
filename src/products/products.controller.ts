@@ -21,6 +21,14 @@ function isUniqueBarcodeError(error: unknown): boolean {
   );
 }
 
+function logServerError(scope: string, error: unknown): void {
+  if (error instanceof Error) {
+    console.error(`[${scope}]`, error.message, error.stack);
+    return;
+  }
+  console.error(`[${scope}]`, error);
+}
+
 export class ProductsController {
   // POST /products
   async create(req: Request, res: Response): Promise<void> {
@@ -121,6 +129,7 @@ export class ProductsController {
       });
       res.json(products);
     } catch (error) {
+      logServerError('products.listAll', error);
       res.status(500).json({ error: clientError(error) });
     }
   }

@@ -14,6 +14,10 @@ const localApiOrigins = [
   `http://localhost:${PORT}`,
   `http://127.0.0.1:${PORT}`,
 ];
+const productionWebOrigins = [
+  'https://vistamagic.com.br',
+  'https://www.vistamagic.com.br',
+];
 
 function isAllowedOrigin(origin?: string): boolean {
   if (!origin) return true;
@@ -30,8 +34,18 @@ function isAllowedOrigin(origin?: string): boolean {
 
 // ─── CORS controlado ─────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:3000', 'http://localhost:5173', ...localApiOrigins];
+  ? Array.from(
+    new Set([
+      ...process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
+      ...productionWebOrigins,
+    ])
+  )
+  : [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    ...localApiOrigins,
+    ...productionWebOrigins,
+  ];
 
 app.use(
   cors({
@@ -60,12 +74,24 @@ app.get('/leitor', (_req: Request, res: Response) => {
   res.sendFile(path.resolve(process.cwd(), 'leitor-estoque.html'));
 });
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV ?? 'development',
-  });
+app.get('/health', async (_req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: 'online',
+      db: 'online',
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV ?? 'development',
+    });
+  } catch (error) {
+    console.error('[HEALTH] Falha ao consultar banco:', error);
+    res.status(503).json({
+      status: 'degraded',
+      db: 'offline',
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV ?? 'development',
+    });
+  }
 });
 
 // ─── Handler de rotas não encontradas ────────────────────────────────────────
