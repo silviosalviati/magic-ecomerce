@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MAGI.C — Leitor de Estoque</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1062,7 +1063,21 @@
     const fromQuery = new URLSearchParams(window.location.search).get('api');
     if (fromQuery) return normalizeApi(fromQuery);
 
-    if (window.location.protocol !== 'file:') {
+    const fromStorage = window.localStorage.getItem('magic.reader.api');
+    if (fromStorage) return normalizeApi(fromStorage);
+
+    const host = window.location.hostname.toLowerCase();
+    const protocol = window.location.protocol;
+
+    if (host === 'vistamagic.com.br' || host === 'www.vistamagic.com.br') {
+      return 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
+    }
+
+    if (host === 'magic-ecomerce-web-731025483706.us-central1.run.app') {
+      return 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
+    }
+
+    if (protocol !== 'file:') {
       return normalizeApi(window.location.origin);
     }
 

@@ -3,7 +3,6 @@ import 'dotenv/config';
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import path from 'path'; // 🧩 Importado para gerenciar caminhos de arquivos
 import { productsRouter } from './products/products.routes';
 import { adminRouter } from './admin/admin.routes';
 import { checkoutRouter } from './checkout/checkout.routes';
@@ -71,11 +70,6 @@ app.use(express.json({ limit: '12mb' }));
 app.use('/products', productsRouter);
 app.use('/admin', adminRouter);
 app.use('/checkout', checkoutRouter);
-
-// 🧶 ROTA: Serve o HTML do leitor direto pelo backend (Bypassa o Preflight do celular)
-app.get('/leitor', (_req: Request, res: Response) => {
-  res.sendFile(path.resolve(process.cwd(), 'leitor-estoque.html'));
-});
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
