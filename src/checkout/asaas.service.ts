@@ -9,6 +9,12 @@ const client = axios.create({
   timeout: 15000,
 });
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 export interface AsaasCustomer {
   id: string;
   name: string;
@@ -68,6 +74,27 @@ export async function createPixPayment(
 }
 
 export async function getPixQrCode(paymentId: string): Promise<PixQrCode> {
-  const { data } = await client.get<PixQrCode>(`/payments/${paymentId}/pixQrCode`);
-  return data;
+  let lastError: unknown;
+
+  // Asaas may take a few seconds to make the PIX QR code available after payment creation.
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      const { data } = await client.get<PixQrCode>(`/payments/${paymentId}/pixQrCode`);
+      if (data?.encodedImage && data?.payload) {
+        return data;
+      }
+    } catch (error) {
+      lastError = error;
+
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      // Retry transient unavailability statuses from Asaas.
+      if (status !== 400 && status !== 404 && status !== 429) {
+        throw error;
+      }
+    }
+
+    await wait(700 * attempt);
+  }
+
+  throw lastError ?? new Error('Não foi possível obter o QR Code PIX no Asaas.');
 }

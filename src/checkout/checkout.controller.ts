@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import axios from 'axios';
 import { prisma } from '../config/database';
 import { findOrCreateCustomer, createPixPayment, getPixQrCode } from './asaas.service';
 
@@ -100,7 +101,15 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
       total,
     });
   } catch (error) {
-    console.error('[checkout]', error);
+    if (axios.isAxiosError(error)) {
+      console.error('[checkout][asaas]', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+    } else {
+      console.error('[checkout]', error);
+    }
     res.status(500).json({ message: 'Erro ao processar pagamento. Tente novamente.' });
   }
 }
