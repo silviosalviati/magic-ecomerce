@@ -2,7 +2,7 @@
 
 :root {
   /* ── Design system tokens ── */
-  --color-bg-base:      #3D3A3B;
+  --color-bg-base:      #0D0D0D;
   --color-bg-deep:      #322F30;
   --color-bg-card:      #3A3637;
   --color-accent:       #E8B4B0;
@@ -96,15 +96,15 @@ body {
 
 .logo-image {
   display: block;
-  height: clamp(28px, 4vw, 40px);
+  height: clamp(36px, 5vw, 52px);
   width: auto;
-  max-width: min(44vw, 160px);
+  max-width: min(44vw, 200px);
   object-fit: contain;
 }
 
 .logo-wrap.compact .logo-image {
-  height: clamp(28px, 4vw, 40px);
-  max-width: min(40vw, 140px);
+  height: clamp(36px, 5vw, 52px);
+  max-width: min(40vw, 180px);
 }
 
 .main-nav {
