@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Palette, Smartphone, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
@@ -14,7 +15,34 @@ type HomePageProps = {
 
 export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomePageProps) {
   const featuredItems = useMemo(() => items.slice(0, 3), [items]);
-  const spotlightItem = featuredItems[0];
+  const heroItems = useMemo(() => items.slice(0, 5), [items]);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const spotlightItem = heroItems[heroIndex];
+
+  useEffect(() => {
+    if (heroItems.length <= 1) return;
+
+    const timerId = window.setInterval(() => {
+      setHeroIndex((current) => (current + 1) % heroItems.length);
+    }, 3200);
+
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [heroItems.length]);
+
+  useEffect(() => {
+    if (heroIndex < heroItems.length) return;
+    setHeroIndex(0);
+  }, [heroIndex, heroItems.length]);
+
+  function goToPreviousHeroItem() {
+    setHeroIndex((current) => (current - 1 + heroItems.length) % heroItems.length);
+  }
+
+  function goToNextHeroItem() {
+    setHeroIndex((current) => (current + 1) % heroItems.length);
+  }
 
   const features = [
     {
@@ -38,19 +66,52 @@ export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomeP
     <>
       <section className="hero" id="marca">
         <div className="hero-left">
-          <div className="hero-product-placeholder">
+          <div className="hero-showcase">
             <span className="hero-product-badge">ÚLTIMAS UNIDADES</span>
             {spotlightItem?.imageUrl ? (
-              <img className="hero-product-img" src={spotlightItem.imageUrl} alt={spotlightItem.name} />
+              <Link
+                className="hero-product-placeholder"
+                to={`/produto/${spotlightItem.productId}`}
+                aria-label={`Ver produto ${spotlightItem.name}`}
+              >
+                <img className="hero-product-img" src={spotlightItem.imageUrl} alt={spotlightItem.name} />
+                <div className="hero-product-overlay" aria-hidden="true" />
+                <p className="product-name-small">{spotlightItem.name}</p>
+                <p className="product-price-small">{toCurrency(spotlightItem.price)}</p>
+              </Link>
             ) : (
-              <div className="placeholder-shape" aria-hidden="true">
-                <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#C4A882" strokeWidth="0.8">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
+              <div className="hero-product-placeholder">
+                <div className="placeholder-shape" aria-hidden="true">
+                  <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#C4A882" strokeWidth="0.8">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </div>
+                <p className="product-name-small">Blusa Ellie</p>
+                <p className="product-price-small">R$ 99,80</p>
               </div>
             )}
-            <p className="product-name-small">{spotlightItem?.name ?? 'Blusa Ellie'}</p>
-            <p className="product-price-small">{spotlightItem ? toCurrency(spotlightItem.price) : 'R$ 99,80'}</p>
+
+            {heroItems.length > 1 && (
+              <div className="hero-controls" aria-label="Vitrine de produtos">
+                <button type="button" className="hero-control-btn" onClick={goToPreviousHeroItem}>
+                  ‹
+                </button>
+                <div className="hero-dots">
+                  {heroItems.map((item, index) => (
+                    <button
+                      key={item.productId}
+                      type="button"
+                      className={index === heroIndex ? 'hero-dot active' : 'hero-dot'}
+                      onClick={() => setHeroIndex(index)}
+                      aria-label={`Mostrar ${item.name}`}
+                    />
+                  ))}
+                </div>
+                <button type="button" className="hero-control-btn" onClick={goToNextHeroItem}>
+                  ›
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
