@@ -7,7 +7,7 @@ export function LogoMark({ compact = false }: LogoMarkProps) {
     <div className={compact ? 'logo-wrap compact' : 'logo-wrap'}>
       <img
         className="logo-image"
-        src="/logo/logo.png"
+        src="/logo/logo-transparent.png"
         alt="MAGI.C"
         loading="eager"
         decoding="async"
