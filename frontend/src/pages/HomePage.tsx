@@ -12,23 +12,11 @@ type HomePageProps = {
 };
 
 export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomePageProps) {
-  const itemsByCategory = useMemo(() => {
-    return items.reduce<Record<string, CatalogProduct[]>>((acc, item) => {
-      const category = (item.category || 'Sem categoria').trim();
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(item);
-      return acc;
-    }, {});
-  }, [items]);
-
-  const categoryNames = useMemo(
-    () => Object.keys(itemsByCategory).sort((a, b) => a.localeCompare(b, 'pt-BR')),
-    [itemsByCategory]
-  );
+  const featuredItems = useMemo(() => items.slice(0, 8), [items]);
 
   return (
     <>
-      <section className="hero" id="novidades">
+      <section className="hero" id="marca">
         <div className="hero-copy">
           <LogoMark />
           <p className="eyebrow">Seu Estilo, Sua Mágia</p>
@@ -38,11 +26,11 @@ export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomeP
             visualmente precisa, como nas melhores lojas de moda digital.
           </p>
           <div className="hero-actions">
-            <a className="primary-btn" href="#colecao">
-              Explorar coleção
+            <a className="primary-btn" href="#novidades">
+              Ver novidades
             </a>
-            <a className="ghost-btn hero-link-btn" href="#colecao">
-              Ver categorias
+            <a className="ghost-btn hero-link-btn" href="#novidades">
+              Explorar lançamentos
             </a>
           </div>
         </div>
@@ -69,56 +57,33 @@ export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomeP
         </div>
       </section>
 
-      <section className="catalog" id="colecao">
+      <section className="catalog novelties-section" id="novidades">
         <div className="section-head">
-          <h2>Coleção por categoria</h2>
-          <p>{items.length} produtos unificados em vitrine</p>
+          <h2>Novidades</h2>
+          <p>{items.length} itens na coleção, com os lançamentos em destaque</p>
         </div>
-
-        {!loading && !error && categoryNames.length > 0 && (
-          <div className="catalog-filters" aria-label="Filtros de categorias">
-            <div className="mobile-filters-head">Categorias</div>
-            <div className="category-pills" aria-label="Categorias">
-              {categoryNames.map((category) => (
-                <a key={category} href={`#categoria-${encodeURIComponent(category)}`}>
-                  {category}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
 
         {loading && <div className="status">Carregando produtos...</div>}
         {error && <div className="status error">{error}</div>}
 
-        {!loading && !error && categoryNames.length === 0 && (
+        {!loading && !error && featuredItems.length === 0 && (
           <div className="status">Sem produtos cadastrados no momento.</div>
         )}
 
         {!loading &&
           !error &&
-          categoryNames.map((category) => (
-            <section
-              key={category}
-              id={`categoria-${encodeURIComponent(category)}`}
-              className="category-section"
-            >
-              <div className="category-title-row">
-                <h3>{category}</h3>
-                <span>{itemsByCategory[category].length} produtos</span>
-              </div>
-              <div className="product-grid">
-                {itemsByCategory[category].map((item) => (
-                  <ProductCard
-                    key={item.productId}
-                    product={item}
-                    onAddToCart={onAddToCart}
-                    onBuyNow={onBuyNow}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+          featuredItems.length > 0 && (
+            <div className="product-grid novelties-grid">
+              {featuredItems.map((item) => (
+                <ProductCard
+                  key={item.productId}
+                  product={item}
+                  onAddToCart={onAddToCart}
+                  onBuyNow={onBuyNow}
+                />
+              ))}
+            </div>
+          )}
       </section>
     </>
   );
