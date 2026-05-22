@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { buildCartItem, colorToken, pickInitialVariant, toCurrency } from '../lib/catalog';
+import { useMemo } from 'react';
+import { buildCartItem, pickInitialVariant, toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
 
 type ProductCardProps = {
@@ -10,27 +10,7 @@ type ProductCardProps = {
 
 export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps) {
   const initialVariant = useMemo(() => pickInitialVariant(product.variants), [product.variants]);
-  const [selectedColor, setSelectedColor] = useState(initialVariant.color);
-  const [selectedSize, setSelectedSize] = useState(initialVariant.size);
-
-  const colors = useMemo(
-    () => Array.from(new Set(product.variants.map((variant) => variant.color))),
-    [product.variants]
-  );
-
-  const variantsForColor = useMemo(
-    () => product.variants.filter((variant) => variant.color === selectedColor),
-    [product.variants, selectedColor]
-  );
-
-  useEffect(() => {
-    if (!variantsForColor.some((variant) => variant.size === selectedSize)) {
-      setSelectedSize(pickInitialVariant(variantsForColor).size);
-    }
-  }, [selectedSize, variantsForColor]);
-
-  const selectedVariant =
-    variantsForColor.find((variant) => variant.size === selectedSize) || variantsForColor[0];
+  const selectedVariant = initialVariant;
 
   const cartItem: CartItem = buildCartItem(product, selectedVariant);
 
@@ -43,58 +23,12 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
         <img src={product.imageUrl} alt={product.name} loading="lazy" />
       </div>
       <div className="product-content">
-        <p className="product-meta">
-          {product.category} • Ref {selectedVariant.barcode}
-        </p>
+        <p className="product-meta">{product.category.toUpperCase()} • REF {selectedVariant.barcode}</p>
         <h3 className="product-name">{product.name}</h3>
         <strong className="price-tag">{toCurrency(product.price)}</strong>
         <p className="product-description">{product.description}</p>
 
-        <div className="selectors-grid">
-          <div className="selector-group">
-            <div className="selector-head">
-              <span>Cor</span>
-              <strong>{selectedColor}</strong>
-            </div>
-            <div className="color-select-row">
-              <div className="color-palette">
-              {colors.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={color === selectedColor ? 'color-swatch active' : 'color-swatch'}
-                  style={{ backgroundColor: colorToken(color) }}
-                  onClick={() => setSelectedColor(color)}
-                  aria-label={`Selecionar cor ${color}`}
-                />
-              ))}
-              </div>
-              <span className="selected-color-label">{selectedColor}</span>
-            </div>
-          </div>
-
-          <div className="selector-group">
-            <div className="selector-head">
-              <span>Tamanho</span>
-              <strong>{selectedSize}</strong>
-            </div>
-            <div className="size-palette">
-              {variantsForColor.map((variant) => (
-                <button
-                  key={variant.variantId}
-                  type="button"
-                  className={variant.size === selectedSize ? 'size-chip active' : 'size-chip'}
-                  onClick={() => setSelectedSize(variant.size)}
-                  disabled={variant.stock <= 0}
-                >
-                  {variant.size}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="cta-row">
+        <div className="product-footer-actions">
           <button
             type="button"
             className="primary-btn product-btn primary-cta"
@@ -117,7 +51,7 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
               <circle cx="10" cy="19" r="1.6" />
               <circle cx="17" cy="19" r="1.6" />
             </svg>
-            Carrinho
+            Adicionar ao carrinho
           </button>
         </div>
       </div>
