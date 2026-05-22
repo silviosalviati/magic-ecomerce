@@ -46,18 +46,18 @@ export function HomePage({ items, loading, error, onAddToCart, onBuyNow }: HomeP
 
   const features = [
     {
-      title: 'Curadoria',
-      description: 'Seleção enxuta e premium por categoria, sem ruído visual.',
+      title: 'Moda Masculina',
+      description: 'Modelagens modernas, caimento impecável e peças versáteis para elevar o visual diário.',
       icon: <Sparkles size={18} strokeWidth={1.5} />,
     },
     {
-      title: 'Compra fluida',
-      description: 'Cor, tamanho e sacola no mesmo fluxo. Sem redirecionamentos.',
+      title: 'Moda Feminina',
+      description: 'Looks elegantes e atuais para compor combinações marcantes em qualquer ocasião.',
       icon: <Palette size={18} strokeWidth={1.5} />,
     },
     {
-      title: 'Mobile first',
-      description: 'Leitura compacta e foco total no produto em qualquer tela.',
+      title: 'Tricot',
+      description: 'Texturas sofisticadas, conforto premium e acabamento de alto padrão em cada peça.',
       icon: <Smartphone size={18} strokeWidth={1.5} />,
     },
   ];

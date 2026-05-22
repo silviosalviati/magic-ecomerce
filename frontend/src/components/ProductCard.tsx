@@ -23,7 +23,7 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
         <img src={product.imageUrl} alt={product.name} loading="lazy" />
       </div>
       <div className="product-content">
-        <p className="product-meta">{product.category.toUpperCase()} • REF {selectedVariant.barcode}</p>
+        <p className="product-meta">{product.category.toUpperCase()}</p>
         <h3 className="product-name">{product.name}</h3>
         <strong className="price-tag">{toCurrency(product.price)}</strong>
         <p className="product-description">{product.description}</p>
