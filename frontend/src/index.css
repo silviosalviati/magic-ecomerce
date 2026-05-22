@@ -628,6 +628,29 @@ body {
   letter-spacing: 0.06em;
 }
 
+.footer-social {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.footer-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-faint);
+  transition: color 0.2s;
+}
+
+.footer-social-link:hover {
+  color: var(--color-accent);
+}
+
+.footer-social-link svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* ─── RESPONSIVE ─── */
 @media (min-width: 768px) {
   .hero {
