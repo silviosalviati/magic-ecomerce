@@ -53,3 +53,18 @@ export interface CartItem {
   stock: number;
   quantity: number;
 }
+
+export interface CheckoutPayload {
+  name: string;
+  email: string;
+  cpf: string;
+  items: { variantId: string; quantity: number; priceAtPurchase: number }[];
+}
+
+export interface CheckoutResponse {
+  orderId: string;
+  pixQrCode: string;
+  pixCopyPaste: string;
+  pixExpiresAt: string | null;
+  total: number;
+}

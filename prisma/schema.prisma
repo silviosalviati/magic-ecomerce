@@ -40,14 +40,20 @@ model Variant {
 }
 
 model Order {
-  id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  items     OrderItem[]
-  total     Decimal
-  status    String
-  paymentId String?
-  createdAt DateTime    @default(now())
+  id           String      @id @default(uuid())
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id])
+  items        OrderItem[]
+  total        Decimal
+  status       String      @default("PENDING")
+  paymentId    String?
+  guestName    String?
+  guestEmail   String?
+  guestCpf     String?
+  pixQrCode    String?
+  pixCopyPaste String?
+  pixExpiresAt DateTime?
+  createdAt    DateTime    @default(now())
 }
 
 model OrderItem {

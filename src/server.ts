@@ -6,6 +6,7 @@ import cors from 'cors';
 import path from 'path'; // 🧩 Importado para gerenciar caminhos de arquivos
 import { productsRouter } from './products/products.routes';
 import { adminRouter } from './admin/admin.routes';
+import { checkoutRouter } from './checkout/checkout.routes';
 import { prisma } from './config/database';
 
 const app = express();
@@ -68,6 +69,7 @@ app.use(express.json({ limit: '12mb' }));
 // ─── Rotas ───────────────────────────────────────────────────────────────────
 app.use('/products', productsRouter);
 app.use('/admin', adminRouter);
+app.use('/checkout', checkoutRouter);
 
 // 🧶 ROTA: Serve o HTML do leitor direto pelo backend (Bypassa o Preflight do celular)
 app.get('/leitor', (_req: Request, res: Response) => {

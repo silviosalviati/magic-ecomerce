@@ -14,4 +14,4 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]

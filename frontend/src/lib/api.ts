@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ApiProduct, CatalogProduct } from '../types';
+import type { ApiProduct, CatalogProduct, CheckoutPayload, CheckoutResponse } from '../types';
 
 const api = axios.create({
   baseURL:
@@ -45,4 +45,9 @@ export function mapProductsToCatalog(products: ApiProduct[]): CatalogProduct[] {
 export async function fetchCatalog(): Promise<CatalogProduct[]> {
   const response = await api.get<ApiProduct[]>('/products');
   return mapProductsToCatalog(response.data || []);
+}
+
+export async function checkout(payload: CheckoutPayload): Promise<CheckoutResponse> {
+  const { data } = await api.post<CheckoutResponse>('/checkout', payload);
+  return data;
 }
