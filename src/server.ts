@@ -18,6 +18,7 @@ const localApiOrigins = [
 const productionWebOrigins = [
   'https://vistamagic.com.br',
   'https://www.vistamagic.com.br',
+  'https://magic-ecomerce-web-731025483706.us-central1.run.app',
 ];
 
 function isAllowedOrigin(origin?: string): boolean {
