@@ -19,6 +19,16 @@ adminRouter.get('/products', (req: Request, res: Response) =>
   controller.listProducts(req, res)
 );
 
+// GET /admin/products/reference/:reference
+adminRouter.get('/products/reference/:reference', (req: Request, res: Response) =>
+  controller.getProductByReference(req, res)
+);
+
+// POST /admin/products/reference/:reference/photos
+adminRouter.post('/products/reference/:reference/photos', (req: Request, res: Response) =>
+  controller.uploadPhotosByReference(req, res)
+);
+
 // DELETE /admin/products/:id
 adminRouter.delete('/products/:id', (req: Request, res: Response) =>
   controller.deleteProduct(req, res)

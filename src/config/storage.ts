@@ -25,6 +25,10 @@ function normalizePath(value: string): string {
   return value.replace(/[^a-zA-Z0-9\-_\/]/g, '_').slice(0, 200);
 }
 
+function normalizeFileToken(value: string): string {
+  return value.replace(/[^a-zA-Z0-9\-_]/g, '_').slice(0, 120);
+}
+
 function detectExtension(fileName: string, contentType: string): string {
   const ext = path.extname(fileName).replace('.', '').toLowerCase();
   if (ext === 'jpg' || ext === 'jpeg') return 'jpg';
@@ -130,6 +134,14 @@ export async function deleteObjectByPath(
     .bucket(bucketName)
     .file(objectPath)
     .delete({ ignoreNotFound: true });
+}
+
+export function buildProductPhotoObjectPath(params: {
+  productId: string;
+  side: 'frente' | 'costas';
+}): string {
+  const safeProductId = normalizeFileToken(params.productId);
+  return `produtos/${safeProductId}-${params.side}.png`;
 }
 
 export { buildPhotoObjectPath };

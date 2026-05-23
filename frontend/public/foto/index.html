@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAGI.C - Upload de Fotos</title>
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #2f3036;
+      --surface: #3a3b44;
+      --surface2: #464854;
+      --border: rgba(244, 209, 218, 0.25);
+      --text: #f7eaee;
+      --muted: #d8bcc4;
+      --accent: #f0c6d0;
+      --accent-soft: rgba(240, 198, 208, 0.18);
+      --ok: #8ce0b0;
+      --error: #ff9eb2;
+      --radius: 14px;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(240, 198, 208, 0.16), transparent 36%),
+        radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.05), transparent 34%),
+        var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: min(720px, 100%);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .brand img {
+      width: 150px;
+      height: auto;
+      display: block;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.04em;
+    }
+
+    .muted {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="file"] {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 11px 12px;
+      font: inherit;
+    }
+
+    input::placeholder {
+      color: rgba(247, 234, 238, 0.5);
+    }
+
+    .row {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #2f2a2d;
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .product-box {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      background: rgba(0, 0, 0, 0.18);
+      display: none;
+    }
+
+    .product-box strong {
+      font-size: 16px;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      display: none;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+
+    .status.ok {
+      display: block;
+      background: rgba(140, 224, 176, 0.12);
+      border-color: rgba(140, 224, 176, 0.35);
+      color: #ddf9e7;
+    }
+
+    .status.error {
+      display: block;
+      background: rgba(255, 158, 178, 0.12);
+      border-color: rgba(255, 158, 178, 0.35);
+      color: #ffe2e9;
+    }
+
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .card { padding: 16px; }
+      h1 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">
+      <img src="/logo/logo-transparent.png" alt="MAGI.C" />
+      <div>
+        <h1>Upload de fotos por referencia</h1>
+        <div class="muted">Busque o produto e envie frente/costas para o bucket.</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="field full">
+        <label for="apiBase">API Base URL</label>
+        <input id="apiBase" type="text" placeholder="https://seu-backend" />
+      </div>
+
+      <div class="field">
+        <label for="adminKey">Admin Key (x-admin-key)</label>
+        <input id="adminKey" type="password" placeholder="Informe a chave admin" />
+      </div>
+
+      <div class="field">
+        <label for="reference">Referencia do produto</label>
+        <input id="reference" type="text" placeholder="Ex: 7891234567890" />
+      </div>
+
+      <div class="field">
+        <label for="frontFile">Foto frente</label>
+        <input id="frontFile" type="file" accept="image/png,image/jpeg,image/webp" />
+      </div>
+
+      <div class="field">
+        <label for="backFile">Foto costas</label>
+        <input id="backFile" type="file" accept="image/png,image/jpeg,image/webp" />
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="btnSearch" class="btn-secondary" type="button">Buscar produto</button>
+      <button id="btnUpload" class="btn-primary" type="button" disabled>Enviar fotos</button>
+    </div>
+
+    <section id="productBox" class="product-box"></section>
+    <section id="status" class="status"></section>
+  </main>
+
+  <script>
+    const apiBaseInput = document.getElementById('apiBase');
+    const adminKeyInput = document.getElementById('adminKey');
+    const referenceInput = document.getElementById('reference');
+    const frontFileInput = document.getElementById('frontFile');
+    const backFileInput = document.getElementById('backFile');
+    const btnSearch = document.getElementById('btnSearch');
+    const btnUpload = document.getElementById('btnUpload');
+    const statusBox = document.getElementById('status');
+    const productBox = document.getElementById('productBox');
+
+    let currentProduct = null;
+
+    const initialBase = (() => {
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        return 'http://localhost:3001';
+      }
+      return 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
+    })();
+
+    apiBaseInput.value = initialBase;
+
+    function normalizedBaseUrl() {
+      return String(apiBaseInput.value || '').trim().replace(/\/+$/, '');
+    }
+
+    function getHeaders() {
+      const adminKey = String(adminKeyInput.value || '').trim();
+      const headers = { 'Content-Type': 'application/json' };
+      if (adminKey) headers['x-admin-key'] = adminKey;
+      return headers;
+    }
+
+    function setStatus(message, kind) {
+      statusBox.className = 'status ' + (kind === 'ok' ? 'ok' : 'error');
+      statusBox.textContent = message;
+    }
+
+    function clearStatus() {
+      statusBox.className = 'status';
+      statusBox.textContent = '';
+    }
+
+    function updateUploadButton() {
+      const canUpload = !!currentProduct && !!frontFileInput.files[0] && !!backFileInput.files[0];
+      btnUpload.disabled = !canUpload;
+    }
+
+    function renderProduct(product) {
+      productBox.style.display = 'block';
+      const firstBarcode = product.variants && product.variants[0] ? product.variants[0].barcode || '-' : '-';
+      productBox.innerHTML = [
+        '<strong>' + product.name + '</strong>',
+        '<div>ID: ' + product.id + '</div>',
+        '<div>Categoria: ' + product.category + '</div>',
+        '<div>Referencia principal: ' + firstBarcode + '</div>',
+        '<div>Imagens atuais: ' + (product.images ? product.images.length : 0) + '</div>',
+      ].join('');
+    }
+
+    async function convertFileToPngBase64(file) {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Falha ao ler arquivo.'));
+        reader.readAsDataURL(file);
+      });
+
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Falha ao processar imagem.'));
+        img.src = dataUrl;
+      });
+
+      const maxSide = 1800;
+      const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const targetW = Math.max(1, Math.round(image.width * ratio));
+      const targetH = Math.max(1, Math.round(image.height * ratio));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Contexto de imagem indisponivel.');
+      ctx.drawImage(image, 0, 0, targetW, targetH);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    async function searchProduct() {
+      clearStatus();
+      currentProduct = null;
+      updateUploadButton();
+
+      const base = normalizedBaseUrl();
+      const reference = String(referenceInput.value || '').trim();
+
+      if (!base) {
+        setStatus('Informe a API Base URL.', 'error');
+        return;
+      }
+
+      if (!reference) {
+        setStatus('Informe a referencia do produto.', 'error');
+        return;
+      }
+
+      btnSearch.disabled = true;
+      productBox.style.display = 'none';
+
+      try {
+        const response = await fetch(base + '/admin/products/reference/' + encodeURIComponent(reference), {
+          method: 'GET',
+          headers: getHeaders(),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.found || !data.product) {
+          throw new Error(data.error || data.message || 'Produto nao encontrado.');
+        }
+
+        currentProduct = data.product;
+        renderProduct(data.product);
+        setStatus('Produto localizado. Agora selecione as duas fotos e clique em "Enviar fotos".', 'ok');
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), 'error');
+      } finally {
+        btnSearch.disabled = false;
+        updateUploadButton();
+      }
+    }
+
+    async function uploadPhotos() {
+      clearStatus();
+
+      const base = normalizedBaseUrl();
+      const reference = String(referenceInput.value || '').trim();
+      const frontFile = frontFileInput.files[0];
+      const backFile = backFileInput.files[0];
+
+      if (!currentProduct) {
+        setStatus('Busque um produto antes do upload.', 'error');
+        return;
+      }
+
+      if (!frontFile || !backFile) {
+        setStatus('Selecione as duas fotos (frente e costas).', 'error');
+        return;
+      }
+
+      btnUpload.disabled = true;
+
+      try {
+        const [frontBase64, backBase64] = await Promise.all([
+          convertFileToPngBase64(frontFile),
+          convertFileToPngBase64(backFile),
+        ]);
+
+        const response = await fetch(base + '/admin/products/reference/' + encodeURIComponent(reference) + '/photos', {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            frontBase64,
+            backBase64,
+            contentTypeFront: 'image/png',
+            contentTypeBack: 'image/png',
+          }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || 'Falha no upload das fotos.');
+        }
+
+        currentProduct = data.product || currentProduct;
+        renderProduct(currentProduct);
+
+        const frontUrl = data.photos && data.photos.frontUrl ? data.photos.frontUrl : '-';
+        const backUrl = data.photos && data.photos.backUrl ? data.photos.backUrl : '-';
+
+        setStatus('Upload concluido com sucesso.\nFrente: ' + frontUrl + '\nCostas: ' + backUrl, 'ok');
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : String(error), 'error');
+      } finally {
+        updateUploadButton();
+      }
+    }
+
+    btnSearch.addEventListener('click', searchProduct);
+    btnUpload.addEventListener('click', uploadPhotos);
+    frontFileInput.addEventListener('change', updateUploadButton);
+    backFileInput.addEventListener('change', updateUploadButton);
+  </script>
+</body>
+</html>
