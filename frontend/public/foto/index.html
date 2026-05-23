@@ -75,6 +75,21 @@
       font-size: 14px;
     }
 
+    .helper {
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(247, 234, 238, 0.72);
+      line-height: 1.5;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.16);
+    }
+
+    .helper b {
+      color: var(--accent);
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -90,6 +105,23 @@
 
     .field.full {
       grid-column: 1 / -1;
+    }
+
+    .panel {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 0.04em;
+      font-size: 13px;
+      color: var(--accent);
+      text-transform: uppercase;
     }
 
     label {
@@ -199,45 +231,47 @@
       </div>
     </div>
 
-    <div class="grid">
-      <div class="field full">
-        <label for="apiBase">API Base URL</label>
-        <input id="apiBase" type="text" placeholder="https://seu-backend" />
-      </div>
-
-      <div class="field">
-        <label for="adminKey">Admin Key (x-admin-key)</label>
-        <input id="adminKey" type="password" placeholder="Informe a chave admin" />
-      </div>
-
-      <div class="field">
-        <label for="reference">Referencia do produto</label>
-        <input id="reference" type="text" placeholder="Ex: 7891234567890" />
-      </div>
-
-      <div class="field">
-        <label for="frontFile">Foto frente</label>
-        <input id="frontFile" type="file" accept="image/png,image/jpeg,image/webp" />
-      </div>
-
-      <div class="field">
-        <label for="backFile">Foto costas</label>
-        <input id="backFile" type="file" accept="image/png,image/jpeg,image/webp" />
-      </div>
+    <div class="helper">
+      Esta pagina usa API e autenticacao automaticamente. Se necessario, abra com
+      <b>?adminKey=SUA_CHAVE</b> para salvar a chave neste navegador.
     </div>
 
-    <div class="row">
-      <button id="btnSearch" class="btn-secondary" type="button">Buscar produto</button>
-      <button id="btnUpload" class="btn-primary" type="button" disabled>Enviar fotos</button>
-    </div>
+    <section class="panel">
+      <h2 class="panel-title">1. Localizar produto</h2>
+      <div class="grid">
+        <div class="field full">
+          <label for="reference">Referencia do produto</label>
+          <input id="reference" type="text" placeholder="Ex: 7891234567890" />
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnSearch" class="btn-secondary" type="button">Buscar produto</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">2. Fotos obrigatorias</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="frontFile">Foto frente</label>
+          <input id="frontFile" type="file" accept="image/png,image/jpeg,image/webp" />
+        </div>
+
+        <div class="field">
+          <label for="backFile">Foto costas</label>
+          <input id="backFile" type="file" accept="image/png,image/jpeg,image/webp" />
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnUpload" class="btn-primary" type="button" disabled>Enviar fotos</button>
+      </div>
+    </section>
 
     <section id="productBox" class="product-box"></section>
     <section id="status" class="status"></section>
   </main>
 
   <script>
-    const apiBaseInput = document.getElementById('apiBase');
-    const adminKeyInput = document.getElementById('adminKey');
     const referenceInput = document.getElementById('reference');
     const frontFileInput = document.getElementById('frontFile');
     const backFileInput = document.getElementById('backFile');
@@ -248,21 +282,58 @@
 
     let currentProduct = null;
 
-    const initialBase = (() => {
+    const API_BASE = (() => {
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
         return 'http://localhost:3001';
       }
       return 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
     })();
 
-    apiBaseInput.value = initialBase;
+    const ADMIN_KEY_QUERY = 'adminKey';
+    const ADMIN_KEY_STORAGE = 'magic.admin.key.v1';
 
-    function normalizedBaseUrl() {
-      return String(apiBaseInput.value || '').trim().replace(/\/+$/, '');
+    function readAdminKeyFromQuery() {
+      const params = new URLSearchParams(location.search);
+      const queryKey = String(params.get(ADMIN_KEY_QUERY) || '').trim();
+      if (queryKey) {
+        try {
+          localStorage.setItem(ADMIN_KEY_STORAGE, queryKey);
+        } catch {
+          // Ignore storage failures.
+        }
+      }
+      return queryKey;
     }
 
-    function getHeaders() {
-      const adminKey = String(adminKeyInput.value || '').trim();
+    function readStoredAdminKey() {
+      try {
+        return String(localStorage.getItem(ADMIN_KEY_STORAGE) || '').trim();
+      } catch {
+        return '';
+      }
+    }
+
+    async function ensureAdminKey() {
+      const queryKey = readAdminKeyFromQuery();
+      if (queryKey) return queryKey;
+
+      const stored = readStoredAdminKey();
+      if (stored) return stored;
+
+      const typed = window.prompt('Informe a admin key para continuar:');
+      const adminKey = String(typed || '').trim();
+      if (adminKey) {
+        try {
+          localStorage.setItem(ADMIN_KEY_STORAGE, adminKey);
+        } catch {
+          // Ignore storage failures.
+        }
+      }
+
+      return adminKey;
+    }
+
+    function getHeaders(adminKey) {
       const headers = { 'Content-Type': 'application/json' };
       if (adminKey) headers['x-admin-key'] = adminKey;
       return headers;
@@ -330,11 +401,11 @@
       currentProduct = null;
       updateUploadButton();
 
-      const base = normalizedBaseUrl();
       const reference = String(referenceInput.value || '').trim();
+      const adminKey = await ensureAdminKey();
 
-      if (!base) {
-        setStatus('Informe a API Base URL.', 'error');
+      if (!adminKey) {
+        setStatus('Admin key obrigatoria para buscar o produto.', 'error');
         return;
       }
 
@@ -347,9 +418,9 @@
       productBox.style.display = 'none';
 
       try {
-        const response = await fetch(base + '/admin/products/reference/' + encodeURIComponent(reference), {
+        const response = await fetch(API_BASE + '/admin/products/reference/' + encodeURIComponent(reference), {
           method: 'GET',
-          headers: getHeaders(),
+          headers: getHeaders(adminKey),
         });
 
         const data = await response.json().catch(() => ({}));
@@ -372,10 +443,15 @@
     async function uploadPhotos() {
       clearStatus();
 
-      const base = normalizedBaseUrl();
       const reference = String(referenceInput.value || '').trim();
       const frontFile = frontFileInput.files[0];
       const backFile = backFileInput.files[0];
+      const adminKey = await ensureAdminKey();
+
+      if (!adminKey) {
+        setStatus('Admin key obrigatoria para enviar as fotos.', 'error');
+        return;
+      }
 
       if (!currentProduct) {
         setStatus('Busque um produto antes do upload.', 'error');
@@ -395,9 +471,9 @@
           convertFileToPngBase64(backFile),
         ]);
 
-        const response = await fetch(base + '/admin/products/reference/' + encodeURIComponent(reference) + '/photos', {
+        const response = await fetch(API_BASE + '/admin/products/reference/' + encodeURIComponent(reference) + '/photos', {
           method: 'POST',
-          headers: getHeaders(),
+          headers: getHeaders(adminKey),
           body: JSON.stringify({
             frontBase64,
             backBase64,
