@@ -24,6 +24,32 @@ export function HomePage({
   onAddToCart,
   onBuyNow,
 }: HomePageProps) {
+  const masculineItems = useMemo(
+    () => items.filter((item) => item.category.toLowerCase().includes('mascul')),
+    [items]
+  );
+
+  const feminineItems = useMemo(
+    () => items.filter((item) => item.category.toLowerCase().includes('femin')),
+    [items]
+  );
+
+  const collectionCards = useMemo(
+    () => [
+      {
+        title: 'Masculina',
+        subtitle: 'Modelos com corte preciso e presença forte.',
+        item: masculineItems[0] || null,
+      },
+      {
+        title: 'Feminina',
+        subtitle: 'Peças elegantes para composições marcantes.',
+        item: feminineItems[0] || null,
+      },
+    ],
+    [feminineItems, masculineItems]
+  );
+
   const featuredItems = useMemo(() => {
     const shuffled = [...items];
     for (let i = shuffled.length - 1; i > 0; i -= 1) {
@@ -162,6 +188,31 @@ export function HomePage({
           </div>
         ))}
       </div>
+
+      <section className="collection-section" id="colecao" aria-label="Coleção por categoria">
+        <div className="section-head">
+          <p className="section-label-inline">Coleção</p>
+        </div>
+
+        <div className="collection-grid">
+          {collectionCards.map((entry) => (
+            <article className="collection-card" key={entry.title}>
+              <p className="collection-title">{entry.title}</p>
+              <p className="collection-subtitle">{entry.subtitle}</p>
+              {entry.item ? (
+                <>
+                  <strong className="collection-product-name">{entry.item.name}</strong>
+                  <Link className="collection-link" to={`/produto/${entry.item.productId}`}>
+                    Ver produto
+                  </Link>
+                </>
+              ) : (
+                <span className="collection-empty">Sem produto disponível nesta categoria.</span>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="catalog novelties-section" id="novidades">
         <div className="section-head">
