@@ -529,20 +529,24 @@ body {
   position: absolute;
   top: 8px;
   left: 8px;
+  z-index: 2;
 }
 
 .product-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 2px;
-  background: rgba(232, 180, 176, 0.15);
-  color: var(--color-accent);
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: rgba(10, 10, 10, 0.72);
+  border: 1px solid rgba(232, 180, 176, 0.5);
+  color: #ffe6e2;
+  backdrop-filter: blur(4px);
   font-family: 'Manrope', sans-serif;
-  font-size: 9px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  letter-spacing: 0.07em;
   font-weight: 700;
   text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
 }
 
 .product-content {
