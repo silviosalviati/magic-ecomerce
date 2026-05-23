@@ -81,12 +81,17 @@ export function ProductDetailsPage({
   }
 
   const colors = Array.from(new Set(product.variants.map((variant) => variant.color)));
-  const resolvedColor = selectedColor || initialVariant.color;
-  const resolvedSize = selectedSize || initialVariant.size;
+  const hasResolvedColor = product.variants.some((variant) => variant.color === selectedColor);
+  const resolvedColor = hasResolvedColor ? selectedColor : initialVariant.color;
+  const hasResolvedSize = product.variants.some(
+    (variant) => variant.color === resolvedColor && variant.size === selectedSize
+  );
+  const resolvedSize = hasResolvedSize ? selectedSize : initialVariant.size;
   const variantsForColor = product.variants.filter((variant) => variant.color === resolvedColor);
   const selectedVariant =
     variantsForColor.find((variant) => variant.size === resolvedSize) ||
-    pickInitialVariant(variantsForColor);
+    pickInitialVariant(variantsForColor) ||
+    initialVariant;
 
   const stockLabel =
     selectedVariant.stock <= 0
