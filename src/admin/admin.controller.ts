@@ -208,7 +208,7 @@ export class AdminController {
 
       const existingImages = Array.isArray(product.images) ? product.images : [];
       const cleaned = existingImages.filter(
-        (url) => !url.includes(`${product.id}-frente.png`) && !url.includes(`${product.id}-costas.png`)
+        (url: string) => !url.includes(`${product.id}-frente.png`) && !url.includes(`${product.id}-costas.png`)
       );
       const nextImages = [frontUpload.publicUrl, backUpload.publicUrl, ...cleaned];
 
