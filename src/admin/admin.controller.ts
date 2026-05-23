@@ -11,7 +11,92 @@ function clientError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function normalizeReferenceToken(value: string): string {
+  return value.trim().replace(/[\s.]+$/g, '');
+}
+
+function buildReferenceCandidates(reference: string): string[] {
+  const normalized = normalizeReferenceToken(reference);
+  const parts = normalized
+    .split(/[&|,;\/_\-\s]+/g)
+    .map((part) => normalizeReferenceToken(part))
+    .filter(Boolean);
+
+  const alnum = normalized.replace(/[^a-zA-Z0-9]/g, '');
+
+  return Array.from(new Set([
+    normalized,
+    ...parts,
+    alnum,
+  ].filter(Boolean)));
+}
+
 export class AdminController {
+  private async resolveProductByReference(reference: string): Promise<{
+    product: any;
+    source: 'barcode' | 'productId' | 'productName';
+    matchedReference: string;
+  } | null> {
+    const candidates = buildReferenceCandidates(reference);
+
+    for (const candidate of candidates) {
+      const variant = await prisma.variant.findFirst({
+        where: { barcode: candidate },
+        include: { product: { include: { variants: true } } },
+      });
+
+      if (variant?.product) {
+        return {
+          product: variant.product,
+          source: 'barcode',
+          matchedReference: candidate,
+        };
+      }
+    }
+
+    for (const candidate of candidates) {
+      const variant = await prisma.variant.findFirst({
+        where: {
+          barcode: {
+            startsWith: candidate,
+            mode: 'insensitive',
+          },
+        },
+        include: { product: { include: { variants: true } } },
+      });
+
+      if (variant?.product) {
+        return {
+          product: variant.product,
+          source: 'barcode',
+          matchedReference: candidate,
+        };
+      }
+    }
+
+    for (const candidate of candidates) {
+      const product = await prisma.product.findFirst({
+        where: {
+          OR: [
+            { id: candidate },
+            { name: { equals: candidate, mode: 'insensitive' } },
+          ],
+        },
+        include: { variants: true },
+      });
+
+      if (product) {
+        return {
+          product,
+          source: product.id === candidate ? 'productId' : 'productName',
+          matchedReference: candidate,
+        };
+      }
+    }
+
+    return null;
+  }
+
   // GET /admin/products/reference/:reference
   async getProductByReference(req: Request, res: Response): Promise<void> {
     try {
@@ -21,32 +106,8 @@ export class AdminController {
         return;
       }
 
-      const variant = await prisma.variant.findFirst({
-        where: { barcode: reference },
-        include: { product: { include: { variants: true } } },
-      });
-
-      if (variant?.product) {
-        res.json({
-          found: true,
-          reference,
-          source: 'barcode',
-          product: variant.product,
-        });
-        return;
-      }
-
-      const product = await prisma.product.findFirst({
-        where: {
-          OR: [
-            { id: reference },
-            { name: { equals: reference, mode: 'insensitive' } },
-          ],
-        },
-        include: { variants: true },
-      });
-
-      if (!product) {
+      const resolved = await this.resolveProductByReference(reference);
+      if (!resolved) {
         res.status(404).json({
           found: false,
           reference,
@@ -58,8 +119,9 @@ export class AdminController {
       res.json({
         found: true,
         reference,
-        source: product.id === reference ? 'productId' : 'productName',
-        product,
+        source: resolved.source,
+        matchedReference: resolved.matchedReference,
+        product: resolved.product,
       });
     } catch (error) {
       res.status(500).json({ error: clientError(error) });
@@ -100,21 +162,8 @@ export class AdminController {
         return;
       }
 
-      const variant = await prisma.variant.findFirst({
-        where: { barcode: reference },
-        include: { product: true },
-      });
-
-      const product = variant?.product
-        ? variant.product
-        : await prisma.product.findFirst({
-          where: {
-            OR: [
-              { id: reference },
-              { name: { equals: reference, mode: 'insensitive' } },
-            ],
-          },
-        });
+      const resolved = await this.resolveProductByReference(reference);
+      const product = resolved?.product || null;
 
       if (!product) {
         res.status(404).json({ error: 'Produto não encontrado para essa referência.' });
