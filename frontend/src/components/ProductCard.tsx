@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { buildCartItem, pickInitialVariant, toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
 
@@ -20,11 +21,21 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
         <div className="product-badge-row" aria-hidden="true">
           <span className="product-badge">Restam {selectedVariant.stock}</span>
         </div>
-        <img src={product.imageUrl} alt={product.name} loading="lazy" />
+        <Link
+          className="product-media-link"
+          to={`/produto/${product.productId}`}
+          aria-label={`Ver produto ${product.name}`}
+        >
+          <img src={product.imageUrl} alt={product.name} loading="lazy" />
+        </Link>
       </div>
       <div className="product-content">
         <p className="product-meta">{product.category.toUpperCase()}</p>
-        <h3 className="product-name">{product.name}</h3>
+        <h3 className="product-name">
+          <Link className="product-name-link" to={`/produto/${product.productId}`}>
+            {product.name}
+          </Link>
+        </h3>
         <strong className="price-tag">{toCurrency(product.price)}</strong>
         <p className="product-description">{product.description}</p>
 

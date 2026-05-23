@@ -5,6 +5,15 @@ import { ProductCard } from '../components/ProductCard';
 import { toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
 
+function shuffleProducts(items: CatalogProduct[]): CatalogProduct[] {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 type HomePageProps = {
   items: CatalogProduct[];
   loading: boolean;
@@ -50,15 +59,8 @@ export function HomePage({
     [feminineItems, masculineItems]
   );
 
-  const featuredItems = useMemo(() => {
-    const shuffled = [...items];
-    for (let i = shuffled.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled.slice(0, 3);
-  }, [items]);
-  const heroItems = useMemo(() => items.slice(0, 5), [items]);
+  const featuredItems = useMemo(() => shuffleProducts(items).slice(0, 3), [items]);
+  const heroItems = useMemo(() => shuffleProducts(items).slice(0, 5), [items]);
   const [heroIndex, setHeroIndex] = useState(0);
   const spotlightItem = heroItems[heroIndex];
 
