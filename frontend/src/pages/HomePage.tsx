@@ -24,7 +24,14 @@ export function HomePage({
   onAddToCart,
   onBuyNow,
 }: HomePageProps) {
-  const featuredItems = useMemo(() => items.slice(0, 3), [items]);
+  const featuredItems = useMemo(() => {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 3);
+  }, [items]);
   const heroItems = useMemo(() => items.slice(0, 5), [items]);
   const [heroIndex, setHeroIndex] = useState(0);
   const spotlightItem = heroItems[heroIndex];
