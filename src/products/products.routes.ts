@@ -27,6 +27,11 @@ productsRouter.post('/images/upload', (req: Request, res: Response) =>
   controller.uploadImage(req, res)
 );
 
+// GET /products/images/object?path=produtos/... — proxy público para imagem no bucket
+productsRouter.get('/images/object', (req: Request, res: Response) =>
+  controller.getImageObject(req, res)
+);
+
 productsRouter.get('/barcode/:code', (req: Request, res: Response) =>
   controller.getByBarcode(req, res)
 );

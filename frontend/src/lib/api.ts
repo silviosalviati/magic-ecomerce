@@ -47,28 +47,52 @@ function fallbackImage(name: string): string {
   return `https://placehold.co/700x900/34363d/f0c6d0?text=${encoded}`;
 }
 
-export function mapProductsToCatalog(products: ApiProduct[]): CatalogProduct[] {
+function toCatalogImageUrl(imageUrl: string, apiBaseUrl: string): string {
+  try {
+    const parsed = new URL(imageUrl);
+    if (parsed.hostname !== 'storage.googleapis.com') {
+      return imageUrl;
+    }
+
+    const bucketPrefix = '/magic-ecommerce-fotos/';
+    if (!parsed.pathname.startsWith(bucketPrefix)) {
+      return imageUrl;
+    }
+
+    const rawObjectPath = parsed.pathname.slice(bucketPrefix.length);
+    const objectPath = decodeURIComponent(rawObjectPath);
+    return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}`;
+  } catch {
+    return imageUrl;
+  }
+}
+
+export function mapProductsToCatalog(products: ApiProduct[], apiBaseUrl: string): CatalogProduct[] {
   return products
     .filter((product) => product.variants.length > 0)
-    .map((product) => ({
-      productId: product.id,
-      name: product.name,
-      description: product.description || 'Seleção MAGI.C para o seu guarda-roupa.',
-      category: product.category,
-      imageUrl: product.images?.[0] || fallbackImage(product.name),
-      images: product.images?.length
-        ? product.images
-        : [fallbackImage(product.name)],
-      price: toNumber(product.basePrice),
-      variants: product.variants.map((variant) => ({
-        variantId: variant.id,
+    .map((product) => {
+      const transformedImages = product.images?.length
+        ? product.images.map((url) => toCatalogImageUrl(url, apiBaseUrl))
+        : [fallbackImage(product.name)];
+
+      return {
         productId: product.id,
-        color: variant.color,
-        size: variant.size,
-        barcode: variant.barcode || 'Sem código',
-        stock: variant.stock,
-      })),
-    }));
+        name: product.name,
+        description: product.description || 'Seleção MAGI.C para o seu guarda-roupa.',
+        category: product.category,
+        imageUrl: transformedImages[0] || fallbackImage(product.name),
+        images: transformedImages,
+        price: toNumber(product.basePrice),
+        variants: product.variants.map((variant) => ({
+          variantId: variant.id,
+          productId: product.id,
+          color: variant.color,
+          size: variant.size,
+          barcode: variant.barcode || 'Sem código',
+          stock: variant.stock,
+        })),
+      };
+    });
 }
 
 export async function fetchCatalog(): Promise<CatalogProduct[]> {
@@ -79,7 +103,7 @@ export async function fetchCatalog(): Promise<CatalogProduct[]> {
     try {
       const client = axios.create({ baseURL, timeout: 15000 });
       const response = await client.get<ApiProduct[]>('/products');
-      return mapProductsToCatalog(response.data || []);
+      return mapProductsToCatalog(response.data || [], baseURL);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;

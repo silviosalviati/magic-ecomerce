@@ -31,6 +31,23 @@ function buildReferenceCandidates(reference: string): string[] {
   ].filter(Boolean)));
 }
 
+function getPublicApiBaseUrl(): string {
+  const configured = [
+    process.env.PUBLIC_API_BASE_URL,
+    process.env.API_PUBLIC_BASE_URL,
+    process.env.APP_BASE_URL,
+  ]
+    .map((value) => String(value || '').trim())
+    .find((value) => value.length > 0);
+
+  return (configured || 'https://magic-ecomerce-api-731025483706.us-central1.run.app').replace(/\/+$/, '');
+}
+
+function buildImageProxyUrl(objectPath: string): string {
+  const base = getPublicApiBaseUrl();
+  return `${base}/products/images/object?path=${encodeURIComponent(objectPath)}`;
+}
+
 export class AdminController {
   private async resolveProductByReference(reference: string): Promise<{
     product: any;
@@ -210,7 +227,9 @@ export class AdminController {
       const cleaned = existingImages.filter(
         (url: string) => !url.includes(`${product.id}-frente.png`) && !url.includes(`${product.id}-costas.png`)
       );
-      const nextImages = [frontUpload.publicUrl, backUpload.publicUrl, ...cleaned];
+      const frontCatalogUrl = buildImageProxyUrl(frontObjectPath);
+      const backCatalogUrl = buildImageProxyUrl(backObjectPath);
+      const nextImages = [frontCatalogUrl, backCatalogUrl, ...cleaned];
 
       const updatedProduct = await prisma.product.update({
         where: { id: product.id },
@@ -223,8 +242,10 @@ export class AdminController {
         message: 'Fotos enviadas e vinculadas ao produto com sucesso.',
         product: updatedProduct,
         photos: {
-          frontUrl: frontUpload.publicUrl,
-          backUrl: backUpload.publicUrl,
+          frontUrl: frontCatalogUrl,
+          backUrl: backCatalogUrl,
+          frontStorageUrl: frontUpload.publicUrl,
+          backStorageUrl: backUpload.publicUrl,
           frontObjectPath,
           backObjectPath,
         },

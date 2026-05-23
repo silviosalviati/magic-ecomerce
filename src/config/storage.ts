@@ -136,6 +136,30 @@ export async function deleteObjectByPath(
     .delete({ ignoreNotFound: true });
 }
 
+export async function getObjectBufferByPath(params: {
+  objectPath: string;
+  bucket?: string;
+}): Promise<{ buffer: Buffer; contentType: string }> {
+  const bucketName = params.bucket || process.env.GCP_BUCKET_NAME || 'magic-ecommerce-fotos';
+  const storage = getStorageClient();
+  const file = storage.bucket(bucketName).file(params.objectPath);
+
+  const [exists] = await file.exists();
+  if (!exists) {
+    const notFound = new Error('Objeto não encontrado.');
+    (notFound as { code?: number }).code = 404;
+    throw notFound;
+  }
+
+  const [metadata] = await file.getMetadata();
+  const [buffer] = await file.download();
+
+  return {
+    buffer,
+    contentType: String(metadata.contentType || 'application/octet-stream'),
+  };
+}
+
 export function buildProductPhotoObjectPath(params: {
   productId: string;
   side: 'frente' | 'costas';

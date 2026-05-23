@@ -5,6 +5,7 @@ import {
   createSignedUploadUrl,
   buildPhotoObjectPath,
   uploadImageBuffer,
+  getObjectBufferByPath,
 } from '../config/storage';
 const { generateMannequinPreview } = require('../config/vertexai');
 
@@ -30,6 +31,36 @@ function logServerError(scope: string, error: unknown): void {
 }
 
 export class ProductsController {
+  // GET /products/images/object?path=produtos/...
+  async getImageObject(req: Request, res: Response): Promise<void> {
+    try {
+      const objectPath = String(req.query['path'] || '').trim();
+
+      if (!objectPath) {
+        res.status(400).json({ error: 'path é obrigatório.' });
+        return;
+      }
+
+      if (!objectPath.startsWith('produtos/') || objectPath.includes('..')) {
+        res.status(400).json({ error: 'path inválido.' });
+        return;
+      }
+
+      const file = await getObjectBufferByPath({ objectPath });
+      res.setHeader('Content-Type', file.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(file.buffer);
+    } catch (error) {
+      const code = Number((error as { code?: unknown })?.code || 0);
+      if (code === 404) {
+        res.status(404).json({ error: 'Imagem não encontrada.' });
+        return;
+      }
+
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
   // POST /products
   async create(req: Request, res: Response): Promise<void> {
     try {
