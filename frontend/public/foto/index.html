@@ -232,8 +232,8 @@
     </div>
 
     <div class="helper">
-      Esta pagina usa API e autenticacao automaticamente. Se necessario, abra com
-      <b>?adminKey=SUA_CHAVE</b> para salvar a chave neste navegador.
+      Esta pagina usa automaticamente a API do ambiente. Basta buscar a referencia,
+      selecionar frente/costas e enviar.
     </div>
 
     <section class="panel">
@@ -289,54 +289,8 @@
       return 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
     })();
 
-    const ADMIN_KEY_QUERY = 'adminKey';
-    const ADMIN_KEY_STORAGE = 'magic.admin.key.v1';
-
-    function readAdminKeyFromQuery() {
-      const params = new URLSearchParams(location.search);
-      const queryKey = String(params.get(ADMIN_KEY_QUERY) || '').trim();
-      if (queryKey) {
-        try {
-          localStorage.setItem(ADMIN_KEY_STORAGE, queryKey);
-        } catch {
-          // Ignore storage failures.
-        }
-      }
-      return queryKey;
-    }
-
-    function readStoredAdminKey() {
-      try {
-        return String(localStorage.getItem(ADMIN_KEY_STORAGE) || '').trim();
-      } catch {
-        return '';
-      }
-    }
-
-    async function ensureAdminKey() {
-      const queryKey = readAdminKeyFromQuery();
-      if (queryKey) return queryKey;
-
-      const stored = readStoredAdminKey();
-      if (stored) return stored;
-
-      const typed = window.prompt('Informe a admin key para continuar:');
-      const adminKey = String(typed || '').trim();
-      if (adminKey) {
-        try {
-          localStorage.setItem(ADMIN_KEY_STORAGE, adminKey);
-        } catch {
-          // Ignore storage failures.
-        }
-      }
-
-      return adminKey;
-    }
-
-    function getHeaders(adminKey) {
-      const headers = { 'Content-Type': 'application/json' };
-      if (adminKey) headers['x-admin-key'] = adminKey;
-      return headers;
+    function getHeaders() {
+      return { 'Content-Type': 'application/json' };
     }
 
     function setStatus(message, kind) {
@@ -402,12 +356,6 @@
       updateUploadButton();
 
       const reference = String(referenceInput.value || '').trim();
-      const adminKey = await ensureAdminKey();
-
-      if (!adminKey) {
-        setStatus('Admin key obrigatoria para buscar o produto.', 'error');
-        return;
-      }
 
       if (!reference) {
         setStatus('Informe a referencia do produto.', 'error');
@@ -420,7 +368,7 @@
       try {
         const response = await fetch(API_BASE + '/admin/products/reference/' + encodeURIComponent(reference), {
           method: 'GET',
-          headers: getHeaders(adminKey),
+          headers: getHeaders(),
         });
 
         const data = await response.json().catch(() => ({}));
@@ -446,12 +394,6 @@
       const reference = String(referenceInput.value || '').trim();
       const frontFile = frontFileInput.files[0];
       const backFile = backFileInput.files[0];
-      const adminKey = await ensureAdminKey();
-
-      if (!adminKey) {
-        setStatus('Admin key obrigatoria para enviar as fotos.', 'error');
-        return;
-      }
 
       if (!currentProduct) {
         setStatus('Busque um produto antes do upload.', 'error');
@@ -473,7 +415,7 @@
 
         const response = await fetch(API_BASE + '/admin/products/reference/' + encodeURIComponent(reference) + '/photos', {
           method: 'POST',
-          headers: getHeaders(adminKey),
+          headers: getHeaders(),
           body: JSON.stringify({
             frontBase64,
             backBase64,

@@ -6,6 +6,15 @@ import { validateUpdateStock } from '../middlewares/validate.middleware';
 const adminRouter = Router();
 const controller = new AdminController();
 
+// Rotas usadas pela tela /foto (sem header x-admin-key)
+adminRouter.get('/products/reference/:reference', (req: Request, res: Response) =>
+  controller.getProductByReference(req, res)
+);
+
+adminRouter.post('/products/reference/:reference/photos', (req: Request, res: Response) =>
+  controller.uploadPhotosByReference(req, res)
+);
+
 // 🔒 Todas as rotas admin exigem x-admin-key no header
 adminRouter.use(requireAdminKey);
 
@@ -17,16 +26,6 @@ adminRouter.get('/dashboard', (req: Request, res: Response) =>
 // GET /admin/products
 adminRouter.get('/products', (req: Request, res: Response) =>
   controller.listProducts(req, res)
-);
-
-// GET /admin/products/reference/:reference
-adminRouter.get('/products/reference/:reference', (req: Request, res: Response) =>
-  controller.getProductByReference(req, res)
-);
-
-// POST /admin/products/reference/:reference/photos
-adminRouter.post('/products/reference/:reference/photos', (req: Request, res: Response) =>
-  controller.uploadPhotosByReference(req, res)
 );
 
 // DELETE /admin/products/:id
