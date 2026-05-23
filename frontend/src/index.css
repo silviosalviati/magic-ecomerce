@@ -1010,6 +1010,38 @@ body {
   padding: 18px;
 }
 
+.recommendation-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recommendation-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recommendation-nav-btn {
+  width: 28px;
+  height: 28px;
+  border: 0.5px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.recommendation-nav-index {
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
+}
+
 .recommendation-grid {
   display: grid;
   grid-template-columns: 1fr;

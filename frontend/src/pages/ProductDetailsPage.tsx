@@ -30,9 +30,16 @@ export function ProductDetailsPage({
     return items
       .filter(
         (entry) => entry.productId !== product.productId && entry.category === product.category
-      )
-      .slice(0, 3);
+      );
   }, [items, product]);
+
+  const [recommendationPage, setRecommendationPage] = useState(0);
+
+  const recommendationPages = Math.max(1, Math.ceil(recommendations.length / 3));
+  const pagedRecommendations = useMemo(
+    () => recommendations.slice(recommendationPage * 3, recommendationPage * 3 + 3),
+    [recommendationPage, recommendations]
+  );
 
   const initialVariant = useMemo<CatalogVariant | null>(
     () => (product ? pickInitialVariant(product.variants) : null),
@@ -49,6 +56,10 @@ export function ProductDetailsPage({
     setSelectedSize(initialVariant.size);
     setActiveImage(product.images[0] || product.imageUrl);
   }, [initialVariant, product]);
+
+  useEffect(() => {
+    setRecommendationPage(0);
+  }, [product?.productId]);
 
   if (loading) {
     return <section className="page-status">Carregando produto...</section>;
@@ -210,12 +221,43 @@ export function ProductDetailsPage({
 
       {recommendations.length > 0 && (
         <section className="recommendations">
-          <div className="section-head">
-            <h2>Você também pode gostar</h2>
-            <p>Mais peças da categoria {product.category}</p>
+          <div className="section-head recommendation-head">
+            <div>
+              <h2>Você também pode gostar</h2>
+              <p>Mais peças da categoria {product.category}</p>
+            </div>
+            {recommendations.length > 3 && (
+              <div className="recommendation-nav" aria-label="Navegação de recomendações">
+                <button
+                  type="button"
+                  className="recommendation-nav-btn"
+                  onClick={() =>
+                    setRecommendationPage(
+                      (current) => (current - 1 + recommendationPages) % recommendationPages
+                    )
+                  }
+                  aria-label="Voltar 3 produtos"
+                >
+                  ‹
+                </button>
+                <span className="recommendation-nav-index">
+                  {recommendationPage + 1}/{recommendationPages}
+                </span>
+                <button
+                  type="button"
+                  className="recommendation-nav-btn"
+                  onClick={() =>
+                    setRecommendationPage((current) => (current + 1) % recommendationPages)
+                  }
+                  aria-label="Avançar 3 produtos"
+                >
+                  ›
+                </button>
+              </div>
+            )}
           </div>
           <div className="recommendation-grid">
-            {recommendations.map((item) => (
+            {pagedRecommendations.map((item) => (
               <Link key={item.productId} className="recommendation-card" to={`/produto/${item.productId}`}>
                 <img src={item.imageUrl} alt={item.name} loading="lazy" />
                 <div>
