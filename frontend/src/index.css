@@ -426,6 +426,8 @@ body {
   padding: 28px 32px;
   border-bottom: 0.5px solid var(--color-border);
   background: transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 .feat:last-child {
@@ -465,11 +467,18 @@ body {
   color: var(--color-text-faint);
   line-height: 1.6;
   margin: 0;
+  flex: 1;
+}
+
+.feat-actions {
+  margin-top: 14px;
+  min-height: 34px;
+  display: flex;
+  align-items: flex-end;
 }
 
 .feat-link {
   width: fit-content;
-  margin-top: 14px;
   font-family: 'Manrope', sans-serif;
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -479,6 +488,12 @@ body {
   background: var(--color-accent);
   border-radius: 2px;
   padding: 8px 12px;
+}
+
+.feat-link-placeholder {
+  display: inline-block;
+  width: 1px;
+  height: 30px;
 }
 
 /* ─── CATALOG / PRODUCT GRID ─── */

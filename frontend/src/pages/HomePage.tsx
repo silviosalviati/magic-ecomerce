@@ -173,11 +173,15 @@ export function HomePage({
             <div className="feat-icon">{feature.icon}</div>
             <p className="feat-title">{feature.title}</p>
             <p className="feat-desc">{feature.description}</p>
-            {feature.ctaTo && (
-              <Link className="feat-link" to={feature.ctaTo}>
-                Ver produtos
-              </Link>
-            )}
+            <div className="feat-actions">
+              {feature.ctaTo ? (
+                <Link className="feat-link" to={feature.ctaTo}>
+                  Ver produtos
+                </Link>
+              ) : (
+                <span className="feat-link-placeholder" aria-hidden="true" />
+              )}
+            </div>
           </div>
         ))}
       </div>
