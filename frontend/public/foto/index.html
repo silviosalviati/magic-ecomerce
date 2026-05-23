@@ -232,8 +232,8 @@
     </div>
 
     <div class="helper">
-      Esta pagina usa automaticamente a API do ambiente. Basta buscar a referencia,
-      selecionar frente/costas e enviar.
+      Esta pagina usa a API do ambiente. Se a chave admin não estiver salva neste navegador,
+      o sistema vai solicitar uma única vez para liberar a busca e o upload.
     </div>
 
     <section class="panel">
@@ -281,6 +281,7 @@
     const productBox = document.getElementById('productBox');
 
     let currentProduct = null;
+    const ADMIN_KEY_STORAGE = 'magic.foto.adminKey.v1';
 
     const API_BASE = (() => {
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
@@ -289,8 +290,48 @@
       return 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
     })();
 
-    function getHeaders() {
-      return { 'Content-Type': 'application/json' };
+    function readAdminKeyFromQuery() {
+      const params = new URLSearchParams(location.search);
+      return String(params.get('adminKey') || '').trim();
+    }
+
+    function readStoredAdminKey() {
+      try {
+        return String(localStorage.getItem(ADMIN_KEY_STORAGE) || '').trim();
+      } catch {
+        return '';
+      }
+    }
+
+    function saveAdminKey(adminKey) {
+      try {
+        localStorage.setItem(ADMIN_KEY_STORAGE, adminKey);
+      } catch {
+        // Ignore storage failures.
+      }
+    }
+
+    function resolveAdminKey() {
+      const fromQuery = readAdminKeyFromQuery();
+      if (fromQuery) {
+        saveAdminKey(fromQuery);
+        return fromQuery;
+      }
+
+      const stored = readStoredAdminKey();
+      if (stored) return stored;
+
+      const typed = window.prompt('Informe a chave admin para liberar a tela de fotos:');
+      const adminKey = String(typed || '').trim();
+      if (adminKey) saveAdminKey(adminKey);
+      return adminKey;
+    }
+
+    function getHeaders(adminKey) {
+      return {
+        'Content-Type': 'application/json',
+        'x-admin-key': adminKey,
+      };
     }
 
     function setStatus(message, kind) {
@@ -372,6 +413,12 @@
       updateUploadButton();
 
       const reference = String(referenceInput.value || '').trim();
+      const adminKey = resolveAdminKey();
+
+      if (!adminKey) {
+        setStatus('A chave admin é obrigatória para buscar o produto.', 'error');
+        return;
+      }
 
       if (!reference) {
         setStatus('Informe a referencia do produto.', 'error');
@@ -384,7 +431,7 @@
       try {
         const response = await fetch(API_BASE + '/admin/products/reference/' + encodeURIComponent(reference), {
           method: 'GET',
-          headers: getHeaders(),
+          headers: getHeaders(adminKey),
         });
 
         const data = await response.json().catch(() => ({}));
@@ -410,6 +457,12 @@
       const reference = String(referenceInput.value || '').trim();
       const frontFile = frontFileInput.files[0];
       const backFile = backFileInput.files[0];
+      const adminKey = resolveAdminKey();
+
+      if (!adminKey) {
+        setStatus('A chave admin é obrigatória para enviar as fotos.', 'error');
+        return;
+      }
 
       if (!currentProduct) {
         setStatus('Busque um produto antes do upload.', 'error');
@@ -436,7 +489,7 @@
 
         const response = await fetch(API_BASE + '/admin/products/reference/' + encodeURIComponent(reference) + '/photos', {
           method: 'POST',
-          headers: getHeaders(),
+          headers: getHeaders(adminKey),
           body: JSON.stringify({
             frontBase64,
             backBase64,

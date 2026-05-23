@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { ProductsController } from './products.controller';
 import { validateCreateProduct } from '../middlewares/validate.middleware';
+import { requireAdminKey } from '../middlewares/auth.middleware';
 
 const productsRouter = Router();
 const controller = new ProductsController();
@@ -8,6 +9,7 @@ const controller = new ProductsController();
 // POST /products — cria produto + variante
 productsRouter.post(
   '/',
+  requireAdminKey,
   validateCreateProduct,
   (req: Request, res: Response) => controller.create(req, res)
 );
@@ -18,12 +20,12 @@ productsRouter.get('/', (req: Request, res: Response) =>
 );
 
 // POST /products/images/upload-url — gera URL assinada para upload
-productsRouter.post('/images/upload-url', (req: Request, res: Response) =>
+productsRouter.post('/images/upload-url', requireAdminKey, (req: Request, res: Response) =>
   controller.createUploadUrl(req, res)
 );
 
 // POST /products/images/upload — fallback de upload via backend
-productsRouter.post('/images/upload', (req: Request, res: Response) =>
+productsRouter.post('/images/upload', requireAdminKey, (req: Request, res: Response) =>
   controller.uploadImage(req, res)
 );
 
@@ -41,7 +43,7 @@ productsRouter.patch('/barcode/:code/stock', (req: Request, res: Response) =>
 );
 
 // POST /products/:barcode/generate-preview — gera preview com manequim
-productsRouter.post('/:barcode/generate-preview', (req: Request, res: Response) =>
+productsRouter.post('/:barcode/generate-preview', requireAdminKey, (req: Request, res: Response) =>
   controller.generatePreview(req, res)
 );
 // GET /products/:id — detalhe de um produto

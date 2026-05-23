@@ -115,6 +115,15 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 }
 
 export async function handleWebhook(req: Request, res: Response): Promise<void> {
+  const expectedSecret = process.env.ASAAS_WEBHOOK_SECRET?.trim();
+  if (expectedSecret) {
+    const providedSecret = String(req.headers['x-webhook-secret'] || '').trim();
+    if (providedSecret !== expectedSecret) {
+      res.sendStatus(401);
+      return;
+    }
+  }
+
   const { event, payment } = req.body as {
     event: string;
     payment?: { id: string; status: string };
