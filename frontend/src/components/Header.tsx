@@ -15,7 +15,6 @@ export function Header({ cartCount, onOpenCart }: HeaderProps) {
       </Link>
       <nav className="main-nav" aria-label="Navegação principal">
         <a href="/#novidades">Novidades</a>
-        <a href="/#colecao">Coleção</a>
         <a href="/#sobre">Sobre</a>
       </nav>
       <button className="header-bag" type="button" onClick={onOpenCart}>

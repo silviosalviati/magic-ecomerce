@@ -467,6 +467,20 @@ body {
   margin: 0;
 }
 
+.feat-link {
+  width: fit-content;
+  margin-top: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--color-bg-base);
+  background: var(--color-accent);
+  border-radius: 2px;
+  padding: 8px 12px;
+}
+
 /* ─── CATALOG / PRODUCT GRID ─── */
 .catalog {
   background: transparent;
@@ -487,65 +501,6 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(232, 180, 176, 0.4);
-}
-
-.collection-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1px;
-  background: var(--color-border);
-}
-
-.collection-card {
-  background: var(--color-bg-base);
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.collection-title {
-  margin: 0;
-  font-family: 'Manrope', sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-}
-
-.collection-subtitle {
-  margin: 0;
-  font-family: 'Manrope', sans-serif;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--color-text-muted);
-}
-
-.collection-product-name {
-  font-family: Georgia, serif;
-  font-style: italic;
-  font-size: 16px;
-  font-weight: 400;
-  color: var(--color-text-primary);
-}
-
-.collection-link {
-  width: fit-content;
-  font-family: 'Manrope', sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--color-bg-base);
-  background: var(--color-accent);
-  border-radius: 2px;
-  padding: 10px 14px;
-}
-
-.collection-empty {
-  font-family: 'Manrope', sans-serif;
-  font-size: 11px;
-  color: var(--color-text-faint);
 }
 
 .novelties-grid {
@@ -841,10 +796,6 @@ body {
   .product-grid,
   .novelties-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-
-  .collection-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
