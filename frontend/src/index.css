@@ -96,15 +96,15 @@ body {
 
 .logo-image {
   display: block;
-  height: clamp(36px, 5vw, 52px);
+  height: clamp(46px, 6vw, 68px);
   width: auto;
-  max-width: min(44vw, 200px);
+  max-width: min(52vw, 250px);
   object-fit: contain;
 }
 
 .logo-wrap.compact .logo-image {
-  height: clamp(36px, 5vw, 52px);
-  max-width: min(40vw, 180px);
+  height: clamp(44px, 5.6vw, 62px);
+  max-width: min(48vw, 230px);
 }
 
 .main-nav {
