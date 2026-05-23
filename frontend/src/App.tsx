@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { CartSidebar } from './components/CartSidebar';
 import { Footer } from './components/Footer';
@@ -137,10 +137,23 @@ function App() {
   }
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const masculineProductId = useMemo(
+    () => items.find((item) => item.category.toLowerCase().includes('mascul'))?.productId,
+    [items]
+  );
+  const feminineProductId = useMemo(
+    () => items.find((item) => item.category.toLowerCase().includes('femin'))?.productId,
+    [items]
+  );
 
   return (
     <div className="page-shell">
-      <Header cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
+      <Header
+        cartCount={cartCount}
+        onOpenCart={() => setCartOpen(true)}
+        masculineProductId={masculineProductId}
+        feminineProductId={feminineProductId}
+      />
 
       <Routes>
         <Route
