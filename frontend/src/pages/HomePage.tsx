@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Palette, Smartphone, Sparkles } from 'lucide-react';
+import { Shirt, Venus, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { toCurrency } from '../lib/catalog';
@@ -58,17 +58,17 @@ export function HomePage({
     {
       title: 'Moda Masculina',
       description: 'Modelagens modernas, caimento impecável e peças versáteis para elevar o visual diário.',
-      icon: <Sparkles size={18} strokeWidth={1.5} />,
+      icon: <Shirt size={18} strokeWidth={1.5} />,
     },
     {
       title: 'Moda Feminina',
       description: 'Looks elegantes e atuais para compor combinações marcantes em qualquer ocasião.',
-      icon: <Palette size={18} strokeWidth={1.5} />,
+      icon: <Venus size={18} strokeWidth={1.5} />,
     },
     {
       title: 'Tricot',
       description: 'Texturas sofisticadas, conforto premium e acabamento de alto padrão em cada peça.',
-      icon: <Smartphone size={18} strokeWidth={1.5} />,
+      icon: <Waves size={18} strokeWidth={1.5} />,
     },
   ];
 
@@ -77,7 +77,6 @@ export function HomePage({
       <section className="hero" id="marca">
         <div className="hero-left">
           <div className="hero-showcase">
-            <span className="hero-product-badge">ÚLTIMAS UNIDADES</span>
             {spotlightItem?.imageUrl ? (
               <Link
                 className="hero-product-placeholder"
