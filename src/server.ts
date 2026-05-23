@@ -64,7 +64,7 @@ app.use(
 );
 
 // ─── Body parser com limite ───────────────────────────────────────────────────
-app.use(express.json({ limit: '12mb' }));
+app.use(express.json({ limit: '25mb' }));
 
 // ─── Rotas ───────────────────────────────────────────────────────────────────
 app.use('/products', productsRouter);
