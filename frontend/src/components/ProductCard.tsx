@@ -18,9 +18,11 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
   return (
     <article className="product-card">
       <div className="product-media">
-        <div className="product-badge-row" aria-hidden="true">
-          <span className="product-badge">Restam {selectedVariant.stock}</span>
-        </div>
+        {selectedVariant.stock > 0 && selectedVariant.stock <= 5 && (
+          <div className="product-badge-row" aria-hidden="true">
+            <span className="product-badge">Restam {selectedVariant.stock}</span>
+          </div>
+        )}
         <Link
           className="product-media-link"
           to={`/produto/${product.productId}`}
@@ -57,7 +59,7 @@ export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps
             disabled={selectedVariant.stock <= 0}
             onClick={() => onAddToCart(cartItem)}
           >
-            + Sacola
+            Adicionar à sacola
           </button>
         </div>
       </div>

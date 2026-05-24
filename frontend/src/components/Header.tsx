@@ -5,35 +5,23 @@ import { LogoMark } from './LogoMark';
 type HeaderProps = {
   cartCount: number;
   onOpenCart: () => void;
-  masculineProductId?: string;
-  feminineProductId?: string;
 };
 
-export function Header({
-  cartCount,
-  onOpenCart,
-  masculineProductId,
-  feminineProductId,
-}: HeaderProps) {
+export function Header({ cartCount, onOpenCart }: HeaderProps) {
   return (
     <header className="site-header">
-      <Link className="product-link" to="/">
+      <Link className="logo-wrap" to="/">
         <LogoMark compact />
       </Link>
       <nav className="main-nav" aria-label="Navegação principal">
         <a href="/#novidades">Novidades</a>
-        <Link to={masculineProductId ? `/produto/${masculineProductId}` : '/#novidades'}>
-          Moda Masculina
-        </Link>
-        <Link to={feminineProductId ? `/produto/${feminineProductId}` : '/#novidades'}>
-          Moda Feminina
-        </Link>
-        <a href="/#sobre">Sobre</a>
+        <a href="/#feminino">Moda Feminina</a>
+        <a href="/#masculino">Moda Masculina</a>
       </nav>
       <button className="header-bag" type="button" onClick={onOpenCart}>
         <ShoppingBag size={15} strokeWidth={1.6} aria-hidden="true" />
         <span>Sacola</span>
-        <span className="cart-badge">{cartCount}</span>
+        {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
       </button>
     </header>
   );

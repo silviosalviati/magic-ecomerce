@@ -1,18 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Shirt, Venus, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
-
-function shuffleProducts(items: CatalogProduct[]): CatalogProduct[] {
-  const shuffled = [...items];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
 
 type HomePageProps = {
   items: CatalogProduct[];
@@ -33,42 +24,35 @@ export function HomePage({
   onAddToCart,
   onBuyNow,
 }: HomePageProps) {
+  const feminineItems = useMemo(
+    () => items.filter((item) => item.category.toLowerCase().includes('femin')),
+    [items]
+  );
   const masculineItems = useMemo(
     () => items.filter((item) => item.category.toLowerCase().includes('mascul')),
     [items]
   );
 
-  const feminineItems = useMemo(
-    () => items.filter((item) => item.category.toLowerCase().includes('femin')),
-    [items]
-  );
-
-  const featuredItems = useMemo(() => shuffleProducts(items).slice(0, 3), [items]);
-  const heroItems = useMemo(() => shuffleProducts(items).slice(0, 5), [items]);
+  // Hero usa os 5 primeiros (mais novos, conforme ordem da API)
+  const heroItems = useMemo(() => items.slice(0, 5), [items]);
   const [heroIndex, setHeroIndex] = useState(0);
   const spotlightItem = heroItems[heroIndex];
 
   useEffect(() => {
-    if (heroItems.length <= 1) return;
+    if (heroIndex >= heroItems.length) setHeroIndex(0);
+  }, [heroIndex, heroItems.length]);
 
+  useEffect(() => {
+    if (heroItems.length <= 1) return;
     const timerId = window.setInterval(() => {
       setHeroIndex((current) => (current + 1) % heroItems.length);
     }, 3200);
-
-    return () => {
-      window.clearInterval(timerId);
-    };
+    return () => window.clearInterval(timerId);
   }, [heroItems.length]);
-
-  useEffect(() => {
-    if (heroIndex < heroItems.length) return;
-    setHeroIndex(0);
-  }, [heroIndex, heroItems.length]);
 
   function goToPreviousHeroItem() {
     setHeroIndex((current) => (current - 1 + heroItems.length) % heroItems.length);
   }
-
   function goToNextHeroItem() {
     setHeroIndex((current) => (current + 1) % heroItems.length);
   }
@@ -78,23 +62,28 @@ export function HomePage({
       title: 'Moda Masculina',
       description: 'Modelagens modernas, caimento impecável e peças versáteis para elevar o visual diário.',
       icon: <Shirt size={18} strokeWidth={1.5} />,
-      ctaTo: masculineItems[0] ? `/produto/${masculineItems[0].productId}` : '/#novidades',
+      ctaHref: masculineItems.length > 0 ? '/#masculino' : null,
+      ctaLabel: 'Ver masculino',
     },
     {
       title: 'Moda Feminina',
       description: 'Looks elegantes e atuais para compor combinações marcantes em qualquer ocasião.',
       icon: <Venus size={18} strokeWidth={1.5} />,
-      ctaTo: feminineItems[0] ? `/produto/${feminineItems[0].productId}` : '/#novidades',
+      ctaHref: feminineItems.length > 0 ? '/#feminino' : null,
+      ctaLabel: 'Ver feminino',
     },
     {
       title: 'Tricot',
       description: 'Texturas sofisticadas, conforto premium e acabamento de alto padrão em cada peça.',
       icon: <Waves size={18} strokeWidth={1.5} />,
+      ctaHref: null,
+      ctaLabel: null,
     },
   ];
 
   return (
     <>
+      {/* ── HERO ── */}
       <section className="hero" id="marca">
         <div className="hero-left">
           <div className="hero-showcase">
@@ -116,8 +105,8 @@ export function HomePage({
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
                 </div>
-                <p className="product-name-small">Blusa Ellie</p>
-                <p className="product-price-small">R$ 99,80</p>
+                <p className="product-name-small">Vista Magic</p>
+                <p className="product-price-small">Carregando...</p>
               </div>
             )}
 
@@ -154,19 +143,16 @@ export function HomePage({
           </h1>
           <p className="hero-sub">
             Peças selecionadas para uma experiência de compra mais limpa e visualmente
-            precisa - como nas melhores lojas de moda digital.
+            precisa — como nas melhores lojas de moda digital.
           </p>
           <div className="hero-ctas">
-            <a className="btn-primary" href="#novidades">
-              Explorar coleção
-            </a>
-            <a className="btn-ghost" href="#novidades">
-              Ver categorias
-            </a>
+            <a className="btn-primary" href="#novidades">Explorar coleção</a>
+            <a className="btn-ghost" href="#novidades">Ver categorias</a>
           </div>
         </div>
       </section>
 
+      {/* ── FEATURES ── */}
       <div className="features" aria-label="Destaques da experiência">
         {features.map((feature) => (
           <div className="feat" key={feature.title}>
@@ -174,10 +160,8 @@ export function HomePage({
             <p className="feat-title">{feature.title}</p>
             <p className="feat-desc">{feature.description}</p>
             <div className="feat-actions">
-              {feature.ctaTo ? (
-                <Link className="feat-link" to={feature.ctaTo}>
-                  Ver produtos
-                </Link>
+              {feature.ctaHref ? (
+                <a className="feat-link" href={feature.ctaHref}>{feature.ctaLabel}</a>
               ) : (
                 <span className="feat-link-placeholder" aria-hidden="true" />
               )}
@@ -186,7 +170,8 @@ export function HomePage({
         ))}
       </div>
 
-      <section className="catalog novelties-section" id="novidades">
+      {/* ── NOVIDADES — catálogo completo ── */}
+      <section className="catalog" id="novidades">
         <div className="section-head">
           <p className="section-label-inline">Novidades da coleção</p>
         </div>
@@ -194,33 +179,69 @@ export function HomePage({
         {loading && <div className="status">Carregando produtos...</div>}
         {warning && <div className="status warning">{warning}</div>}
         {error && (
-          <div className="status error status-row">
+          <div className="status status-row">
             <span>{error}</span>
             <button type="button" className="status-action" onClick={onRetry}>
               Tentar novamente
             </button>
           </div>
         )}
-
-        {!loading && !error && featuredItems.length === 0 && (
+        {!loading && !error && items.length === 0 && (
           <div className="status">Sem produtos cadastrados no momento.</div>
         )}
-
-        {!loading &&
-          !error &&
-          featuredItems.length > 0 && (
-            <div className="product-grid novelties-grid">
-              {featuredItems.map((item) => (
-                <ProductCard
-                  key={item.productId}
-                  product={item}
-                  onAddToCart={onAddToCart}
-                  onBuyNow={onBuyNow}
-                />
-              ))}
-            </div>
-          )}
+        {!loading && !error && items.length > 0 && (
+          <div className="product-grid">
+            {items.map((item) => (
+              <ProductCard
+                key={item.productId}
+                product={item}
+                onAddToCart={onAddToCart}
+                onBuyNow={onBuyNow}
+              />
+            ))}
+          </div>
+        )}
       </section>
+
+      {/* ── MODA FEMININA ── */}
+      {!loading && !error && feminineItems.length > 0 && (
+        <section className="category-section" id="feminino">
+          <div className="category-title-row">
+            <p className="category-subtitle">Categoria</p>
+            <h2 className="category-title">Moda Feminina</h2>
+          </div>
+          <div className="product-grid">
+            {feminineItems.map((item) => (
+              <ProductCard
+                key={item.productId}
+                product={item}
+                onAddToCart={onAddToCart}
+                onBuyNow={onBuyNow}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── MODA MASCULINA ── */}
+      {!loading && !error && masculineItems.length > 0 && (
+        <section className="category-section" id="masculino">
+          <div className="category-title-row">
+            <p className="category-subtitle">Categoria</p>
+            <h2 className="category-title">Moda Masculina</h2>
+          </div>
+          <div className="product-grid">
+            {masculineItems.map((item) => (
+              <ProductCard
+                key={item.productId}
+                product={item}
+                onAddToCart={onAddToCart}
+                onBuyNow={onBuyNow}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }
