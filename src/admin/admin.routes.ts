@@ -6,8 +6,7 @@ import { validateUpdateStock } from '../middlewares/validate.middleware';
 const adminRouter = Router();
 const controller = new AdminController();
 
-// Rotas usadas pela tela /foto (exigem x-admin-key)
-adminRouter.use('/products/reference', requireAdminKey);
+// Rotas usadas pela tela /foto (acesso direto para operação interna de fotos)
 
 adminRouter.get('/products/reference/:reference', (req: Request, res: Response) =>
   controller.getProductByReference(req, res)

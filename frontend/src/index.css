@@ -1,49 +1,39 @@
-/* Fonts loaded via index.html — see brand-tokens.md for full design system */
-
 :root {
   /* ═══════════════════════════════════════════════════════════
-     COLORS — Brand Palette
+     COLORS — Brand Palette (canonical tokens)
   ═══════════════════════════════════════════════════════════ */
-  --color-brand-primary:   #E8B4B0;
-  --color-brand-secondary: #f3d7d4;
-  --color-danger:          #ef8ba0;
-  --color-success:         #7fcf9a;
-
-  /* Color channels for rgba composition */
-  --color-accent-ch: 232, 180, 176;
-  --color-text-ch:   245, 237, 232;
 
   /* Surfaces */
-  --color-surface:         #0D0D0D;
-  --color-surface-raised:  #322F30;
-  --color-surface-high:    #3A3637;
-  --color-surface-overlay: #453f41;
+  --color-bg-base:        #0D0D0D;
+  --color-bg-deep:        #322F30;
+  --color-bg-card:        #3A3637;
+  --color-surface-raised: #453f41;
+
+  /* Accent */
+  --color-accent:        #E8B4B0;
+  --color-accent-strong: #f3d7d4;
+  --color-accent-muted:  rgba(232, 180, 176, 0.15);
 
   /* Text */
   --color-text-primary: #F5EDE8;
   --color-text-muted:   rgba(245, 237, 232, 0.50);
-  --color-text-faint:   rgba(245, 237, 232, 0.28);
+  --color-text-faint:   rgba(245, 237, 232, 0.30);
 
   /* Borders */
-  --color-border:       rgba(232, 180, 176, 0.12);
-  --color-border-strong:rgba(232, 180, 176, 0.28);
+  --color-border:        rgba(232, 180, 176, 0.12);
+  --color-border-strong: rgba(232, 180, 176, 0.28);
 
-  /* ── Legacy aliases — preserved for backward compatibility ── */
-  --color-bg-base:     var(--color-surface);
-  --color-bg-deep:     var(--color-surface-raised);
-  --color-bg-card:     var(--color-surface-high);
-  --color-accent:      var(--color-brand-primary);
-  --color-accent-strong: var(--color-brand-secondary);
-  --bg:          var(--color-surface);
-  --surface:     var(--color-surface-raised);
-  --surface-soft:var(--color-surface-overlay);
-  --card:        var(--color-surface-high);
-  --border:      var(--color-border);
-  --text:        var(--color-text-primary);
-  --muted:       var(--color-text-muted);
-  --accent:      var(--color-brand-primary);
-  --accent-strong: var(--color-brand-secondary);
-  --danger:      var(--color-danger);
+  /* Status */
+  --color-success: #7fcf9a;
+  --color-danger:  #ef8ba0;
+
+  /* Brand shorthands — kept per spec */
+  --accent-strong: #f3d7d4;
+  --danger:        #ef8ba0;
+
+  /* Color channels for rgba composition */
+  --color-accent-ch: 232, 180, 176;
+  --color-text-ch:   245, 237, 232;
 
   /* ═══════════════════════════════════════════════════════════
      TYPOGRAPHY
@@ -54,15 +44,13 @@
   --font-mono:    'Courier New', 'Lucida Console', monospace;
 
   /* Type scale */
-  --text-xs:   9px;
-  --text-sm:   11px;
-  --text-base: 13px;
-  --text-md:   15px;
-  --text-lg:   17px;
+  --text-xs:   10px;
+  --text-sm:   12px;
+  --text-base: 14px;
+  --text-lg:   16px;
   --text-xl:   20px;
-  --text-2xl:  24px;
-  --text-3xl:  28px;
-  --text-4xl:  clamp(26px, 4vw, 48px);
+  --text-2xl:  28px;
+  --text-3xl:  40px;
 
   /* Line heights */
   --leading-tight:   1.1;
@@ -98,10 +86,10 @@
   ═══════════════════════════════════════════════════════════ */
   --radius-none: 0px;
   --radius-sm:   2px;
-  --radius-md:   4px;
-  --radius-lg:   8px;
-  --radius-xl:   12px;
-  --radius-2xl:  16px;
+  --radius-md:   6px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
   --radius-full: 999px;
 
   /* ═══════════════════════════════════════════════════════════
@@ -126,6 +114,8 @@
   --duration-normal:  220ms;
   --duration-slow:    350ms;
 
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
   /* ═══════════════════════════════════════════════════════════
      BUTTON TOKENS
   ═══════════════════════════════════════════════════════════ */
@@ -134,8 +124,8 @@
   --btn-height-lg: 48px;
   --btn-radius:    var(--radius-sm);
   --btn-font:      var(--font-ui);
-  --btn-font-size: var(--text-sm);
-  --btn-tracking:  var(--tracking-wide);
+  --btn-font-size: var(--text-xs);
+  --btn-tracking:  0.1em;
   --btn-weight:    600;
 
   /* ═══════════════════════════════════════════════════════════
@@ -148,15 +138,6 @@
   --z-drawer:   20;
   --z-modal:    30;
   --z-toast:    40;
-
-  /* ═══════════════════════════════════════════════════════════
-     DARK MODE TOKENS
-     (site is dark-first; these are pre-wired for a future
-     light-mode or theme-switcher — currently inactive)
-  ═══════════════════════════════════════════════════════════ */
-  --dm-surface:      var(--color-surface);
-  --dm-text-primary: var(--color-text-primary);
-  --dm-accent:       var(--color-brand-primary);
 }
 
 *,
@@ -181,18 +162,16 @@ body,
 body {
   font-family: var(--font-body);
   color: var(--color-text-primary);
-  background: var(--color-surface);
+  background: var(--color-bg-base);
   line-height: var(--leading-normal);
 }
 
-/* ── Global focus-visible — accessibility ── */
 :focus-visible {
-  outline: 1.5px solid var(--color-brand-primary);
+  outline: 1.5px solid var(--color-accent);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
 }
 
-/* Inputs use border-color signal instead of outline */
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
@@ -206,6 +185,7 @@ textarea:focus-visible {
   padding: 0;
 }
 
+/* ── HEADER ── */
 .site-header {
   display: flex;
   align-items: center;
@@ -217,6 +197,31 @@ textarea:focus-visible {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
+}
+
+/* Scroll-driven border — transitions opacity as user scrolls */
+@supports (animation-timeline: scroll()) {
+  .site-header {
+    border-bottom: none;
+  }
+
+  .site-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0.5px;
+    background: var(--color-border);
+    animation: site-header-border linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0px 80px;
+  }
+}
+
+@keyframes site-header-border {
+  from { opacity: 0 }
+  to   { opacity: 1 }
 }
 
 .header-bag {
@@ -254,7 +259,7 @@ textarea:focus-visible {
 
 .logo-image {
   display: block;
-  height: clamp(46px, 6vw, 68px);
+  height: clamp(48px, 6vw, 72px);
   width: auto;
   max-width: min(52vw, 250px);
   object-fit: contain;
@@ -278,7 +283,7 @@ textarea:focus-visible {
   text-decoration: none;
   font-family: var(--font-ui);
   font-size: 12px;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-wider);
   font-weight: 400;
 }
 
@@ -288,10 +293,8 @@ textarea:focus-visible {
 
 /* ═══════════════════════════════════════════════════════════
    BUTTON SYSTEM — 3 canonical variants
-   See brand-tokens.md for full specification
 ═══════════════════════════════════════════════════════════ */
 
-/* Base reset shared by all button variants */
 .btn-primary,
 .btn-secondary,
 .btn-ghost,
@@ -307,21 +310,19 @@ textarea:focus-visible {
   font-size: var(--btn-font-size);
   font-weight: var(--btn-weight);
   letter-spacing: var(--btn-tracking);
+  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
-  transition:
-    opacity var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-standard);
+  border-radius: var(--btn-radius);
+  transition: var(--transition-base);
 }
 
 /* Primary — accent filled */
 .btn-primary,
 .primary-btn {
-  background: var(--color-brand-primary);
-  color: var(--color-surface);
-  border-radius: var(--btn-radius);
-  padding: 13px var(--space-6);
+  background: var(--color-accent);
+  color: #0D0D0D;
+  padding: 12px var(--space-6);
   width: fit-content;
 }
 
@@ -338,19 +339,18 @@ textarea:focus-visible {
   transform: none;
 }
 
-/* Secondary — outlined */
+/* Secondary — outlined accent */
 .btn-secondary {
   background: transparent;
-  color: var(--color-text-primary);
-  border: 0.5px solid var(--color-border);
-  border-radius: var(--btn-radius);
-  padding: 13px var(--space-6);
+  color: var(--color-accent);
+  border: 0.5px solid var(--color-accent);
+  padding: 12px var(--space-6);
   width: fit-content;
 }
 
 .btn-secondary:not(:disabled):hover {
-  border-color: var(--color-border-strong);
-  color: var(--color-brand-primary);
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-strong);
 }
 
 /* Ghost — text only */
@@ -358,7 +358,6 @@ textarea:focus-visible {
 .ghost-btn {
   background: transparent;
   color: var(--color-text-muted);
-  border-radius: var(--btn-radius);
   padding: 8px var(--space-1);
   width: fit-content;
   justify-content: flex-start;
@@ -368,12 +367,6 @@ textarea:focus-visible {
 .btn-ghost:hover,
 .ghost-btn:hover {
   color: var(--color-text-primary);
-}
-
-/* Legacy alias — btn-primary used as base reset historically */
-.btn-ghost {
-  font-size: 12px;
-  letter-spacing: var(--tracking-wide);
 }
 
 .cart-badge {
@@ -390,31 +383,8 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
-.primary-btn {
-  background: var(--color-accent);
-  color: var(--color-bg-base);
-  border-radius: 2px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  padding: 13px 24px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-}
-
-.btn-primary,
-.btn-ghost {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-}
-
 /* ═══════════════════════════════════════════════════════════
    PAGE LOAD — Staggered Reveal Pattern
-   ONE animation system, applied via animation-delay per section
 ═══════════════════════════════════════════════════════════ */
 
 @keyframes pageReveal {
@@ -428,13 +398,18 @@ textarea:focus-visible {
   }
 }
 
+/* Product card stagger — set --i via inline style in map() */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px) }
+  to   { opacity: 1; transform: none }
+}
+
 .hero         { animation: pageReveal 0.55s var(--ease-spring) 0.00s both; }
 .features     { animation: pageReveal 0.55s var(--ease-spring) 0.08s both; }
 .catalog      { animation: pageReveal 0.55s var(--ease-spring) 0.14s both; }
 .category-section { animation: pageReveal 0.55s var(--ease-spring) 0.20s both; }
 .site-footer  { animation: pageReveal 0.55s var(--ease-spring) 0.24s both; }
 
-/* Product Detail — stagger gallery + copy */
 .detail-gallery { animation: pageReveal 0.45s var(--ease-spring) 0.05s both; }
 .detail-copy    { animation: pageReveal 0.45s var(--ease-spring) 0.12s both; }
 
@@ -606,7 +581,7 @@ textarea:focus-visible {
 }
 
 .hero-headline {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: clamp(26px, 4vw, 48px);
   line-height: 1.25;
   color: var(--color-text-primary);
@@ -638,34 +613,6 @@ textarea:focus-visible {
   flex-wrap: wrap;
 }
 
-.btn-primary {
-  background: var(--color-accent);
-  color: var(--color-bg-base);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  padding: 13px 24px;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-ghost {
-  background: transparent;
-  border: none;
-  color: var(--color-text-muted);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  padding: 0;
-}
-
 /* ─── FEATURE BAR ─── */
 .features {
   display: grid;
@@ -677,13 +624,19 @@ textarea:focus-visible {
 .feat {
   padding: 28px 32px;
   border-bottom: 0.5px solid var(--color-border);
+  border-left: 1px solid transparent;
   background: transparent;
   display: flex;
   flex-direction: column;
+  transition: border-left-color var(--transition-base);
 }
 
 .feat:last-child {
   border-bottom: none;
+}
+
+.feat:hover {
+  border-left-color: var(--color-accent-muted);
 }
 
 .feat-icon {
@@ -781,6 +734,7 @@ textarea:focus-visible {
   background: var(--color-border);
 }
 
+/* Card stagger via --i custom property set in map() */
 .product-card {
   display: flex;
   flex-direction: column;
@@ -789,12 +743,14 @@ textarea:focus-visible {
   border: none;
   background: var(--color-bg-base);
   box-shadow: none;
+  animation: fadeUp 0.5s var(--ease-spring) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
 }
 
 .product-media {
   position: relative;
   background: var(--color-bg-deep);
-  aspect-ratio: 3 / 4;
+  height: clamp(280px, 40vw, 480px);
   overflow: hidden;
 }
 
@@ -808,6 +764,11 @@ textarea:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--transition-base);
+}
+
+.product-media:hover img {
+  transform: scale(1.02);
 }
 
 .product-badge-row {
@@ -835,7 +796,7 @@ textarea:focus-visible {
 }
 
 .product-content {
-  padding: 14px 16px 16px;
+  padding: var(--space-5) var(--space-4);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -852,8 +813,8 @@ textarea:focus-visible {
 }
 
 .product-name {
-  font-family: var(--font-body);
-  font-size: 13px;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
   color: var(--color-text-primary);
   font-style: italic;
   margin: 0;
@@ -876,7 +837,7 @@ textarea:focus-visible {
 }
 
 .product-description {
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.6;
@@ -1060,7 +1021,7 @@ textarea:focus-visible {
 
   .product-grid,
   .novelties-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1087,7 +1048,7 @@ textarea:focus-visible {
   flex-wrap: wrap;
   gap: 8px;
   padding: 18px 18px 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
@@ -1154,7 +1115,7 @@ textarea:focus-visible {
 
 .detail-category {
   margin: 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1170,7 +1131,7 @@ textarea:focus-visible {
 
 .detail-description {
   margin: 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
@@ -1205,7 +1166,7 @@ textarea:focus-visible {
 
 .detail-highlights span {
   display: block;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1220,7 +1181,6 @@ textarea:focus-visible {
   margin-top: 8px;
 }
 
-/* ─── CTA ROW (detalhe do produto) ─── */
 .cta-row {
   display: flex;
   flex-direction: column;
@@ -1241,7 +1201,7 @@ textarea:focus-visible {
   color: var(--color-text-primary);
 }
 
-/* ─── SELETORES DE VARIANTE ─── */
+/* ─── VARIANT SELECTORS ─── */
 .selector-group {
   display: flex;
   flex-direction: column;
@@ -1318,7 +1278,7 @@ textarea:focus-visible {
   text-decoration: line-through;
 }
 
-/* ─── STATUS DE ESTOQUE ─── */
+/* ─── STOCK STATUS ─── */
 .stock {
   font-family: var(--font-ui);
   font-size: 10px;
@@ -1344,7 +1304,7 @@ textarea:focus-visible {
   color: var(--color-text-faint);
 }
 
-/* ─── SEÇÕES DE CATEGORIA ─── */
+/* ─── CATEGORY SECTIONS ─── */
 .category-section {
   border-top: 0.5px solid var(--color-border);
 }
@@ -1357,7 +1317,7 @@ textarea:focus-visible {
 }
 
 .category-title {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: clamp(18px, 2.5vw, 26px);
   font-weight: 400;
   font-style: italic;
@@ -1452,7 +1412,7 @@ textarea:focus-visible {
 }
 
 .recommendation-card p {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1463,6 +1423,7 @@ textarea:focus-visible {
   font-size: 17px;
 }
 
+/* ─── CART ─── */
 .cart-backdrop {
   position: fixed;
   inset: 0;
@@ -1485,7 +1446,7 @@ textarea:focus-visible {
   height: 100dvh;
   padding: 20px;
   background: linear-gradient(180deg, rgba(19, 19, 19, 0.98), rgba(10, 10, 10, 0.99));
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--color-border);
   transform: translateX(100%);
   transition: transform var(--duration-slow) var(--ease-decelerate);
   z-index: var(--z-drawer);
@@ -1516,7 +1477,7 @@ textarea:focus-visible {
   margin: 0;
   font-size: 12px;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .cart-header h2 {
@@ -1542,15 +1503,15 @@ textarea:focus-visible {
 }
 
 .cart-empty {
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--color-border);
   border-radius: 16px;
   padding: 18px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .cart-empty strong {
   display: block;
-  color: var(--text);
+  color: var(--color-text-primary);
   margin-bottom: 8px;
 }
 
@@ -1558,7 +1519,7 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: 88px 1fr;
   gap: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.03);
@@ -1578,7 +1539,7 @@ textarea:focus-visible {
 
 .cart-item-copy p {
   margin: 0 0 6px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
@@ -1589,7 +1550,7 @@ textarea:focus-visible {
 
 .qty-box {
   gap: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
   padding: 4px 10px;
 }
@@ -1600,12 +1561,12 @@ textarea:focus-visible {
 }
 
 .cart-footer {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
   padding-top: 16px;
 }
 
 .cart-total span {
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .cart-total strong {
@@ -1759,7 +1720,7 @@ textarea:focus-visible {
 
 @media (max-width: 767px) {
   .product-content {
-    padding: 20px;
+    padding: var(--space-5) var(--space-4);
   }
 
   .color-swatch {
@@ -1788,7 +1749,7 @@ textarea:focus-visible {
   }
 
   .site-header {
-    padding: 16px 32px;
+    padding: 20px 40px;
   }
 
   .main-nav {
@@ -1813,7 +1774,7 @@ textarea:focus-visible {
   }
 
   .product-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .product-detail-layout {
@@ -1824,6 +1785,12 @@ textarea:focus-visible {
   .detail-highlights,
   .recommendation-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .product-grid {
+    grid-template-columns: 1.2fr 1fr 1fr;
   }
 }
 
@@ -1838,7 +1805,6 @@ textarea:focus-visible {
   flex-direction: column;
 }
 
-/* Header */
 .checkout-header {
   display: flex;
   align-items: center;
@@ -1874,7 +1840,6 @@ textarea:focus-visible {
   letter-spacing: 0.04em;
 }
 
-/* Progress stepper */
 .checkout-progress {
   display: flex;
   align-items: center;
@@ -1944,7 +1909,6 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-/* Layout */
 .checkout-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -1956,7 +1920,6 @@ textarea:focus-visible {
   flex: 1;
 }
 
-/* Main form area */
 .checkout-main {
   min-width: 0;
 }
@@ -2028,7 +1991,6 @@ textarea:focus-visible {
   padding: 12px 24px;
 }
 
-/* Payment method tabs */
 .payment-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2079,7 +2041,6 @@ textarea:focus-visible {
   text-align: center;
 }
 
-/* Payment info boxes (PIX / Boleto preview) */
 .payment-info-box {
   background: var(--color-bg-deep);
   border: 1px solid var(--color-border);
@@ -2104,12 +2065,10 @@ textarea:focus-visible {
   color: var(--color-text-muted) !important;
 }
 
-/* Credit card form */
 .card-form {
   margin-bottom: 20px;
 }
 
-/* Card preview */
 .card-preview {
   width: 100%;
   max-width: 340px;
@@ -2242,7 +2201,6 @@ textarea:focus-visible {
   letter-spacing: 0.2em;
 }
 
-/* Card fields */
 .card-fields {
   display: flex;
   flex-direction: column;
@@ -2274,7 +2232,6 @@ textarea:focus-visible {
   margin: 0;
 }
 
-/* Field select (installments) */
 .field-select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23E8B4B0' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
@@ -2289,7 +2246,6 @@ textarea:focus-visible {
   color: var(--color-text-primary);
 }
 
-/* Sidebar — order summary */
 .checkout-sidebar {
   margin-top: 24px;
 }
@@ -2467,7 +2423,6 @@ textarea:focus-visible {
   border-top: 1px solid var(--color-border);
 }
 
-/* Confirmation screens */
 .payment-confirmation {
   display: flex;
   flex-direction: column;
@@ -2504,7 +2459,6 @@ textarea:focus-visible {
   margin-top: 16px;
 }
 
-/* PIX confirmation */
 .pix-confirmation {
   width: 100%;
 }
@@ -2525,7 +2479,6 @@ textarea:focus-visible {
   text-align: center;
 }
 
-/* Boleto confirmation */
 .boleto-confirmation {
   width: 100%;
 }
@@ -2578,7 +2531,6 @@ textarea:focus-visible {
   margin-bottom: 4px;
 }
 
-/* Desktop layout — 2 columns */
 @media (min-width: 768px) {
   .checkout-layout {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
@@ -2615,15 +2567,12 @@ textarea:focus-visible {
 
 /* ═══════════════════════════════════════════════════════════════
    CHECKOUT — LUXURY DESIGN ELEVATION
-   Cormorant Garamond, underline inputs, card shimmer, brand gradients
 ═══════════════════════════════════════════════════════════════ */
 
-/* Section reveal animation — shares pageReveal keyframe */
 .checkout-section {
   animation: pageReveal 0.38s var(--ease-spring) both;
 }
 
-/* Cormorant Garamond for checkout display typography */
 .checkout-section-title {
   font-family: var(--font-display);
   font-size: 28px;
@@ -2643,7 +2592,6 @@ textarea:focus-visible {
   opacity: 0.6;
 }
 
-/* Confirmation titles */
 .confirmation-title {
   font-family: var(--font-display);
   font-size: 28px;
@@ -2652,14 +2600,12 @@ textarea:focus-visible {
   letter-spacing: 0.06em;
 }
 
-/* Checkout page subtle texture background */
 .checkout-page {
   background-image:
     radial-gradient(ellipse at 20% 50%, rgba(232,180,176,0.03) 0%, transparent 60%),
     radial-gradient(ellipse at 80% 20%, rgba(232,180,176,0.02) 0%, transparent 50%);
 }
 
-/* Override checkout header to be more minimal */
 .checkout-header {
   background: rgba(13,13,13,0.95);
   backdrop-filter: blur(12px);
@@ -2682,7 +2628,6 @@ textarea:focus-visible {
   text-transform: uppercase;
 }
 
-/* Progress stepper — editorial line style */
 .checkout-progress {
   padding: 20px 24px 18px;
   background: rgba(13,13,13,0.95);
@@ -2720,7 +2665,6 @@ textarea:focus-visible {
   background: linear-gradient(90deg, var(--color-border) 0%, transparent 100%);
 }
 
-/* Checkout section — more refined card */
 .checkout-section {
   background: rgba(58, 54, 55, 0.4);
   border: 0.5px solid rgba(232, 180, 176, 0.1);
@@ -2734,7 +2678,6 @@ textarea:focus-visible {
   border-radius: 2px;
 }
 
-/* Underline-style inputs in checkout (luxury fashion aesthetic) */
 .checkout-page .field-group {
   position: relative;
 }
@@ -2783,7 +2726,6 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
-/* Checkout CTA button — elevated */
 .checkout-cta {
   background: var(--color-accent);
   color: #0D0D0D;
@@ -2816,7 +2758,6 @@ textarea:focus-visible {
   cursor: not-allowed;
 }
 
-/* Payment tabs — more architectural */
 .payment-tabs {
   gap: 6px;
   margin-bottom: 28px;
@@ -2873,7 +2814,6 @@ textarea:focus-visible {
   letter-spacing: 0.08em;
 }
 
-/* Payment info boxes */
 .payment-info-box {
   border: 0.5px solid rgba(232, 180, 176, 0.1);
   background: rgba(13,13,13,0.4);
@@ -2881,7 +2821,6 @@ textarea:focus-visible {
   padding: 24px;
 }
 
-/* Credit card — brand-specific gradients */
 .card-preview {
   max-width: 360px;
   margin-bottom: 28px;
@@ -2908,7 +2847,6 @@ textarea:focus-visible {
   background: linear-gradient(135deg, #0d0d00 0%, #2a2800 50%, #1a1800 100%);
 }
 
-/* Card shimmer animation */
 @keyframes cardShimmer {
   0%   { transform: translateX(-100%) skewX(-20deg); opacity: 0; }
   10%  { opacity: 1; }
@@ -2933,7 +2871,6 @@ textarea:focus-visible {
   pointer-events: none;
 }
 
-/* Card number — monospaced elegance */
 .card-number-display {
   font-family: var(--font-mono);
   font-size: 17px;
@@ -2964,7 +2901,6 @@ textarea:focus-visible {
   letter-spacing: 0.15em;
 }
 
-/* Card address section */
 .card-address-section {
   padding-top: 24px;
   margin-top: 24px;
@@ -2977,7 +2913,6 @@ textarea:focus-visible {
   margin-bottom: 4px;
 }
 
-/* Order summary title */
 .order-summary-title {
   font-family: var(--font-display);
   font-size: 15px;
@@ -3002,7 +2937,6 @@ textarea:focus-visible {
   font-weight: 400;
 }
 
-/* Security note */
 .checkout-security-note {
   font-size: 9px;
   letter-spacing: 0.12em;
@@ -3010,7 +2944,6 @@ textarea:focus-visible {
   margin-top: 16px;
 }
 
-/* Boleto open button */
 .boleto-open-btn {
   border-radius: 1px;
   font-size: 11px;
@@ -3019,14 +2952,12 @@ textarea:focus-visible {
   text-transform: uppercase;
 }
 
-/* Confirmation icon — larger, more dramatic */
 .confirmation-icon {
   font-size: 56px;
   margin-bottom: 20px;
   filter: drop-shadow(0 4px 20px rgba(232,180,176,0.2));
 }
 
-/* Checkout back button */
 .checkout-back-btn {
   font-family: var(--font-display);
   font-size: 14px;
@@ -3041,7 +2972,6 @@ textarea:focus-visible {
   color: var(--color-accent);
 }
 
-/* Home button after order */
 .checkout-home-btn {
   border-radius: 1px;
   font-size: 10px;
@@ -3051,7 +2981,6 @@ textarea:focus-visible {
   padding: 14px 24px;
 }
 
-/* Responsive fine-tuning */
 @media (min-width: 768px) {
   .checkout-section-title {
     font-size: 32px;

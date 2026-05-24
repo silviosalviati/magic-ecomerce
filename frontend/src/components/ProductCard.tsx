@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type React from 'react';
 import { Link } from 'react-router-dom';
 import { buildCartItem, pickInitialVariant, toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
@@ -7,16 +8,17 @@ type ProductCardProps = {
   product: CatalogProduct;
   onAddToCart: (item: CartItem) => void;
   onBuyNow: (item: CartItem) => void;
+  style?: React.CSSProperties;
 };
 
-export function ProductCard({ product, onAddToCart, onBuyNow }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, onBuyNow, style }: ProductCardProps) {
   const initialVariant = useMemo(() => pickInitialVariant(product.variants), [product.variants]);
   const selectedVariant = initialVariant;
 
   const cartItem: CartItem = buildCartItem(product, selectedVariant);
 
   return (
-    <article className="product-card">
+    <article className="product-card" style={style}>
       <div className="product-media">
         {selectedVariant.stock > 0 && selectedVariant.stock <= 5 && (
           <div className="product-badge-row" aria-hidden="true">

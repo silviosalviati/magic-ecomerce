@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import type React from 'react';
 import { Shirt, Venus, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
@@ -191,12 +192,13 @@ export function HomePage({
         )}
         {!loading && !error && items.length > 0 && (
           <div className="product-grid">
-            {items.map((item) => (
+            {items.map((item, index) => (
               <ProductCard
                 key={item.productId}
                 product={item}
                 onAddToCart={onAddToCart}
                 onBuyNow={onBuyNow}
+                style={{ '--i': index } as React.CSSProperties}
               />
             ))}
           </div>
@@ -211,12 +213,13 @@ export function HomePage({
             <h2 className="category-title">Moda Feminina</h2>
           </div>
           <div className="product-grid">
-            {feminineItems.map((item) => (
+            {feminineItems.map((item, index) => (
               <ProductCard
                 key={item.productId}
                 product={item}
                 onAddToCart={onAddToCart}
                 onBuyNow={onBuyNow}
+                style={{ '--i': index } as React.CSSProperties}
               />
             ))}
           </div>
@@ -231,12 +234,13 @@ export function HomePage({
             <h2 className="category-title">Moda Masculina</h2>
           </div>
           <div className="product-grid">
-            {masculineItems.map((item) => (
+            {masculineItems.map((item, index) => (
               <ProductCard
                 key={item.productId}
                 product={item}
                 onAddToCart={onAddToCart}
                 onBuyNow={onBuyNow}
+                style={{ '--i': index } as React.CSSProperties}
               />
             ))}
           </div>
