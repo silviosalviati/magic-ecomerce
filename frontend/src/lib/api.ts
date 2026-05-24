@@ -47,24 +47,72 @@ function fallbackImage(name: string): string {
   return `https://placehold.co/700x900/34363d/f0c6d0?text=${encoded}`;
 }
 
-function toCatalogImageUrl(imageUrl: string, apiBaseUrl: string): string {
+function decodeUriSafely(value: string): string {
+  let decoded = value;
+  for (let i = 0; i < 2; i += 1) {
+    try {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    } catch {
+      break;
+    }
+  }
+  return decoded;
+}
+
+function normalizeObjectPath(candidate: string): string {
+  return decodeUriSafely(candidate.replace(/^\/+/, '').trim());
+}
+
+function extractGcsObjectPath(imageUrl: string): string | null {
+  const knownBucket = String(import.meta.env.VITE_GCP_BUCKET_NAME || 'magic-ecommerce-fotos').trim();
+
+  // Already an object path.
+  if (imageUrl.startsWith('produtos/')) {
+    return normalizeObjectPath(imageUrl);
+  }
+
   try {
     const parsed = new URL(imageUrl);
-    if (parsed.hostname !== 'storage.googleapis.com') {
-      return imageUrl;
+
+    // Already proxied through our own API.
+    if (parsed.pathname === '/products/images/object') {
+      const proxiedPath = parsed.searchParams.get('path');
+      return proxiedPath ? normalizeObjectPath(proxiedPath) : null;
     }
 
-    const bucketPrefix = '/magic-ecommerce-fotos/';
-    if (!parsed.pathname.startsWith(bucketPrefix)) {
-      return imageUrl;
+    const segments = parsed.pathname.split('/').filter(Boolean);
+
+    if (parsed.hostname === 'storage.googleapis.com') {
+      if (segments.length === 0) return null;
+
+      const first = normalizeObjectPath(segments[0]);
+      if (first === knownBucket && segments.length > 1) {
+        return normalizeObjectPath(segments.slice(1).join('/'));
+      }
+
+      return normalizeObjectPath(segments.join('/'));
     }
 
-    const rawObjectPath = parsed.pathname.slice(bucketPrefix.length);
-    const objectPath = decodeURIComponent(rawObjectPath);
-    return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}`;
+    if (parsed.hostname.endsWith('.storage.googleapis.com')) {
+      if (segments.length === 0) return null;
+      return normalizeObjectPath(segments.join('/'));
+    }
   } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function toCatalogImageUrl(imageUrl: string, apiBaseUrl: string): string {
+  const objectPath = extractGcsObjectPath(imageUrl);
+  if (!objectPath || !objectPath.startsWith('produtos/')) {
     return imageUrl;
   }
+
+  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}`;
 }
 
 export function mapProductsToCatalog(products: ApiProduct[], apiBaseUrl: string): CatalogProduct[] {

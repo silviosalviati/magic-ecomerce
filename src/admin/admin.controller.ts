@@ -31,7 +31,7 @@ function buildReferenceCandidates(reference: string): string[] {
   ].filter(Boolean)));
 }
 
-function getPublicApiBaseUrl(): string {
+function getPublicApiBaseUrl(req?: Request): string {
   const configured = [
     process.env.PUBLIC_API_BASE_URL,
     process.env.API_PUBLIC_BASE_URL,
@@ -40,11 +40,26 @@ function getPublicApiBaseUrl(): string {
     .map((value) => String(value || '').trim())
     .find((value) => value.length > 0);
 
-  return (configured || 'https://magic-ecomerce-api-731025483706.us-central1.run.app').replace(/\/+$/, '');
+  if (configured) {
+    return configured.replace(/\/+$/, '');
+  }
+
+  if (req) {
+    const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0]?.trim();
+    const forwardedHost = String(req.headers['x-forwarded-host'] || '').split(',')[0]?.trim();
+    const host = forwardedHost || String(req.headers.host || '').trim();
+    const proto = forwardedProto || (host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https');
+
+    if (host) {
+      return `${proto}://${host}`.replace(/\/+$/, '');
+    }
+  }
+
+  return 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
 }
 
-function buildImageProxyUrl(objectPath: string): string {
-  const base = getPublicApiBaseUrl();
+function buildImageProxyUrl(objectPath: string, req?: Request): string {
+  const base = getPublicApiBaseUrl(req);
   return `${base}/products/images/object?path=${encodeURIComponent(objectPath)}`;
 }
 
@@ -227,8 +242,8 @@ export class AdminController {
       const cleaned = existingImages.filter(
         (url: string) => !url.includes(`${product.id}-frente.png`) && !url.includes(`${product.id}-costas.png`)
       );
-      const frontCatalogUrl = buildImageProxyUrl(frontObjectPath);
-      const backCatalogUrl = buildImageProxyUrl(backObjectPath);
+      const frontCatalogUrl = buildImageProxyUrl(frontObjectPath, req);
+      const backCatalogUrl = buildImageProxyUrl(backObjectPath, req);
       const nextImages = [frontCatalogUrl, backCatalogUrl, ...cleaned];
 
       const updatedProduct = await prisma.product.update({
