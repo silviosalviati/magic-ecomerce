@@ -166,6 +166,17 @@ export async function fetchCatalog(): Promise<CatalogProduct[]> {
 }
 
 export async function checkout(payload: CheckoutPayload): Promise<CheckoutResponse> {
-  const { data } = await api.post<CheckoutResponse>('/checkout', payload);
-  return data;
+  try {
+    const { data } = await api.post<CheckoutResponse>('/checkout', payload);
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiMessage = error.response?.data?.message;
+      if (typeof apiMessage === 'string' && apiMessage.trim().length > 0) {
+        throw new Error(apiMessage.trim());
+      }
+    }
+
+    throw error;
+  }
 }

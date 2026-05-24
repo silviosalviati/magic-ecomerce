@@ -102,11 +102,26 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     });
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      const status = Number(error.response?.status || 0);
       console.error('[checkout][asaas]', {
-        status: error.response?.status,
+        status,
         data: error.response?.data,
         message: error.message,
       });
+
+      if (status === 401 || status === 403) {
+        res.status(503).json({
+          message: 'Pagamento PIX indisponível no momento. Tente novamente em instantes.',
+        });
+        return;
+      }
+
+      if (status === 429) {
+        res.status(503).json({
+          message: 'Pagamento PIX temporariamente sobrecarregado. Tente novamente em alguns minutos.',
+        });
+        return;
+      }
     } else {
       console.error('[checkout]', error);
     }
