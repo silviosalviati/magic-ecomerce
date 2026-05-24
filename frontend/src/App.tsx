@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CartSidebar } from './components/CartSidebar';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { fetchCatalog } from './lib/api';
+import { CheckoutPage } from './pages/CheckoutPage';
 import { HomePage } from './pages/HomePage';
 import { ProductDetailsPage } from './pages/ProductDetailsPage';
 import type { CartItem, CatalogProduct } from './types';
@@ -136,13 +137,22 @@ function App() {
     setCartItems((current) => current.filter((item) => item.cartKey !== cartKey));
   }
 
+  function clearCart() {
+    setCartItems([]);
+  }
+
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const location = useLocation();
+  const isCheckoutPage = location.pathname === '/checkout';
+
   return (
     <div className="page-shell">
-      <Header
-        cartCount={cartCount}
-        onOpenCart={() => setCartOpen(true)}
-      />
+      {!isCheckoutPage && (
+        <Header
+          cartCount={cartCount}
+          onOpenCart={() => setCartOpen(true)}
+        />
+      )}
 
       <Routes>
         <Route
@@ -171,19 +181,34 @@ function App() {
             />
           }
         />
+        <Route
+          path="/checkout"
+          element={
+            <CheckoutPage
+              cartItems={cartItems}
+              onDecrease={(cartKey) => changeCartQuantity(cartKey, -1)}
+              onIncrease={(cartKey) => changeCartQuantity(cartKey, 1)}
+              onRemove={removeFromCart}
+              onClearCart={clearCart}
+            />
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      <CartSidebar
-        items={cartItems}
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        onDecrease={(cartKey) => changeCartQuantity(cartKey, -1)}
-        onIncrease={(cartKey) => changeCartQuantity(cartKey, 1)}
-        onRemove={removeFromCart}
-      />
-
-      <Footer />
+      {!isCheckoutPage && (
+        <>
+          <CartSidebar
+            items={cartItems}
+            open={cartOpen}
+            onClose={() => setCartOpen(false)}
+            onDecrease={(cartKey) => changeCartQuantity(cartKey, -1)}
+            onIncrease={(cartKey) => changeCartQuantity(cartKey, 1)}
+            onRemove={removeFromCart}
+          />
+          <Footer />
+        </>
+      )}
     </div>
   );
 }

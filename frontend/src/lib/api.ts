@@ -176,7 +176,6 @@ export async function checkout(payload: CheckoutPayload): Promise<CheckoutRespon
         throw new Error(apiMessage.trim());
       }
     }
-
     throw error;
   }
 }

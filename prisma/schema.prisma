@@ -50,10 +50,14 @@ model Order {
   guestName    String?
   guestEmail   String?
   guestCpf     String?
-  pixQrCode    String?
-  pixCopyPaste String?
-  pixExpiresAt DateTime?
-  createdAt    DateTime    @default(now())
+  pixQrCode     String?
+  pixCopyPaste  String?
+  pixExpiresAt  DateTime?
+  paymentMethod String?
+  boletoUrl     String?
+  boletoBarcode String?
+  boletoDueDate DateTime?
+  createdAt     DateTime    @default(now())
 }
 
 model OrderItem {

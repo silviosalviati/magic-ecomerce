@@ -1,7 +1,16 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { prisma } from '../config/database';
-import { findOrCreateCustomer, createPixPayment, getPixQrCode } from './asaas.service';
+import {
+  findOrCreateCustomer,
+  createPixPayment,
+  getPixQrCode,
+  createBoletoPayment,
+  getBoletoData,
+  createCreditCardPayment,
+  type CreditCardData,
+  type CreditCardHolderInfo,
+} from './asaas.service';
 
 interface CheckoutItem {
   variantId: string;
@@ -14,12 +23,36 @@ interface CheckoutBody {
   email: string;
   cpf: string;
   items: CheckoutItem[];
+  paymentMethod?: 'PIX' | 'CREDIT_CARD' | 'BOLETO';
+  // Credit card fields
+  cardHolderName?: string;
+  cardNumber?: string;
+  cardExpiry?: string; // "MM/YY"
+  cardCvv?: string;
+  phone?: string;
+  postalCode?: string;
+  addressNumber?: string;
+  installments?: number;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function createCheckout(req: Request, res: Response): Promise<void> {
-  const { name, email, cpf, items } = req.body as CheckoutBody;
+  const {
+    name,
+    email,
+    cpf,
+    items,
+    paymentMethod = 'PIX',
+    cardHolderName,
+    cardNumber,
+    cardExpiry,
+    cardCvv,
+    phone,
+    postalCode,
+    addressNumber,
+    installments = 1,
+  } = req.body as CheckoutBody;
 
   // ── Input validation ──────────────────────────────────────────────────────
   if (!name?.trim() || !email?.trim() || !cpf || !Array.isArray(items) || items.length === 0) {
@@ -38,9 +71,25 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     return;
   }
 
+  if (!['PIX', 'CREDIT_CARD', 'BOLETO'].includes(paymentMethod)) {
+    res.status(400).json({ message: 'Método de pagamento inválido.' });
+    return;
+  }
+
   for (const item of items) {
     if (!item.variantId || item.quantity < 1 || item.priceAtPurchase <= 0) {
       res.status(400).json({ message: 'Item inválido na sacola.' });
+      return;
+    }
+  }
+
+  if (paymentMethod === 'CREDIT_CARD') {
+    if (!cardHolderName?.trim() || !cardNumber?.trim() || !cardExpiry?.trim() || !cardCvv?.trim()) {
+      res.status(400).json({ message: 'Dados do cartão de crédito incompletos.' });
+      return;
+    }
+    if (!phone?.trim() || !postalCode?.trim() || !addressNumber?.trim()) {
+      res.status(400).json({ message: 'Telefone, CEP e número do endereço são obrigatórios para cartão.' });
       return;
     }
   }
@@ -65,24 +114,123 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     }
 
     const total = items.reduce((sum, i) => sum + i.priceAtPurchase * i.quantity, 0);
-
-    // ── Create Asaas customer + PIX payment ───────────────────────────────
     const customer = await findOrCreateCustomer(name.trim(), email.trim(), cpfClean);
-    const payment = await createPixPayment(customer.id, total, 'Compra MAGI.C');
-    const pix = await getPixQrCode(payment.id);
 
-    // ── Persist order ─────────────────────────────────────────────────────
+    // ── PIX ───────────────────────────────────────────────────────────────
+    if (paymentMethod === 'PIX') {
+      const payment = await createPixPayment(customer.id, total, 'Compra Vista Magic');
+      const pix = await getPixQrCode(payment.id);
+
+      const order = await prisma.order.create({
+        data: {
+          total,
+          status: 'PENDING',
+          paymentId: payment.id,
+          paymentMethod: 'PIX',
+          guestName: name.trim(),
+          guestEmail: email.trim(),
+          guestCpf: cpfClean,
+          pixQrCode: pix.encodedImage,
+          pixCopyPaste: pix.payload,
+          pixExpiresAt: pix.expirationDate ? new Date(pix.expirationDate) : null,
+          items: {
+            create: items.map((i) => ({
+              variantId: i.variantId,
+              quantity: i.quantity,
+              priceAtPurchase: i.priceAtPurchase,
+            })),
+          },
+        },
+      });
+
+      res.json({
+        orderId: order.id,
+        paymentMethod: 'PIX',
+        pixQrCode: pix.encodedImage,
+        pixCopyPaste: pix.payload,
+        pixExpiresAt: pix.expirationDate ?? null,
+        total,
+      });
+      return;
+    }
+
+    // ── BOLETO ────────────────────────────────────────────────────────────
+    if (paymentMethod === 'BOLETO') {
+      const payment = await createBoletoPayment(customer.id, total, 'Compra Vista Magic');
+      const boleto = await getBoletoData(payment.id);
+
+      const order = await prisma.order.create({
+        data: {
+          total,
+          status: 'PENDING',
+          paymentId: payment.id,
+          paymentMethod: 'BOLETO',
+          guestName: name.trim(),
+          guestEmail: email.trim(),
+          guestCpf: cpfClean,
+          boletoUrl: boleto.bankSlipUrl,
+          boletoBarcode: boleto.nossoNumero,
+          boletoDueDate: boleto.dueDate ? new Date(boleto.dueDate) : null,
+          items: {
+            create: items.map((i) => ({
+              variantId: i.variantId,
+              quantity: i.quantity,
+              priceAtPurchase: i.priceAtPurchase,
+            })),
+          },
+        },
+      });
+
+      res.json({
+        orderId: order.id,
+        paymentMethod: 'BOLETO',
+        boletoUrl: boleto.bankSlipUrl,
+        boletoBarcode: boleto.nossoNumero,
+        boletoDueDate: boleto.dueDate,
+        total,
+      });
+      return;
+    }
+
+    // ── CREDIT CARD ───────────────────────────────────────────────────────
+    const [expiryMonth, expiryYear] = (cardExpiry ?? '').split('/').map((s) => s.trim());
+
+    const cardData: CreditCardData = {
+      holderName: cardHolderName!.trim(),
+      number: (cardNumber ?? '').replace(/\s/g, ''),
+      expiryMonth: expiryMonth ?? '',
+      expiryYear: expiryYear?.length === 2 ? `20${expiryYear}` : (expiryYear ?? ''),
+      ccv: cardCvv!.trim(),
+    };
+
+    const holderInfo: CreditCardHolderInfo = {
+      name: name.trim(),
+      email: email.trim(),
+      cpfCnpj: cpfClean,
+      postalCode: (postalCode ?? '').replace(/\D/g, ''),
+      addressNumber: addressNumber!.trim(),
+      phone: (phone ?? '').replace(/\D/g, ''),
+    };
+
+    const safeInstallments = Math.max(1, Math.min(12, Number(installments) || 1));
+    const payment = await createCreditCardPayment(
+      customer.id,
+      total,
+      'Compra Vista Magic',
+      cardData,
+      holderInfo,
+      safeInstallments,
+    );
+
     const order = await prisma.order.create({
       data: {
         total,
-        status: 'PENDING',
+        status: payment.status === 'CONFIRMED' || payment.status === 'RECEIVED' ? 'PAID' : 'PENDING',
         paymentId: payment.id,
+        paymentMethod: 'CREDIT_CARD',
         guestName: name.trim(),
         guestEmail: email.trim(),
         guestCpf: cpfClean,
-        pixQrCode: pix.encodedImage,
-        pixCopyPaste: pix.payload,
-        pixExpiresAt: pix.expirationDate ? new Date(pix.expirationDate) : null,
         items: {
           create: items.map((i) => ({
             variantId: i.variantId,
@@ -95,9 +243,8 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 
     res.json({
       orderId: order.id,
-      pixQrCode: pix.encodedImage,
-      pixCopyPaste: pix.payload,
-      pixExpiresAt: pix.expirationDate ?? null,
+      paymentMethod: 'CREDIT_CARD',
+      cardStatus: payment.status,
       total,
     });
   } catch (error) {
@@ -111,16 +258,26 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 
       if (status === 401 || status === 403) {
         res.status(503).json({
-          message: 'Pagamento PIX indisponível no momento. Tente novamente em instantes.',
+          message: 'Pagamento indisponível no momento. Tente novamente em instantes.',
         });
         return;
       }
 
       if (status === 429) {
         res.status(503).json({
-          message: 'Pagamento PIX temporariamente sobrecarregado. Tente novamente em alguns minutos.',
+          message: 'Serviço temporariamente sobrecarregado. Tente novamente em alguns minutos.',
         });
         return;
+      }
+
+      // Asaas returns validation errors as 400 with a body containing errors array
+      const asaasErrors = error.response?.data?.errors;
+      if (Array.isArray(asaasErrors) && asaasErrors.length > 0) {
+        const msg = asaasErrors.map((e: { description?: string }) => e.description).filter(Boolean).join('. ');
+        if (msg) {
+          res.status(400).json({ message: msg });
+          return;
+        }
       }
     } else {
       console.error('[checkout]', error);
@@ -155,6 +312,8 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
     PAYMENT_OVERDUE: 'OVERDUE',
     PAYMENT_DELETED: 'CANCELLED',
     PAYMENT_REFUNDED: 'REFUNDED',
+    PAYMENT_AUTHORIZED: 'PAID',
+    PAYMENT_DECLINED: 'CANCELLED',
   };
 
   const newStatus = statusMap[event];

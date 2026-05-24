@@ -12,3 +12,6 @@ secrets/
 
 # Build output
 dist/
+
+# Claude local agent config/skills
+.claude/

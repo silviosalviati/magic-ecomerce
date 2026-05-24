@@ -54,17 +54,48 @@ export interface CartItem {
   quantity: number;
 }
 
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'BOLETO';
+
+export interface CreditCardFormData {
+  cardHolderName: string;
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvv: string;
+  phone: string;
+  postalCode: string;
+  addressNumber: string;
+  installments: number;
+}
+
 export interface CheckoutPayload {
   name: string;
   email: string;
   cpf: string;
   items: { variantId: string; quantity: number; priceAtPurchase: number }[];
+  paymentMethod: PaymentMethod;
+  // Credit card fields
+  cardHolderName?: string;
+  cardNumber?: string;
+  cardExpiry?: string;
+  cardCvv?: string;
+  phone?: string;
+  postalCode?: string;
+  addressNumber?: string;
+  installments?: number;
 }
 
 export interface CheckoutResponse {
   orderId: string;
-  pixQrCode: string;
-  pixCopyPaste: string;
-  pixExpiresAt: string | null;
   total: number;
+  paymentMethod: PaymentMethod;
+  // PIX
+  pixQrCode?: string;
+  pixCopyPaste?: string;
+  pixExpiresAt?: string | null;
+  // Credit card
+  cardStatus?: string;
+  // Boleto
+  boletoUrl?: string;
+  boletoBarcode?: string;
+  boletoDueDate?: string;
 }
