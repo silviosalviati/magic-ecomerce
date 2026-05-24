@@ -1,35 +1,174 @@
-/* Fonts are loaded via index.html for better performance */
+/* Fonts loaded via index.html — see brand-tokens.md for full design system */
 
 :root {
-  /* ── Design system tokens ── */
-  --color-bg-base:      #0D0D0D;
-  --color-bg-deep:      #322F30;
-  --color-bg-card:      #3A3637;
-  --color-accent:       #E8B4B0;
+  /* ═══════════════════════════════════════════════════════════
+     COLORS — Brand Palette
+  ═══════════════════════════════════════════════════════════ */
+  --color-brand-primary:   #E8B4B0;
+  --color-brand-secondary: #f3d7d4;
+  --color-danger:          #ef8ba0;
+  --color-success:         #7fcf9a;
+
+  /* Color channels for rgba composition */
+  --color-accent-ch: 232, 180, 176;
+  --color-text-ch:   245, 237, 232;
+
+  /* Surfaces */
+  --color-surface:         #0D0D0D;
+  --color-surface-raised:  #322F30;
+  --color-surface-high:    #3A3637;
+  --color-surface-overlay: #453f41;
+
+  /* Text */
   --color-text-primary: #F5EDE8;
   --color-text-muted:   rgba(245, 237, 232, 0.50);
-  --color-text-faint:   rgba(245, 237, 232, 0.30);
-  --color-border:       rgba(232, 180, 176, 0.12);
+  --color-text-faint:   rgba(245, 237, 232, 0.28);
 
-  /* ── Legacy aliases (cart / detail pages) ── */
-  --bg:          var(--color-bg-base);
-  --surface:     var(--color-bg-deep);
-  --surface-soft:#453f41;
-  --card:        var(--color-bg-card);
+  /* Borders */
+  --color-border:       rgba(232, 180, 176, 0.12);
+  --color-border-strong:rgba(232, 180, 176, 0.28);
+
+  /* ── Legacy aliases — preserved for backward compatibility ── */
+  --color-bg-base:     var(--color-surface);
+  --color-bg-deep:     var(--color-surface-raised);
+  --color-bg-card:     var(--color-surface-high);
+  --color-accent:      var(--color-brand-primary);
+  --color-accent-strong: var(--color-brand-secondary);
+  --bg:          var(--color-surface);
+  --surface:     var(--color-surface-raised);
+  --surface-soft:var(--color-surface-overlay);
+  --card:        var(--color-surface-high);
   --border:      var(--color-border);
   --text:        var(--color-text-primary);
   --muted:       var(--color-text-muted);
-  --accent:      var(--color-accent);
-  --accent-strong:#f3d7d4;
-  --danger:      #ef8ba0;
+  --accent:      var(--color-brand-primary);
+  --accent-strong: var(--color-brand-secondary);
+  --danger:      var(--color-danger);
+
+  /* ═══════════════════════════════════════════════════════════
+     TYPOGRAPHY
+  ═══════════════════════════════════════════════════════════ */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    Georgia, serif;
+  --font-ui:      'Manrope', sans-serif;
+  --font-mono:    'Courier New', 'Lucida Console', monospace;
+
+  /* Type scale */
+  --text-xs:   9px;
+  --text-sm:   11px;
+  --text-base: 13px;
+  --text-md:   15px;
+  --text-lg:   17px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  28px;
+  --text-4xl:  clamp(26px, 4vw, 48px);
+
+  /* Line heights */
+  --leading-tight:   1.1;
+  --leading-snug:    1.25;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* Letter spacing */
+  --tracking-tight:   -0.01em;
+  --tracking-normal:   0em;
+  --tracking-wide:     0.06em;
+  --tracking-wider:    0.12em;
+  --tracking-widest:   0.22em;
+
+  /* ═══════════════════════════════════════════════════════════
+     SPACING — 4px base unit
+  ═══════════════════════════════════════════════════════════ */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-9:  36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ═══════════════════════════════════════════════════════════
+     BORDER RADIUS
+  ═══════════════════════════════════════════════════════════ */
+  --radius-none: 0px;
+  --radius-sm:   2px;
+  --radius-md:   4px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-full: 999px;
+
+  /* ═══════════════════════════════════════════════════════════
+     SHADOWS
+  ═══════════════════════════════════════════════════════════ */
+  --shadow-sm:   0 1px 6px rgba(0, 0, 0, 0.35);
+  --shadow-md:   0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.55);
+  --shadow-xl:   0 16px 48px rgba(0, 0, 0, 0.65);
+  --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.40);
+
+  /* ═══════════════════════════════════════════════════════════
+     MOTION
+  ═══════════════════════════════════════════════════════════ */
+  --ease-standard:   cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring:     cubic-bezier(0.22, 1, 0.36, 1);
+
+  --duration-instant: 80ms;
+  --duration-fast:    150ms;
+  --duration-normal:  220ms;
+  --duration-slow:    350ms;
+
+  /* ═══════════════════════════════════════════════════════════
+     BUTTON TOKENS
+  ═══════════════════════════════════════════════════════════ */
+  --btn-height-sm: 32px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 48px;
+  --btn-radius:    var(--radius-sm);
+  --btn-font:      var(--font-ui);
+  --btn-font-size: var(--text-sm);
+  --btn-tracking:  var(--tracking-wide);
+  --btn-weight:    600;
+
+  /* ═══════════════════════════════════════════════════════════
+     Z-INDEX SCALE
+  ═══════════════════════════════════════════════════════════ */
+  --z-base:     0;
+  --z-raised:   1;
+  --z-dropdown: 10;
+  --z-sticky:   12;
+  --z-drawer:   20;
+  --z-modal:    30;
+  --z-toast:    40;
+
+  /* ═══════════════════════════════════════════════════════════
+     DARK MODE TOKENS
+     (site is dark-first; these are pre-wired for a future
+     light-mode or theme-switcher — currently inactive)
+  ═══════════════════════════════════════════════════════════ */
+  --dm-surface:      var(--color-surface);
+  --dm-text-primary: var(--color-text-primary);
+  --dm-accent:       var(--color-brand-primary);
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html,
@@ -40,9 +179,24 @@ body,
 }
 
 body {
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   color: var(--color-text-primary);
-  background: var(--color-bg-base);
+  background: var(--color-surface);
+  line-height: var(--leading-normal);
+}
+
+/* ── Global focus-visible — accessibility ── */
+:focus-visible {
+  outline: 1.5px solid var(--color-brand-primary);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Inputs use border-color signal instead of outline */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
 }
 
 .page-shell {
@@ -62,7 +216,7 @@ body {
   border-bottom: 0.5px solid var(--color-border);
   position: sticky;
   top: 0;
-  z-index: 12;
+  z-index: var(--z-sticky);
 }
 
 .header-bag {
@@ -72,7 +226,7 @@ body {
   background: transparent;
   border: none;
   color: var(--color-text-muted);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -122,7 +276,7 @@ body {
 .main-nav a {
   color: var(--color-text-muted);
   text-decoration: none;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.08em;
   font-weight: 400;
@@ -132,26 +286,94 @@ body {
   color: var(--color-text-primary);
 }
 
-.ghost-btn,
-.btn-primary,
-.btn-ghost,
-.primary-btn {
-  border: none;
-  cursor: pointer;
-  font-family: 'Manrope', sans-serif;
-}
+/* ═══════════════════════════════════════════════════════════
+   BUTTON SYSTEM — 3 canonical variants
+   See brand-tokens.md for full specification
+═══════════════════════════════════════════════════════════ */
 
+/* Base reset shared by all button variants */
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.primary-btn,
 .ghost-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  background: transparent;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
   border: none;
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  font-family: var(--btn-font);
+  font-size: var(--btn-font-size);
+  font-weight: var(--btn-weight);
+  letter-spacing: var(--btn-tracking);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+/* Primary — accent filled */
+.btn-primary,
+.primary-btn {
+  background: var(--color-brand-primary);
+  color: var(--color-surface);
+  border-radius: var(--btn-radius);
+  padding: 13px var(--space-6);
+  width: fit-content;
+}
+
+.btn-primary:not(:disabled):hover,
+.primary-btn:not(:disabled):hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled,
+.primary-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary — outlined */
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--btn-radius);
+  padding: 13px var(--space-6);
+  width: fit-content;
+}
+
+.btn-secondary:not(:disabled):hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-brand-primary);
+}
+
+/* Ghost — text only */
+.btn-ghost,
+.ghost-btn {
+  background: transparent;
   color: var(--color-text-muted);
+  border-radius: var(--btn-radius);
+  padding: 8px var(--space-1);
+  width: fit-content;
+  justify-content: flex-start;
+  gap: var(--space-3);
+}
+
+.btn-ghost:hover,
+.ghost-btn:hover {
+  color: var(--color-text-primary);
+}
+
+/* Legacy alias — btn-primary used as base reset historically */
+.btn-ghost {
+  font-size: 12px;
+  letter-spacing: var(--tracking-wide);
 }
 
 .cart-badge {
@@ -163,7 +385,7 @@ body {
   justify-content: center;
   background: var(--color-accent);
   color: var(--color-bg-base);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 700;
 }
@@ -185,10 +407,36 @@ body {
 
 .btn-primary,
 .btn-ghost {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.08em;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE LOAD — Staggered Reveal Pattern
+   ONE animation system, applied via animation-delay per section
+═══════════════════════════════════════════════════════════ */
+
+@keyframes pageReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero         { animation: pageReveal 0.55s var(--ease-spring) 0.00s both; }
+.features     { animation: pageReveal 0.55s var(--ease-spring) 0.08s both; }
+.catalog      { animation: pageReveal 0.55s var(--ease-spring) 0.14s both; }
+.category-section { animation: pageReveal 0.55s var(--ease-spring) 0.20s both; }
+.site-footer  { animation: pageReveal 0.55s var(--ease-spring) 0.24s both; }
+
+/* Product Detail — stagger gallery + copy */
+.detail-gallery { animation: pageReveal 0.45s var(--ease-spring) 0.05s both; }
+.detail-copy    { animation: pageReveal 0.45s var(--ease-spring) 0.12s both; }
 
 /* ─── HERO ─── */
 .hero {
@@ -241,7 +489,7 @@ body {
   left: 10px;
   background: var(--color-accent);
   color: var(--color-bg-base);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 9px;
   letter-spacing: 0.1em;
   font-weight: 700;
@@ -280,7 +528,7 @@ body {
 .product-name-small {
   position: relative;
   z-index: 1;
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--color-text-primary);
   text-align: left;
@@ -291,7 +539,7 @@ body {
 .product-price-small {
   position: relative;
   z-index: 1;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--color-accent);
   font-weight: 500;
@@ -349,7 +597,7 @@ body {
 }
 
 .hero-eyebrow {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.2em;
   color: var(--color-accent);
@@ -358,7 +606,7 @@ body {
 }
 
 .hero-headline {
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-size: clamp(26px, 4vw, 48px);
   line-height: 1.25;
   color: var(--color-text-primary);
@@ -375,7 +623,7 @@ body {
 }
 
 .hero-sub {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 1.7;
   color: var(--color-text-muted);
@@ -393,7 +641,7 @@ body {
 .btn-primary {
   background: var(--color-accent);
   color: var(--color-bg-base);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.08em;
   font-weight: 600;
@@ -409,7 +657,7 @@ body {
   background: transparent;
   border: none;
   color: var(--color-text-muted);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -456,7 +704,7 @@ body {
 }
 
 .feat-title {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -466,7 +714,7 @@ body {
 }
 
 .feat-desc {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--color-text-faint);
   line-height: 1.6;
@@ -483,7 +731,7 @@ body {
 
 .feat-link {
   width: fit-content;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -515,7 +763,7 @@ body {
 }
 
 .section-label-inline {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -566,7 +814,7 @@ body {
   position: absolute;
   top: 8px;
   left: 8px;
-  z-index: 2;
+  z-index: var(--z-raised);
 }
 
 .product-badge {
@@ -578,7 +826,7 @@ body {
   border: 1px solid rgba(232, 180, 176, 0.5);
   color: #ffe6e2;
   backdrop-filter: blur(4px);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.07em;
   font-weight: 700;
@@ -595,7 +843,7 @@ body {
 }
 
 .product-meta {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 9px;
   letter-spacing: 0.1em;
   color: var(--color-text-faint);
@@ -604,7 +852,7 @@ body {
 }
 
 .product-name {
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-size: 13px;
   color: var(--color-text-primary);
   font-style: italic;
@@ -621,14 +869,14 @@ body {
 }
 
 .price-tag {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--color-accent);
   font-weight: 500;
 }
 
 .product-description {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.6;
@@ -651,7 +899,7 @@ body {
   padding: 0 14px;
   justify-content: center;
   gap: 6px;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.06em;
   font-weight: 500;
@@ -680,7 +928,7 @@ body {
   background: transparent;
   border: none;
   color: var(--color-text-faint);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.04em;
   cursor: pointer;
@@ -699,7 +947,7 @@ body {
 .status {
   margin: 12px 32px;
   color: var(--color-text-muted);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
 }
 
@@ -719,7 +967,7 @@ body {
   border: 0.5px solid var(--color-border);
   background: transparent;
   color: var(--color-text-primary);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -745,14 +993,14 @@ body {
 }
 
 .footer-brand {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   color: var(--color-text-faint);
   letter-spacing: 0.1em;
 }
 
 .footer-note {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   color: var(--color-text-faint);
   letter-spacing: 0.06em;
@@ -1004,7 +1252,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
@@ -1048,7 +1296,7 @@ body {
   border-radius: 2px;
   background: transparent;
   color: var(--color-text-primary);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
@@ -1072,7 +1320,7 @@ body {
 
 /* ─── STATUS DE ESTOQUE ─── */
 .stock {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1109,7 +1357,7 @@ body {
 }
 
 .category-title {
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-size: clamp(18px, 2.5vw, 26px);
   font-weight: 400;
   font-style: italic;
@@ -1118,7 +1366,7 @@ body {
 }
 
 .category-subtitle {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1156,7 +1404,7 @@ body {
 }
 
 .recommendation-nav-index {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.08em;
   color: var(--color-text-faint);
@@ -1239,8 +1487,8 @@ body {
   background: linear-gradient(180deg, rgba(19, 19, 19, 0.98), rgba(10, 10, 10, 0.99));
   border-left: 1px solid var(--border);
   transform: translateX(100%);
-  transition: transform 0.24s ease;
-  z-index: 20;
+  transition: transform var(--duration-slow) var(--ease-decelerate);
+  z-index: var(--z-drawer);
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 16px;
@@ -1385,7 +1633,7 @@ body {
 }
 
 .field-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1397,7 +1645,7 @@ body {
   border: 0.5px solid var(--color-border);
   border-radius: 2px;
   padding: 10px 12px;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   color: var(--color-text-primary);
   outline: none;
@@ -1409,7 +1657,7 @@ body {
 }
 
 .form-error {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--danger);
   margin: 0;
@@ -1432,7 +1680,7 @@ body {
 }
 
 .pix-copy-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1446,7 +1694,7 @@ body {
   border: 0.5px solid var(--color-border);
   border-radius: 2px;
   padding: 10px 12px;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   color: var(--color-text-muted);
   word-break: break-all;
@@ -1461,7 +1709,7 @@ body {
   border: none;
   border-radius: 2px;
   padding: 12px 20px;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -1470,7 +1718,7 @@ body {
 }
 
 .pix-instruction {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--color-text-faint);
   text-align: center;
@@ -1600,14 +1848,14 @@ body {
   background: var(--color-bg-deep);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-dropdown);
 }
 
 .checkout-back-link {
   background: none;
   border: none;
   color: var(--color-accent);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1620,7 +1868,7 @@ body {
 }
 
 .checkout-secure-badge {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--color-text-muted);
   letter-spacing: 0.04em;
@@ -1651,12 +1899,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 700;
   color: var(--color-text-muted);
   flex-shrink: 0;
-  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  transition: border-color var(--duration-normal) var(--ease-standard), background var(--duration-normal) var(--ease-standard), color var(--duration-normal) var(--ease-standard);
 }
 
 .checkout-step.active .checkout-step-bubble {
@@ -1672,7 +1920,7 @@ body {
 }
 
 .checkout-step-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-muted);
@@ -1721,7 +1969,7 @@ body {
 }
 
 .checkout-section-title {
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-size: 20px;
   font-weight: 400;
   color: var(--color-text-primary);
@@ -1749,7 +1997,7 @@ body {
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   cursor: pointer;
   padding: 0;
@@ -1767,7 +2015,7 @@ body {
 }
 
 .checkout-security-note {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   color: var(--color-text-faint);
   text-align: center;
@@ -1816,7 +2064,7 @@ body {
 }
 
 .payment-tab-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-primary);
@@ -1825,7 +2073,7 @@ body {
 }
 
 .payment-tab-desc {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   color: var(--color-text-muted);
   text-align: center;
@@ -1838,7 +2086,7 @@ body {
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   color: var(--color-text-primary);
 }
@@ -1917,7 +2165,7 @@ body {
 }
 
 .card-brand-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1927,7 +2175,7 @@ body {
 }
 
 .card-number-display {
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 18px;
   letter-spacing: 0.18em;
   color: var(--color-text-primary);
@@ -1943,7 +2191,7 @@ body {
 }
 
 .card-field-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -1953,7 +2201,7 @@ body {
 }
 
 .card-holder-display {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -1965,7 +2213,7 @@ body {
 }
 
 .card-expiry-display {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -1987,7 +2235,7 @@ body {
 }
 
 .card-cvv-display {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -2017,7 +2265,7 @@ body {
 }
 
 .card-address-title {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-muted);
@@ -2054,7 +2302,7 @@ body {
 }
 
 .order-summary-title {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2100,7 +2348,7 @@ body {
   border-radius: 50%;
   background: var(--color-accent);
   color: #0D0D0D;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 800;
   display: flex;
@@ -2114,7 +2362,7 @@ body {
 }
 
 .order-summary-name {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -2125,7 +2373,7 @@ body {
 }
 
 .order-summary-meta {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   color: var(--color-text-muted);
   margin: 0;
@@ -2159,7 +2407,7 @@ body {
 }
 
 .qty-mini-val {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -2171,7 +2419,7 @@ body {
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   cursor: pointer;
   padding: 0;
@@ -2183,7 +2431,7 @@ body {
 }
 
 .order-summary-price {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text-primary);
@@ -2201,7 +2449,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   color: var(--color-text-muted);
   margin-bottom: 8px;
@@ -2235,7 +2483,7 @@ body {
 }
 
 .confirmation-title {
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-size: 22px;
   font-weight: 400;
   color: var(--color-text-primary);
@@ -2243,14 +2491,14 @@ body {
 }
 
 .confirmation-subtitle {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   color: var(--color-text-muted);
   margin: 0 0 24px;
 }
 
 .confirmation-note {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 11px;
   color: var(--color-text-faint);
   margin-top: 16px;
@@ -2270,7 +2518,7 @@ body {
 }
 
 .pix-instruction {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   color: var(--color-text-muted);
   margin: 0 0 16px;
@@ -2309,7 +2557,7 @@ body {
 }
 
 .boleto-instruction-title {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-muted);
@@ -2324,7 +2572,7 @@ body {
 }
 
 .boleto-instructions li {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--color-text-muted);
   margin-bottom: 4px;
@@ -2370,19 +2618,14 @@ body {
    Cormorant Garamond, underline inputs, card shimmer, brand gradients
 ═══════════════════════════════════════════════════════════════ */
 
-/* Section reveal animation */
-@keyframes sectionReveal {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
+/* Section reveal animation — shares pageReveal keyframe */
 .checkout-section {
-  animation: sectionReveal 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: pageReveal 0.38s var(--ease-spring) both;
 }
 
 /* Cormorant Garamond for checkout display typography */
 .checkout-section-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 28px;
   font-weight: 300;
   letter-spacing: 0.08em;
@@ -2402,7 +2645,7 @@ body {
 
 /* Confirmation titles */
 .confirmation-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 28px;
   font-weight: 300;
   font-style: italic;
@@ -2426,7 +2669,7 @@ body {
 }
 
 .checkout-back-link {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 400;
   font-style: italic;
@@ -2451,7 +2694,7 @@ body {
   width: 22px;
   height: 22px;
   font-size: 10px;
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-weight: 500;
   border-width: 1px;
 }
@@ -2461,7 +2704,7 @@ body {
 }
 
 .checkout-step-label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 400;
   letter-spacing: 0.1em;
@@ -2552,7 +2795,7 @@ body {
   padding: 17px 24px;
   position: relative;
   overflow: hidden;
-  transition: opacity 0.2s, transform 0.15s;
+  transition: opacity var(--duration-normal) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
 
 .checkout-cta::after {
@@ -2615,7 +2858,7 @@ body {
 }
 
 .payment-tab-label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0.06em;
@@ -2692,7 +2935,7 @@ body {
 
 /* Card number — monospaced elegance */
 .card-number-display {
-  font-family: 'Courier New', 'Lucida Console', monospace;
+  font-family: var(--font-mono);
   font-size: 17px;
   letter-spacing: 0.22em;
   color: rgba(245, 237, 232, 0.9);
@@ -2700,7 +2943,7 @@ body {
 }
 
 .card-holder-display {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 400;
   letter-spacing: 0.12em;
@@ -2708,7 +2951,7 @@ body {
 }
 
 .card-brand-label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.2em;
@@ -2716,7 +2959,7 @@ body {
 }
 
 .card-expiry-display {
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.15em;
 }
@@ -2736,7 +2979,7 @@ body {
 
 /* Order summary title */
 .order-summary-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 400;
   letter-spacing: 0.16em;
@@ -2746,14 +2989,14 @@ body {
 }
 
 .order-summary-name {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 400;
   letter-spacing: 0.03em;
 }
 
 .order-summary-total {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 18px;
   letter-spacing: 0.04em;
   font-weight: 400;
@@ -2785,7 +3028,7 @@ body {
 
 /* Checkout back button */
 .checkout-back-btn {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 14px;
   font-style: italic;
   color: rgba(245, 237, 232, 0.4);
