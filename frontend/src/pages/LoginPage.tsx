@@ -174,7 +174,11 @@ export function LoginPage() {
 
           <p className="auth-form-switch">
             Não tem conta?{' '}
-            <Link to="/cadastrar" className="auth-form-switch-link">
+            <Link
+              to="/cadastrar"
+              state={from !== '/minha-conta' ? { from } : undefined}
+              className="auth-form-switch-link"
+            >
               Criar conta gratuita
             </Link>
           </p>

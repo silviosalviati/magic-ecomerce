@@ -58,7 +58,7 @@ export function CheckoutPage({
   onClearCart,
 }: CheckoutPageProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState<Step>('details');
   const [cpf, setCpf] = useState('');
   // Address
@@ -81,12 +81,15 @@ export function CheckoutPage({
   const cpfDigits = cpf.replace(/\D/g, '');
   const stepIndex = STEP_ORDER.indexOf(step);
 
-  // Redirect to login if not authenticated
+  // Wait for auth to resolve before redirecting — avoids sending logged-in users to /entrar
   useEffect(() => {
-    if (!user) {
-      navigate('/entrar', { state: { from: '/checkout' }, replace: true });
+    if (!authLoading && !user) {
+      navigate('/entrar', {
+        state: { from: '/checkout', message: 'Faça login para finalizar sua compra.' },
+        replace: true,
+      });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Redirect to home if cart is empty and we haven't finished an order
   useEffect(() => {
@@ -94,6 +97,9 @@ export function CheckoutPage({
       navigate('/');
     }
   }, [cartItems.length, step, navigate]);
+
+  // Render nothing while auth is resolving — prevents flash and wrong redirects
+  if (authLoading) return null;
 
   async function handleCepBlur() {
     const clean = addressZip.replace(/\D/g, '');
