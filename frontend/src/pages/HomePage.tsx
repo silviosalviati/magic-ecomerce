@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
 import type React from 'react';
-import { Shirt, Venus, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { toCurrency } from '../lib/catalog';
@@ -16,6 +15,13 @@ type HomePageProps = {
   onAddToCart: (item: CartItem) => void;
   onBuyNow: (item: CartItem) => void;
 };
+
+const MARQUEE_ITEMS = [
+  'Moda Feminina', '·', 'Moda Masculina', '·', 'Tricot Premium', '·',
+  'Nova Coleção', '·', 'Entrega Rápida', '·', 'Compra Segura', '·',
+  'Moda Feminina', '·', 'Moda Masculina', '·', 'Tricot Premium', '·',
+  'Nova Coleção', '·', 'Entrega Rápida', '·', 'Compra Segura', '·',
+];
 
 export function HomePage({
   items,
@@ -36,7 +42,6 @@ export function HomePage({
     [items]
   );
 
-  // Hero usa os 5 primeiros (mais novos, conforme ordem da API)
   const heroItems = useMemo(() => items.slice(0, 5), [items]);
   const [heroIndex, setHeroIndex] = useState(0);
   const spotlightItem = heroItems[heroIndex];
@@ -53,105 +58,71 @@ export function HomePage({
     return () => window.clearInterval(timerId);
   }, [heroItems.length]);
 
-  function goToPreviousHeroItem() {
-    setHeroIndex((current) => (current - 1 + heroItems.length) % heroItems.length);
-  }
-  function goToNextHeroItem() {
-    setHeroIndex((current) => (current + 1) % heroItems.length);
-  }
-
-  const features = [
-    {
-      title: 'Moda Masculina',
-      description: 'Modelagens modernas, caimento impecável e peças versáteis para elevar o visual diário.',
-      icon: <Shirt size={18} strokeWidth={1.5} />,
-      ctaHref: masculineItems.length > 0 ? '/#masculino' : null,
-      ctaLabel: 'Ver masculino',
-    },
-    {
-      title: 'Moda Feminina',
-      description: 'Looks elegantes e atuais para compor combinações marcantes em qualquer ocasião.',
-      icon: <Venus size={18} strokeWidth={1.5} />,
-      ctaHref: feminineItems.length > 0 ? '/#feminino' : null,
-      ctaLabel: 'Ver feminino',
-    },
-    {
-      title: 'Tricot',
-      description: 'Texturas sofisticadas, conforto premium, acabamento de alto padrão e durabilidade. Aqui, cada peça entrega qualidade real e respeito ao consumidor.',
-      icon: <Waves size={18} strokeWidth={1.5} />,
-      ctaHref: null,
-      ctaLabel: null,
-    },
-  ];
-
   return (
     <>
-      {/* ── HERO ── */}
+      {/* ── HERO — Full-Bleed ── */}
       <section className="hero" id="marca">
-        <div className="hero-left">
-          <div className="hero-showcase">
-            {spotlightItem?.imageUrl ? (
+        <div className="hero-bg">
+          {heroItems.length > 0 ? (
+            heroItems.map((item, index) => (
+              <img
+                key={item.productId}
+                className={index === heroIndex ? 'hero-bg-img active' : 'hero-bg-img'}
+                src={item.imageUrl}
+                alt=""
+                aria-hidden="true"
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+            ))
+          ) : (
+            <div className="hero-bg-img active" style={{ background: 'var(--color-bg-deep)' }} />
+          )}
+          <div className="hero-bg-gradient" />
+        </div>
+
+        <div className="hero-content">
+          <div className="hero-text">
+            <p className="hero-eyebrow">Nova coleção — {new Date().getFullYear()}</p>
+            <h1 className="hero-headline">
+              Moda que<br />
+              <em>encanta.</em>
+            </h1>
+          </div>
+
+          {spotlightItem && (
+            <div className="hero-product-info">
               <Link
-                className="hero-product-placeholder"
+                className="hero-feat-link"
                 to={`/produto/${spotlightItem.productId}`}
-                aria-label={`Ver produto ${spotlightItem.name}`}
+                aria-label={`Ver ${spotlightItem.name}`}
               >
-                <img className="hero-product-img" src={spotlightItem.imageUrl} alt={spotlightItem.name} />
-                <div className="hero-product-overlay" aria-hidden="true" />
-                <p className="product-name-small">{spotlightItem.name}</p>
-                <p className="product-price-small">{toCurrency(spotlightItem.price)}</p>
+                <span className="hero-feat-name">{spotlightItem.name}</span>
+                <span className="hero-feat-price">{toCurrency(spotlightItem.price)}</span>
               </Link>
-            ) : (
-              <div className="hero-product-placeholder">
-                <div className="placeholder-shape" aria-hidden="true">
-                  <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="#C4A882" strokeWidth="0.8">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                </div>
-                <p className="product-name-small">Vista Magic</p>
-                <p className="product-price-small">Carregando...</p>
-              </div>
-            )}
-
-            {heroItems.length > 1 && (
-              <div className="hero-controls" aria-label="Vitrine de produtos">
-                <button type="button" className="hero-control-btn" onClick={goToPreviousHeroItem}>
-                  ‹
-                </button>
-                <div className="hero-dots">
-                  {heroItems.map((item, index) => (
-                    <button
-                      key={item.productId}
-                      type="button"
-                      className={index === heroIndex ? 'hero-dot active' : 'hero-dot'}
-                      onClick={() => setHeroIndex(index)}
-                      aria-label={`Mostrar ${item.name}`}
-                    />
-                  ))}
-                </div>
-                <button type="button" className="hero-control-btn" onClick={goToNextHeroItem}>
-                  ›
-                </button>
-              </div>
-            )}
-          </div>
+              <a className="btn-primary" href="#novidades">Ver coleção</a>
+            </div>
+          )}
         </div>
 
-        <div className="hero-right">
-          <p className="hero-eyebrow">Nova coleção disponível</p>
-          <h1 className="hero-headline">
-            Moda que você<br />
-            <strong>vai querer usar</strong>
-            <br />todo dia.
-          </h1>
-          <p className="hero-sub">
-            Peças com caimento impecável, selecionadas com cuidado. Entrega rápida, troca fácil e compra 100% segura.
-          </p>
-          <div className="hero-ctas">
-            <a className="btn-primary" href="#novidades">Explorar coleção</a>
-            <a className="btn-ghost" href="#novidades">Ver categorias</a>
+        {heroItems.length > 1 && (
+          <div className="hero-nav" aria-label="Vitrine de produtos">
+            {heroItems.map((item, index) => (
+              <button
+                key={item.productId}
+                type="button"
+                className={index === heroIndex ? 'hero-dot active' : 'hero-dot'}
+                onClick={() => setHeroIndex(index)}
+                aria-label={`Mostrar ${item.name}`}
+              />
+            ))}
           </div>
-        </div>
+        )}
+
+        {heroItems.length > 1 && (
+          <div className="hero-progress-bar" aria-hidden="true">
+            <div key={heroIndex} className="hero-progress-fill" />
+          </div>
+        )}
       </section>
 
       {/* ── TRUST BAR ── */}
@@ -186,22 +157,13 @@ export function HomePage({
         </div>
       </div>
 
-      {/* ── FEATURES ── */}
-      <div className="features" aria-label="Destaques da experiência">
-        {features.map((feature) => (
-          <div className="feat" key={feature.title}>
-            <div className="feat-icon">{feature.icon}</div>
-            <p className="feat-title">{feature.title}</p>
-            <p className="feat-desc">{feature.description}</p>
-            <div className="feat-actions">
-              {feature.ctaHref ? (
-                <a className="feat-link" href={feature.ctaHref}>{feature.ctaLabel}</a>
-              ) : (
-                <span className="feat-link-placeholder" aria-hidden="true" />
-              )}
-            </div>
-          </div>
-        ))}
+      {/* ── MARQUEE STRIP ── */}
+      <div className="marquee-strip" aria-hidden="true">
+        <div className="marquee-track">
+          {MARQUEE_ITEMS.map((item, i) => (
+            <span key={i}>{item}</span>
+          ))}
+        </div>
       </div>
 
       {/* ── NOVIDADES — catálogo completo ── */}
@@ -214,10 +176,10 @@ export function HomePage({
           <div className="product-grid">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="product-card skeleton-card">
-                <div className="product-media skeleton-card" style={{ height: 'clamp(280px, 40vw, 480px)' }} />
+                <div className="product-media skeleton-card" style={{ height: 'clamp(340px, 52vw, 580px)' }} />
                 <div className="product-content" style={{ gap: 8 }}>
                   <span className="skeleton-line" style={{ width: '38%', height: 10 }} />
-                  <span className="skeleton-line" style={{ width: '72%', height: 16, marginTop: 4 }} />
+                  <span className="skeleton-line" style={{ width: '72%', height: 18, marginTop: 4 }} />
                   <span className="skeleton-line" style={{ width: '28%', height: 15, marginTop: 4 }} />
                 </div>
               </div>
@@ -261,6 +223,7 @@ export function HomePage({
           <div className="category-title-row">
             <p className="category-subtitle">Categoria</p>
             <h2 className="category-title">Moda Feminina</h2>
+            <span className="category-title-bg" aria-hidden="true">Feminina</span>
           </div>
           <div className="product-grid">
             {feminineItems.map((item, index) => (
@@ -282,6 +245,7 @@ export function HomePage({
           <div className="category-title-row">
             <p className="category-subtitle">Categoria</p>
             <h2 className="category-title">Moda Masculina</h2>
+            <span className="category-title-bg" aria-hidden="true">Masculina</span>
           </div>
           <div className="product-grid">
             {masculineItems.map((item, index) => (
