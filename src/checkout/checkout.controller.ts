@@ -46,7 +46,10 @@ interface CheckoutBody {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+type AuthRequest = Request & { userId?: string };
+
 export async function createCheckout(req: Request, res: Response): Promise<void> {
+  const userId = (req as AuthRequest).userId ?? null;
   const {
     name,
     email,
@@ -158,6 +161,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           pixQrCode: pix.encodedImage,
           pixCopyPaste: pix.payload,
           pixExpiresAt: pix.expirationDate ? new Date(pix.expirationDate) : null,
+          ...(userId ? { userId } : {}),
           ...addressData,
           items: {
             create: items.map((i) => ({
@@ -197,6 +201,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           boletoUrl: boleto.bankSlipUrl,
           boletoBarcode: boleto.nossoNumero,
           boletoDueDate: boleto.dueDate ? new Date(boleto.dueDate) : null,
+          ...(userId ? { userId } : {}),
           ...addressData,
           items: {
             create: items.map((i) => ({
@@ -258,6 +263,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         guestName: name.trim(),
         guestEmail: email.trim(),
         guestCpf: cpfClean,
+        ...(userId ? { userId } : {}),
         ...addressData,
         items: {
           create: items.map((i) => ({

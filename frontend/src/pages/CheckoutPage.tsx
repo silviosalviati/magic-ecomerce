@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkout } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 import type { CartItem, CheckoutResponse, CreditCardFormData, PaymentMethod } from '../types';
 import { BoletoConfirmation } from '../components/checkout/BoletoConfirmation';
 import { CreditCardForm } from '../components/checkout/CreditCardForm';
@@ -57,9 +58,8 @@ export function CheckoutPage({
   onClearCart,
 }: CheckoutPageProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState<Step>('details');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
   // Address
   const [addressZip, setAddressZip] = useState('');
@@ -80,6 +80,13 @@ export function CheckoutPage({
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cpfDigits = cpf.replace(/\D/g, '');
   const stepIndex = STEP_ORDER.indexOf(step);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate('/entrar', { state: { from: '/checkout' }, replace: true });
+    }
+  }, [user, navigate]);
 
   // Redirect to home if cart is empty and we haven't finished an order
   useEffect(() => {
@@ -118,8 +125,6 @@ export function CheckoutPage({
 
   function canProceedFromDetails(): boolean {
     return (
-      name.trim().length > 0 &&
-      email.trim().length > 0 &&
       cpfDigits.length === 11 &&
       addressZip.replace(/\D/g, '').length === 8 &&
       addressNumber.trim().length > 0
@@ -149,8 +154,8 @@ export function CheckoutPage({
     setLoading(true);
     try {
       const basePayload = {
-        name: name.trim(),
-        email: email.trim(),
+        name: user!.name,
+        email: user!.email,
         cpf: cpfDigits,
         items: cartItems.map((i) => ({
           variantId: i.variantId,
@@ -257,33 +262,13 @@ export function CheckoutPage({
           {/* ── STEP 1: DADOS PESSOAIS ─────────────────────────── */}
           {step === 'details' && (
             <section className="checkout-section">
-              <h2 className="checkout-section-title">Seus dados</h2>
+              <h2 className="checkout-section-title">Entrega</h2>
 
               <div className="checkout-form">
-                <div className="field-group">
-                  <label className="field-label" htmlFor="co-name">Nome completo</label>
-                  <input
-                    id="co-name"
-                    className="field-input"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Seu nome completo"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label" htmlFor="co-email">E-mail</label>
-                  <input
-                    id="co-email"
-                    className="field-input"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                <div className="checkout-logged-user">
+                  <span className="checkout-logged-label">Comprando como</span>
+                  <strong className="checkout-logged-name">{user?.name}</strong>
+                  <span className="checkout-logged-email">{user?.email}</span>
                 </div>
 
                 <div className="field-group">

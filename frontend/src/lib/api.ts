@@ -11,11 +11,21 @@ import type {
   Order,
 } from '../types';
 
+const TOKEN_KEY = 'magic.auth.token';
+
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL ||
     'https://magic-ecomerce-api-731025483706.us-central1.run.app',
   timeout: 15000,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 const DEFAULT_API_BASE_URL = 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
