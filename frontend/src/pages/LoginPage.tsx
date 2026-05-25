@@ -68,18 +68,26 @@ export function LoginPage() {
 
   return (
     <main className="auth-page">
-      <aside className="auth-brand">
+      <aside className="auth-brand auth-brand--login-manifesto">
         <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
           <img src="/logo/logo-transparent.png" alt="MAGI.C" />
         </Link>
-        <div className="auth-brand-body">
-          <div className="auth-brand-ornament">
-            <span className="auth-brand-ornament-diamond" />
+        <div className="auth-brand-body auth-brand-body--manifesto">
+          <div className="auth-brand-manifesto-copy">
+            <p className="auth-brand-manifesto-text">
+              O FUTURO
+              <br />
+              RESPEITA A ESSENCIA
+              <br />
+              E ABRACA A <span>MUDANCA.</span>
+            </p>
+            <p className="auth-brand-manifesto-heart" aria-hidden="true">♥</p>
           </div>
-          <p className="auth-brand-tagline">
-            Vista o que<br />você sente.
-          </p>
-          <p className="auth-brand-caption">Moda feminina e masculina</p>
+          <div className="auth-brand-waves" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
         </div>
       </aside>
 

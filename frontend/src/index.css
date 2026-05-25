@@ -3863,6 +3863,93 @@ textarea:focus-visible {
   text-transform: uppercase;
 }
 
+/* Login visual variant inspired by manifesto artwork */
+.auth-brand--login-manifesto {
+  background: #030306;
+}
+
+.auth-brand--login-manifesto::before {
+  background:
+    radial-gradient(ellipse 95% 60% at 78% 90%, rgba(239, 141, 141, 0.1) 0%, transparent 62%),
+    radial-gradient(ellipse 65% 52% at 30% 72%, rgba(239, 141, 141, 0.06) 0%, transparent 70%);
+  animation: none;
+}
+
+.auth-brand-body--manifesto {
+  justify-content: space-between;
+}
+
+.auth-brand-manifesto-copy {
+  margin-top: clamp(34px, 8.2vh, 110px);
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+}
+
+.auth-brand-manifesto-text {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: clamp(27px, 2.25vw, 41px);
+  font-weight: 300;
+  letter-spacing: 0.11em;
+  line-height: 1.52;
+  text-align: center;
+  color: #f0f1f4;
+  text-transform: uppercase;
+}
+
+.auth-brand-manifesto-text span {
+  color: #ef9f9f;
+}
+
+.auth-brand-manifesto-heart {
+  margin: 0;
+  color: #ef9f9f;
+  font-size: clamp(26px, 2vw, 34px);
+  line-height: 1;
+}
+
+.auth-brand-waves {
+  position: relative;
+  height: min(290px, 36vh);
+  margin: 0 -82px -58px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-brand-waves span {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  border-radius: 52% 48% 58% 42%;
+  border: 1px solid rgba(255, 176, 176, 0.48);
+  background:
+    linear-gradient(120deg, transparent 2%, rgba(255, 183, 183, 0.25) 37%, rgba(255, 222, 222, 0.55) 52%, rgba(255, 170, 170, 0.3) 66%, transparent 96%);
+  filter: blur(0.4px);
+  transform-origin: center;
+}
+
+.auth-brand-waves span:nth-child(1) {
+  bottom: 8px;
+  height: 138px;
+  transform: rotate(-11deg);
+  opacity: 0.88;
+}
+
+.auth-brand-waves span:nth-child(2) {
+  bottom: 58px;
+  height: 128px;
+  transform: rotate(-7deg);
+  opacity: 0.74;
+}
+
+.auth-brand-waves span:nth-child(3) {
+  bottom: 102px;
+  height: 112px;
+  transform: rotate(-3deg);
+  opacity: 0.56;
+}
+
 /* ── Form panel (right) ── */
 .auth-form-panel {
   display: flex;
@@ -4124,6 +4211,11 @@ textarea:focus-visible {
   .auth-brand::after { display: none; }
   .auth-brand-body { display: none; }
   .auth-brand-logo { width: 110px; }
+  .auth-brand--login-manifesto {
+    background:
+      radial-gradient(ellipse 120% 100% at 100% 100%, rgba(239, 141, 141, 0.16) 0%, transparent 56%),
+      #030306;
+  }
   .auth-form-panel {
     padding: 32px 24px 52px;
     align-items: flex-start;
