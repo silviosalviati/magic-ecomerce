@@ -75,7 +75,7 @@ export function HomePage({
     },
     {
       title: 'Tricot',
-      description: 'Texturas sofisticadas, conforto premium e acabamento de alto padrão em cada peça.',
+      description: 'Texturas sofisticadas, conforto premium, acabamento de alto padrão e durabilidade. Aqui, cada peça entrega qualidade real e respeito ao consumidor.',
       icon: <Waves size={18} strokeWidth={1.5} />,
       ctaHref: null,
       ctaLabel: null,
