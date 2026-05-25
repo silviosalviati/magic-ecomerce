@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { authRegister } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -8,6 +9,8 @@ export function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -43,76 +46,129 @@ export function RegisterPage() {
 
   return (
     <main className="auth-page">
-      <div className="auth-container">
-        <div className="auth-header">
-          <p className="section-label-inline">Primeira vez aqui?</p>
-          <h1 className="auth-title">Criar conta</h1>
+      <aside className="auth-brand">
+        <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
+          <img src="/logo/logo-transparent.png" alt="MAGI.C" />
+        </Link>
+        <div className="auth-brand-body">
+          <div className="auth-brand-ornament">
+            <span className="auth-brand-ornament-diamond" />
+          </div>
+          <p className="auth-brand-tagline">
+            Sua jornada<br />começa aqui.
+          </p>
+          <p className="auth-brand-caption">Moda feminina e masculina</p>
         </div>
+      </aside>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="reg-name">Nome completo</label>
-            <input
-              id="reg-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Seu nome"
-              required
-              autoComplete="name"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="reg-email">E-mail</label>
-            <input
-              id="reg-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="reg-password">Senha</label>
-            <input
-              id="reg-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              required
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="reg-confirm">Confirmar senha</label>
-            <input
-              id="reg-confirm"
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repita sua senha"
-              required
-              autoComplete="new-password"
-            />
-          </div>
-
-          {error && <p className="auth-error">{error}</p>}
-
-          <button type="submit" className="btn-primary auth-submit" disabled={loading}>
-            {loading ? 'Criando conta...' : 'Criar conta'}
-          </button>
-        </form>
-
-        <p className="auth-switch">
-          Já tem conta?{' '}
-          <Link to="/entrar" className="auth-switch-link">
-            Entrar
+      <section className="auth-form-panel">
+        <div className="auth-form-inner">
+          <Link to="/" className="auth-form-back">
+            <ArrowLeft size={13} strokeWidth={1.8} />
+            Voltar à loja
           </Link>
-        </p>
-      </div>
+
+          <p className="auth-form-eyebrow">Primeira vez aqui?</p>
+          <h1 className="auth-form-title">Criar conta</h1>
+
+          <form onSubmit={handleSubmit}>
+            <div className="auth-field">
+              <input
+                id="reg-name"
+                className="auth-field-input"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder=" "
+                required
+                autoComplete="name"
+              />
+              <label className="auth-field-label" htmlFor="reg-name">Nome completo</label>
+              <span className="auth-field-line" />
+            </div>
+
+            <div className="auth-field">
+              <input
+                id="reg-email"
+                className="auth-field-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder=" "
+                required
+                autoComplete="email"
+              />
+              <label className="auth-field-label" htmlFor="reg-email">E-mail</label>
+              <span className="auth-field-line" />
+            </div>
+
+            <div className="auth-field">
+              <input
+                id="reg-password"
+                className="auth-field-input"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder=" "
+                required
+                autoComplete="new-password"
+              />
+              <label className="auth-field-label" htmlFor="reg-password">Senha</label>
+              <span className="auth-field-line" />
+              <button
+                type="button"
+                className="auth-field-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                tabIndex={-1}
+              >
+                {showPassword
+                  ? <EyeOff size={16} strokeWidth={1.6} />
+                  : <Eye size={16} strokeWidth={1.6} />}
+              </button>
+            </div>
+
+            <div className="auth-field">
+              <input
+                id="reg-confirm"
+                className="auth-field-input"
+                type={showConfirm ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder=" "
+                required
+                autoComplete="new-password"
+              />
+              <label className="auth-field-label" htmlFor="reg-confirm">Confirmar senha</label>
+              <span className="auth-field-line" />
+              <button
+                type="button"
+                className="auth-field-toggle"
+                onClick={() => setShowConfirm((v) => !v)}
+                aria-label={showConfirm ? 'Ocultar confirmação' : 'Ver confirmação'}
+                tabIndex={-1}
+              >
+                {showConfirm
+                  ? <EyeOff size={16} strokeWidth={1.6} />
+                  : <Eye size={16} strokeWidth={1.6} />}
+              </button>
+            </div>
+
+            {error && <p className="auth-error">{error}</p>}
+
+            <button type="submit" className="auth-form-btn" disabled={loading}>
+              <span>{loading ? 'Criando conta…' : 'Criar conta'}</span>
+            </button>
+          </form>
+
+          <p className="auth-form-switch">
+            Já tem conta?{' '}
+            <Link to="/entrar" className="auth-form-switch-link">
+              Entrar
+            </Link>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

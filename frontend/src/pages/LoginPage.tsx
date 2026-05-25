@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { authLogin } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -32,52 +34,88 @@ export function LoginPage() {
 
   return (
     <main className="auth-page">
-      <div className="auth-container">
-        <div className="auth-header">
-          <p className="section-label-inline">Acesse sua conta</p>
-          <h1 className="auth-title">Entrar</h1>
+      <aside className="auth-brand">
+        <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
+          <img src="/logo/logo-transparent.png" alt="MAGI.C" />
+        </Link>
+        <div className="auth-brand-body">
+          <div className="auth-brand-ornament">
+            <span className="auth-brand-ornament-diamond" />
+          </div>
+          <p className="auth-brand-tagline">
+            Vista o que<br />você sente.
+          </p>
+          <p className="auth-brand-caption">Moda feminina e masculina</p>
         </div>
+      </aside>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="login-email">E-mail</label>
-            <input
-              id="login-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="login-password">Senha</label>
-            <input
-              id="login-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Sua senha"
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && <p className="auth-error">{error}</p>}
-
-          <button type="submit" className="btn-primary auth-submit" disabled={loading}>
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-
-        <p className="auth-switch">
-          Não tem conta?{' '}
-          <Link to="/cadastrar" className="auth-switch-link">
-            Criar conta gratuita
+      <section className="auth-form-panel">
+        <div className="auth-form-inner">
+          <Link to="/" className="auth-form-back">
+            <ArrowLeft size={13} strokeWidth={1.8} />
+            Voltar à loja
           </Link>
-        </p>
-      </div>
+
+          <p className="auth-form-eyebrow">Sua conta</p>
+          <h1 className="auth-form-title">Entrar</h1>
+
+          <form onSubmit={handleSubmit}>
+            <div className="auth-field">
+              <input
+                id="login-email"
+                className="auth-field-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder=" "
+                required
+                autoComplete="email"
+              />
+              <label className="auth-field-label" htmlFor="login-email">E-mail</label>
+              <span className="auth-field-line" />
+            </div>
+
+            <div className="auth-field">
+              <input
+                id="login-password"
+                className="auth-field-input"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder=" "
+                required
+                autoComplete="current-password"
+              />
+              <label className="auth-field-label" htmlFor="login-password">Senha</label>
+              <span className="auth-field-line" />
+              <button
+                type="button"
+                className="auth-field-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                tabIndex={-1}
+              >
+                {showPassword
+                  ? <EyeOff size={16} strokeWidth={1.6} />
+                  : <Eye size={16} strokeWidth={1.6} />}
+              </button>
+            </div>
+
+            {error && <p className="auth-error">{error}</p>}
+
+            <button type="submit" className="auth-form-btn" disabled={loading}>
+              <span>{loading ? 'Entrando…' : 'Entrar'}</span>
+            </button>
+          </form>
+
+          <p className="auth-form-switch">
+            Não tem conta?{' '}
+            <Link to="/cadastrar" className="auth-form-switch-link">
+              Criar conta gratuita
+            </Link>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
