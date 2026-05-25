@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { authLogin } from '../lib/api';
+import { authLogin, requestEmailVerification } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export function LoginPage() {
@@ -9,15 +9,29 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string })?.from || '/minha-conta';
+  const state = location.state as { from?: string; message?: string; email?: string } | null;
+  const from = state?.from || '/minha-conta';
+  const emailNotVerified = error.toLowerCase().includes('não verificado');
+
+  useEffect(() => {
+    if (state?.email) {
+      setEmail(state.email);
+    }
+    if (state?.message) {
+      setMessage(state.message);
+    }
+  }, [state]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
 
     try {
@@ -29,6 +43,26 @@ export function LoginPage() {
       setError(msg);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!email.trim()) {
+      setError('Informe seu e-mail para reenviar a verificação.');
+      return;
+    }
+
+    setResendLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await requestEmailVerification(email.trim());
+      setMessage(response.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao reenviar verificação.');
+    } finally {
+      setResendLoading(false);
     }
   }
 
@@ -58,6 +92,8 @@ export function LoginPage() {
 
           <p className="auth-form-eyebrow">Sua conta</p>
           <h1 className="auth-form-title">Entrar</h1>
+
+          {message && <p className="auth-success">{message}</p>}
 
           <form onSubmit={handleSubmit}>
             <div className="auth-field">
@@ -107,6 +143,26 @@ export function LoginPage() {
               <span>{loading ? 'Entrando…' : 'Entrar'}</span>
             </button>
           </form>
+
+          <div className="auth-inline-links">
+            {emailNotVerified ? (
+              <button
+                type="button"
+                className="auth-inline-action"
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+              >
+                {resendLoading ? 'Reenviando...' : 'Reenviar verificação por e-mail'}
+              </button>
+            ) : (
+              <Link to="/verificar-email" className="auth-inline-action">
+                Confirmar e-mail
+              </Link>
+            )}
+            <Link to="/recuperar-senha" className="auth-inline-action">
+              Esqueci minha senha
+            </Link>
+          </div>
 
           <p className="auth-form-switch">
             Não tem conta?{' '}

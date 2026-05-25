@@ -3970,7 +3970,7 @@ textarea:focus-visible {
 }
 .auth-field-toggle:hover { color: #1a1816; }
 
-/* ── Error ── */
+/* ── Alerts ── */
 .auth-error {
   font-family: var(--font-ui);
   font-size: 12px;
@@ -3980,6 +3980,45 @@ textarea:focus-visible {
   padding: 8px 12px;
   margin-bottom: 18px;
   animation: auth-shake 0.4s var(--ease-spring);
+}
+.auth-success {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: #1f6d46;
+  background: rgba(31, 109, 70, 0.08);
+  border-left: 2px solid #1f6d46;
+  padding: 8px 12px;
+  margin-bottom: 18px;
+}
+.auth-form-note {
+  margin: 0 0 22px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #867a73;
+}
+.auth-inline-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.auth-inline-action {
+  color: #1a1816;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+}
+.auth-inline-action:hover {
+  opacity: 0.55;
 }
 
 /* ── Submit button ── */

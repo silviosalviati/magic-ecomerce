@@ -48,6 +48,20 @@ const PAYMENT_LABELS: Record<string, string> = {
   CREDIT_CARD: 'Cartão de Crédito',
 };
 
+function buildFrontendUrl(pathname: string): string {
+  const frontendUrl = (process.env.FRONTEND_URL || 'https://vistamagic.com.br').replace(/\/$/, '');
+  return `${frontendUrl}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function sendStoreNotification(data: OrderEmailData): Promise<void> {
   const storeEmail = process.env.STORE_EMAIL;
   if (!storeEmail || !process.env.SMTP_USER) return;
@@ -152,6 +166,60 @@ export async function sendCustomerConfirmation(data: OrderEmailData): Promise<vo
           </a>
         </div>
         <p style="margin-top:24px;font-size:12px;color:#5a5050">Dúvidas? Fale conosco no WhatsApp: (11) 96970-7136</p>
+      </div>`,
+  });
+}
+
+export async function sendEmailVerification(params: {
+  email: string;
+  name: string;
+  token: string;
+}): Promise<void> {
+  if (!process.env.SMTP_USER) return;
+
+  const verifyUrl = buildFrontendUrl(`/verificar-email?token=${encodeURIComponent(params.token)}`);
+
+  await transporter.sendMail({
+    from: `"MAGI.C" <${process.env.SMTP_USER}>`,
+    to: params.email,
+    subject: 'Confirme seu e-mail para ativar sua conta — MAGI.C',
+    html: `
+      <div style="font-family:sans-serif;background:#0d0d0d;color:#f5ede8;padding:32px;max-width:600px;margin:auto">
+        <h1 style="font-size:22px;margin:0 0 12px;color:#e8b4b0">Confirme seu e-mail</h1>
+        <p style="margin:0 0 18px">Olá, ${escapeHtml(params.name)}. Para ativar sua conta, confirme seu e-mail clicando no botão abaixo.</p>
+        <div style="margin:24px 0;text-align:center">
+          <a href="${verifyUrl}" style="background:#e8b4b0;color:#0d0d0d;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">
+            Confirmar e-mail
+          </a>
+        </div>
+        <p style="font-size:12px;color:#a89b95;word-break:break-all">Se o botão não abrir, use este link: ${verifyUrl}</p>
+      </div>`,
+  });
+}
+
+export async function sendPasswordResetEmail(params: {
+  email: string;
+  name: string;
+  token: string;
+}): Promise<void> {
+  if (!process.env.SMTP_USER) return;
+
+  const resetUrl = buildFrontendUrl(`/redefinir-senha?token=${encodeURIComponent(params.token)}`);
+
+  await transporter.sendMail({
+    from: `"MAGI.C" <${process.env.SMTP_USER}>`,
+    to: params.email,
+    subject: 'Redefinição de senha — MAGI.C',
+    html: `
+      <div style="font-family:sans-serif;background:#0d0d0d;color:#f5ede8;padding:32px;max-width:600px;margin:auto">
+        <h1 style="font-size:22px;margin:0 0 12px;color:#e8b4b0">Redefinir sua senha</h1>
+        <p style="margin:0 0 18px">Olá, ${escapeHtml(params.name)}. Recebemos uma solicitação para redefinir sua senha.</p>
+        <div style="margin:24px 0;text-align:center">
+          <a href="${resetUrl}" style="background:#e8b4b0;color:#0d0d0d;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">
+            Criar nova senha
+          </a>
+        </div>
+        <p style="font-size:12px;color:#a89b95;word-break:break-all">Se o botão não abrir, use este link: ${resetUrl}</p>
       </div>`,
   });
 }

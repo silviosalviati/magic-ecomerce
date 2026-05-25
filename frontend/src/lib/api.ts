@@ -1,5 +1,15 @@
 import axios from 'axios';
-import type { ApiProduct, AuthUser, CatalogProduct, CheckoutPayload, CheckoutResponse, Order } from '../types';
+import type {
+  ApiProduct,
+  AuthLoginResponse,
+  AuthMessageResponse,
+  AuthRegisterResponse,
+  AuthUser,
+  CatalogProduct,
+  CheckoutPayload,
+  CheckoutResponse,
+  Order,
+} from '../types';
 
 const api = axios.create({
   baseURL:
@@ -206,21 +216,43 @@ export async function authRegister(
   name: string,
   email: string,
   password: string
-): Promise<{ token: string; user: AuthUser }> {
-  const { data } = await api.post('/auth/register', { name, email, password });
+): Promise<AuthRegisterResponse> {
+  const { data } = await api.post<AuthRegisterResponse>('/auth/register', { name, email, password });
   return data;
 }
 
 export async function authLogin(
   email: string,
   password: string
-): Promise<{ token: string; user: AuthUser }> {
-  const { data } = await api.post('/auth/login', { email, password });
+): Promise<AuthLoginResponse> {
+  const { data } = await api.post<AuthLoginResponse>('/auth/login', { email, password });
+  return data;
+}
+
+export async function requestEmailVerification(email: string): Promise<AuthMessageResponse> {
+  const { data } = await api.post<AuthMessageResponse>('/auth/request-verification', { email });
+  return data;
+}
+
+export async function verifyEmail(token: string): Promise<AuthMessageResponse> {
+  const { data } = await api.get<AuthMessageResponse>('/auth/verify-email', {
+    params: { token },
+  });
+  return data;
+}
+
+export async function requestPasswordReset(email: string): Promise<AuthMessageResponse> {
+  const { data } = await api.post<AuthMessageResponse>('/auth/request-password-reset', { email });
+  return data;
+}
+
+export async function resetPassword(token: string, password: string): Promise<AuthMessageResponse> {
+  const { data } = await api.post<AuthMessageResponse>('/auth/reset-password', { token, password });
   return data;
 }
 
 export async function authMe(token: string): Promise<AuthUser> {
-  const { data } = await api.get('/auth/me', {
+  const { data } = await api.get<AuthUser>('/auth/me', {
     headers: { Authorization: `Bearer ${token}` },
   });
   return data;

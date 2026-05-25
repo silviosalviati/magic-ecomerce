@@ -6,13 +6,20 @@ generator client {
   provider = "prisma-client-js"
 }
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  isAdmin   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  orders    Order[]
+  id                       String   @id @default(uuid())
+  email                    String   @unique
+  password                 String
+  name                     String
+  isAdmin                  Boolean  @default(false)
+  emailVerifiedAt          DateTime?
+  emailVerificationToken   String?
+  emailVerificationExpires DateTime?
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
+  failedLoginAttempts      Int      @default(0)
+  lockedUntil              DateTime?
+  createdAt                DateTime @default(now())
+  orders                   Order[]
 }
 
 model Product {

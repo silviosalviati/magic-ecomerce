@@ -1,22 +1,35 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { authRegister } from '../lib/api';
+import { resetPassword } from '../lib/api';
 
-export function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+export function ResetPasswordPage() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') || '';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!token) {
+      setError('Link de redefinição inválido ou ausente.');
+    }
+  }, [token]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setMessage('');
+
+    if (!token) {
+      setError('Link de redefinição inválido ou ausente.');
+      return;
+    }
 
     if (password !== confirm) {
       setError('As senhas não conferem.');
@@ -31,17 +44,14 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await authRegister(name.trim(), email.trim(), password);
+      const response = await resetPassword(token, password);
+      setMessage(response.message);
       navigate('/entrar', {
         replace: true,
-        state: {
-          message: response.message,
-          email,
-        },
+        state: { message: response.message },
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao criar conta.';
-      setError(msg);
+      setError(err instanceof Error ? err.message : 'Erro ao redefinir senha.');
     } finally {
       setLoading(false);
     }
@@ -58,59 +68,32 @@ export function RegisterPage() {
             <span className="auth-brand-ornament-diamond" />
           </div>
           <p className="auth-brand-tagline">
-            Sua jornada<br />começa aqui.
+            Nova senha,<br />novo acesso.
           </p>
-          <p className="auth-brand-caption">Crie sua conta com e-mail verificado</p>
+          <p className="auth-brand-caption">Link temporário e seguro</p>
         </div>
       </aside>
 
       <section className="auth-form-panel">
         <div className="auth-form-inner">
-          <Link to="/" className="auth-form-back">
+          <Link to="/entrar" className="auth-form-back">
             <ArrowLeft size={13} strokeWidth={1.8} />
-            Voltar à loja
+            Voltar ao login
           </Link>
 
-          <p className="auth-form-eyebrow">Primeira vez aqui?</p>
-          <h1 className="auth-form-title">Criar conta</h1>
+          <p className="auth-form-eyebrow">Redefinir senha</p>
+          <h1 className="auth-form-title">Criar nova senha</h1>
           <p className="auth-form-note">
-            Para sua segurança, a conta só é ativada após confirmar o e-mail recebido.
+            Escolha uma senha forte e nunca reutilizada. O link expira em pouco tempo.
           </p>
+
+          {message && <p className="auth-success">{message}</p>}
+          {error && <p className="auth-error">{error}</p>}
 
           <form onSubmit={handleSubmit}>
             <div className="auth-field">
               <input
-                id="reg-name"
-                className="auth-field-input"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder=" "
-                required
-                autoComplete="name"
-              />
-              <label className="auth-field-label" htmlFor="reg-name">Nome completo</label>
-              <span className="auth-field-line" />
-            </div>
-
-            <div className="auth-field">
-              <input
-                id="reg-email"
-                className="auth-field-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder=" "
-                required
-                autoComplete="email"
-              />
-              <label className="auth-field-label" htmlFor="reg-email">E-mail</label>
-              <span className="auth-field-line" />
-            </div>
-
-            <div className="auth-field">
-              <input
-                id="reg-password"
+                id="reset-password"
                 className="auth-field-input"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -119,7 +102,7 @@ export function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-              <label className="auth-field-label" htmlFor="reg-password">Senha</label>
+              <label className="auth-field-label" htmlFor="reset-password">Nova senha</label>
               <span className="auth-field-line" />
               <button
                 type="button"
@@ -136,7 +119,7 @@ export function RegisterPage() {
 
             <div className="auth-field">
               <input
-                id="reg-confirm"
+                id="reset-confirm"
                 className="auth-field-input"
                 type={showConfirm ? 'text' : 'password'}
                 value={confirm}
@@ -145,7 +128,7 @@ export function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-              <label className="auth-field-label" htmlFor="reg-confirm">Confirmar senha</label>
+              <label className="auth-field-label" htmlFor="reset-confirm">Confirmar senha</label>
               <span className="auth-field-line" />
               <button
                 type="button"
@@ -160,17 +143,15 @@ export function RegisterPage() {
               </button>
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
-
-            <button type="submit" className="auth-form-btn" disabled={loading}>
-              <span>{loading ? 'Criando conta…' : 'Criar conta'}</span>
+            <button type="submit" className="auth-form-btn" disabled={loading || !token}>
+              <span>{loading ? 'Salvando...' : 'Salvar nova senha'}</span>
             </button>
           </form>
 
           <p className="auth-form-switch">
-            Já tem conta?{' '}
-            <Link to="/entrar" className="auth-form-switch-link">
-              Entrar
+            Precisa de outro link?{' '}
+            <Link to="/recuperar-senha" className="auth-form-switch-link">
+              Solicitar recuperação
             </Link>
           </p>
         </div>

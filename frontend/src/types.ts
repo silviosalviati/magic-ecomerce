@@ -95,6 +95,21 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  emailVerifiedAt?: string | null;
+}
+
+export interface AuthRegisterResponse {
+  message: string;
+  requiresVerification: boolean;
+}
+
+export interface AuthLoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+export interface AuthMessageResponse {
+  message: string;
 }
 
 export interface OrderItem {

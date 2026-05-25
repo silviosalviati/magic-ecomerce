@@ -11,8 +11,11 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { OrderLookupPage } from './pages/OrderLookupPage';
+import { PasswordRecoveryPage } from './pages/PasswordRecoveryPage';
 import { ProductDetailsPage } from './pages/ProductDetailsPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import type { CartItem, CatalogProduct } from './types';
 
 const CATALOG_CACHE_KEY = 'magic.catalog.cache.v1';
@@ -177,7 +180,7 @@ function App() {
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const location = useLocation();
   const isCheckoutPage = location.pathname === '/checkout';
-  const isAuthPage = ['/entrar', '/cadastrar'].includes(location.pathname);
+  const isAuthPage = ['/entrar', '/cadastrar', '/verificar-email', '/recuperar-senha', '/redefinir-senha'].includes(location.pathname);
   const showHeaderSearch = location.pathname === '/';
 
   return (
@@ -240,6 +243,9 @@ function App() {
         />
         <Route path="/entrar" element={<LoginPage />} />
         <Route path="/cadastrar" element={<RegisterPage />} />
+        <Route path="/verificar-email" element={<VerifyEmailPage />} />
+        <Route path="/recuperar-senha" element={<PasswordRecoveryPage />} />
+        <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
         <Route path="/minha-conta" element={<AccountPage />} />
         <Route path="/rastrear-pedido" element={<OrderLookupPage />} />
         <Route path="/admin/pedidos" element={<AdminOrdersPage />} />
