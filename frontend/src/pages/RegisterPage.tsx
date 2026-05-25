@@ -65,9 +65,9 @@ export function RegisterPage() {
               alt="Manifesto MAGI.C"
             />
             <p className="auth-brand-story-line">
-              TUDO COMECA
+              TUDO COMEÇA
               <br />
-              COM UMA <span>VISAO.</span>
+              COM UMA <span>VISÃO.</span>
             </p>
             <div className="auth-brand-story-waves" aria-hidden="true">
               <span />
@@ -91,9 +91,9 @@ export function RegisterPage() {
 
           <article className="auth-brand-story-panel auth-brand-story-panel--essence">
             <p className="auth-brand-story-line">
-              MUDAR E PERMITIR
+              MUDAR É PERMITIR
               <br />
-              QUE A ESSENCIA
+              QUE A ESSÊNCIA
               <br />
               <span>EVOLUA.</span>
             </p>

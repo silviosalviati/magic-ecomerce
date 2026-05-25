@@ -77,9 +77,9 @@ export function LoginPage() {
             <p className="auth-brand-manifesto-text">
               O FUTURO
               <br />
-              RESPEITA A ESSENCIA
+              RESPEITA A ESSÊNCIA
               <br />
-              E ABRACA A <span>MUDANCA.</span>
+              E ABRAÇA A <span>MUDANÇA.</span>
             </p>
             <p className="auth-brand-manifesto-heart" aria-hidden="true">♥</p>
           </div>
