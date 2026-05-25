@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import sharp from 'sharp';
 import { prisma } from '../config/database';
 import {
   isAllowedImageMimeType,
@@ -6,8 +7,104 @@ import {
   buildPhotoObjectPath,
   uploadImageBuffer,
   getObjectBufferByPath,
+  getObjectStreamByPath,
 } from '../config/storage';
 const { generateMannequinPreview } = require('../config/vertexai');
+
+type ImageFormat = 'jpeg' | 'png' | 'webp';
+
+type ImageTransformOptions = {
+  width?: number;
+  quality?: number;
+  format?: ImageFormat;
+};
+
+function parseIntegerQuery(value: unknown): number | null {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function resolveImageTransformOptions(req: Request): ImageTransformOptions | null {
+  const rawWidth = parseIntegerQuery(req.query['w']);
+  const rawQuality = parseIntegerQuery(req.query['q']);
+  const rawFormat = String(req.query['fm'] || '')
+    .trim()
+    .toLowerCase();
+
+  if (rawWidth !== null && (rawWidth < 200 || rawWidth > 2400)) {
+    throw new Error('Parâmetro w inválido. Use entre 200 e 2400.');
+  }
+
+  if (rawQuality !== null && (rawQuality < 45 || rawQuality > 90)) {
+    throw new Error('Parâmetro q inválido. Use entre 45 e 90.');
+  }
+
+  let format: ImageFormat | undefined;
+  if (rawFormat) {
+    if (rawFormat !== 'jpeg' && rawFormat !== 'png' && rawFormat !== 'webp') {
+      throw new Error('Parâmetro fm inválido. Use jpeg, png ou webp.');
+    }
+    format = rawFormat;
+  }
+
+  if (rawWidth === null && rawQuality === null && !format) {
+    return null;
+  }
+
+  return {
+    width: rawWidth === null ? undefined : rawWidth,
+    quality: rawQuality === null ? undefined : rawQuality,
+    format,
+  };
+}
+
+async function transformImageBuffer(params: {
+  buffer: Buffer;
+  contentType: string;
+  options: ImageTransformOptions;
+}): Promise<{ buffer: Buffer; contentType: string }> {
+  const { buffer, contentType, options } = params;
+
+  let pipeline = sharp(buffer, { failOn: 'none' }).rotate();
+
+  if (options.width) {
+    pipeline = pipeline.resize({
+      width: options.width,
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
+  }
+
+  const normalizedSource = contentType.toLowerCase();
+  const targetFormat: ImageFormat =
+    options.format || (normalizedSource.includes('png') ? 'webp' : 'jpeg');
+  const quality = options.quality || (targetFormat === 'png' ? 80 : 72);
+
+  if (targetFormat === 'webp') {
+    pipeline = pipeline.webp({ quality });
+    return {
+      buffer: await pipeline.toBuffer(),
+      contentType: 'image/webp',
+    };
+  }
+
+  if (targetFormat === 'png') {
+    pipeline = pipeline.png({ quality, compressionLevel: 9, adaptiveFiltering: true });
+    return {
+      buffer: await pipeline.toBuffer(),
+      contentType: 'image/png',
+    };
+  }
+
+  pipeline = pipeline.jpeg({ quality, mozjpeg: true });
+  return {
+    buffer: await pipeline.toBuffer(),
+    contentType: 'image/jpeg',
+  };
+}
 
 function clientError(error: unknown): string {
   if (process.env.NODE_ENV === 'production') return 'Erro interno. Tente novamente.';
@@ -35,6 +132,7 @@ export class ProductsController {
   async getImageObject(req: Request, res: Response): Promise<void> {
     try {
       const objectPath = String(req.query['path'] || '').trim();
+      const transformOptions = resolveImageTransformOptions(req);
 
       if (!objectPath) {
         res.status(400).json({ error: 'path é obrigatório.' });
@@ -46,11 +144,53 @@ export class ProductsController {
         return;
       }
 
-      const file = await getObjectBufferByPath({ objectPath });
+      if (transformOptions) {
+        const file = await getObjectBufferByPath({ objectPath });
+        const transformed = await transformImageBuffer({
+          buffer: file.buffer,
+          contentType: file.contentType,
+          options: transformOptions,
+        });
+
+        res.setHeader('Content-Type', transformed.contentType);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        res.setHeader('Content-Length', transformed.buffer.length);
+
+        if (req.method === 'HEAD') {
+          res.status(200).end();
+          return;
+        }
+
+        res.send(transformed.buffer);
+        return;
+      }
+
+      const file = await getObjectStreamByPath({ objectPath });
       res.setHeader('Content-Type', file.contentType);
       res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.send(file.buffer);
+      if (file.contentLength) {
+        res.setHeader('Content-Length', file.contentLength);
+      }
+
+      if (req.method === 'HEAD') {
+        res.status(200).end();
+        return;
+      }
+
+      file.stream.on('error', () => {
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Falha ao ler imagem.' });
+          return;
+        }
+        res.end();
+      });
+      file.stream.pipe(res);
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Parâmetro')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
       const code = Number((error as { code?: unknown })?.code || 0);
       if (code === 404) {
         res.status(404).json({ error: 'Imagem não encontrada.' });

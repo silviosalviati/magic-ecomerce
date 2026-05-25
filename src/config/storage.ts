@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { Storage } from '@google-cloud/storage';
+import { Readable } from 'stream';
 
 const SIGNED_UPLOAD_TTL_MS = 5 * 60 * 1000;
 
@@ -157,6 +158,31 @@ export async function getObjectBufferByPath(params: {
   return {
     buffer,
     contentType: String(metadata.contentType || 'application/octet-stream'),
+  };
+}
+
+export async function getObjectStreamByPath(params: {
+  objectPath: string;
+  bucket?: string;
+}): Promise<{ stream: Readable; contentType: string; contentLength?: number }> {
+  const bucketName = params.bucket || process.env.GCP_BUCKET_NAME || 'magic-ecommerce-fotos';
+  const storage = getStorageClient();
+  const file = storage.bucket(bucketName).file(params.objectPath);
+
+  const [exists] = await file.exists();
+  if (!exists) {
+    const notFound = new Error('Objeto não encontrado.');
+    (notFound as { code?: number }).code = 404;
+    throw notFound;
+  }
+
+  const [metadata] = await file.getMetadata();
+  const size = Number(metadata.size);
+
+  return {
+    stream: file.createReadStream(),
+    contentType: String(metadata.contentType || 'application/octet-stream'),
+    contentLength: Number.isFinite(size) ? size : undefined,
   };
 }
 

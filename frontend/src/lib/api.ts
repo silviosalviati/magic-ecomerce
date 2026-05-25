@@ -106,29 +106,49 @@ function extractGcsObjectPath(imageUrl: string): string | null {
   return null;
 }
 
-function toCatalogImageUrl(imageUrl: string, apiBaseUrl: string): string {
+function toOptimizedCatalogImageUrl(
+  imageUrl: string,
+  apiBaseUrl: string,
+  options: { width: number; quality: number; format: 'webp' | 'jpeg' | 'png' }
+): string {
   const objectPath = extractGcsObjectPath(imageUrl);
   if (!objectPath || !objectPath.startsWith('produtos/')) {
     return imageUrl;
   }
 
-  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}`;
+  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}&w=${options.width}&q=${options.quality}&fm=${options.format}`;
 }
 
 export function mapProductsToCatalog(products: ApiProduct[], apiBaseUrl: string): CatalogProduct[] {
   return products
     .filter((product) => product.variants.length > 0)
     .map((product) => {
+      const sourceImages = product.images?.length ? product.images : [];
+
       const transformedImages = product.images?.length
-        ? product.images.map((url) => toCatalogImageUrl(url, apiBaseUrl))
+        ? sourceImages.map((url) =>
+            toOptimizedCatalogImageUrl(url, apiBaseUrl, {
+              width: 1280,
+              quality: 78,
+              format: 'webp',
+            })
+          )
         : [fallbackImage(product.name)];
+
+      const listImage = sourceImages[0]
+        ? toOptimizedCatalogImageUrl(sourceImages[0], apiBaseUrl, {
+            width: 760,
+            quality: 70,
+            format: 'webp',
+          })
+        : fallbackImage(product.name);
 
       return {
         productId: product.id,
         name: product.name,
         description: product.description || 'Seleção MAGI.C para o seu guarda-roupa.',
         category: product.category,
-        imageUrl: transformedImages[0] || fallbackImage(product.name),
+        imageUrl: listImage,
         images: transformedImages,
         price: toNumber(product.basePrice),
         variants: product.variants.map((variant) => ({
