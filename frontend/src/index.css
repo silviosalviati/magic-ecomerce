@@ -292,6 +292,43 @@ textarea:focus-visible {
   color: var(--color-text-primary);
 }
 
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  order: 3;
+  border: 0.5px solid var(--color-border);
+  background: rgba(var(--color-text-ch), 0.03);
+  padding: 9px 12px;
+  color: var(--color-text-muted);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+
+.header-search:focus-within {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+  background: rgba(var(--color-text-ch), 0.06);
+}
+
+.header-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
+.header-search input::placeholder {
+  color: var(--color-text-faint);
+}
+
 /* ═══════════════════════════════════════════════════════════
    BUTTON SYSTEM — 3 canonical variants
 ═══════════════════════════════════════════════════════════ */
@@ -1030,6 +1067,10 @@ textarea:focus-visible {
 
 /* ─── RESPONSIVE ─── */
 @media (min-width: 768px) {
+  .site-header {
+    flex-wrap: nowrap;
+  }
+
   .hero {
     grid-template-columns: 1fr 1fr;
     min-height: 520px;
@@ -1042,6 +1083,12 @@ textarea:focus-visible {
 
   .main-nav {
     display: flex;
+  }
+
+  .header-search {
+    order: 0;
+    width: min(360px, 36vw);
+    flex-shrink: 0;
   }
 
   .features {
@@ -1932,6 +1979,10 @@ textarea:focus-visible {
 
   .site-header {
     padding: 20px 40px;
+  }
+
+  .header-search {
+    width: min(420px, 34vw);
   }
 
   .main-nav {

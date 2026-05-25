@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CartSidebar } from './components/CartSidebar';
 import { Footer } from './components/Footer';
@@ -34,8 +34,17 @@ function saveCatalogCache(items: CatalogProduct[]) {
   }
 }
 
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 function App() {
   const [items, setItems] = useState<CatalogProduct[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -141,9 +150,28 @@ function App() {
     setCartItems([]);
   }
 
+  const filteredItems = useMemo(() => {
+    const term = normalizeSearchText(searchQuery);
+    if (!term) return items;
+
+    return items.filter((product) => {
+      const baseFields = [product.name, product.description, product.category];
+      const variantFields = product.variants.flatMap((variant) => [
+        variant.color,
+        variant.size,
+        variant.barcode,
+      ]);
+
+      return [...baseFields, ...variantFields].some((field) =>
+        normalizeSearchText(String(field || '')).includes(term)
+      );
+    });
+  }, [items, searchQuery]);
+
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const location = useLocation();
   const isCheckoutPage = location.pathname === '/checkout';
+  const showHeaderSearch = location.pathname === '/';
 
   return (
     <div className="page-shell">
@@ -151,6 +179,9 @@ function App() {
         <Header
           cartCount={cartCount}
           onOpenCart={() => setCartOpen(true)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          showSearch={showHeaderSearch}
         />
       )}
 
@@ -159,7 +190,8 @@ function App() {
           path="/"
           element={
             <HomePage
-              items={items}
+              items={filteredItems}
+              searchQuery={searchQuery}
               loading={loading}
               error={error}
               warning={warning}

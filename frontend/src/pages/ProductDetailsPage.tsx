@@ -11,6 +11,13 @@ type ProductDetailsPageProps = {
   onBuyNow: (item: CartItem) => void;
 };
 
+function resolveBreadcrumbCategory(category: string): string {
+  const normalized = category.toLowerCase();
+  if (normalized.includes('femin')) return 'Feminino';
+  if (normalized.includes('mascul')) return 'Masculino';
+  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+}
+
 export function ProductDetailsPage({
   items,
   loading,
@@ -103,6 +110,7 @@ export function ProductDetailsPage({
     selectedVariant.stock <= 0 ? 'off' : selectedVariant.stock <= 3 ? 'low' : 'ok';
 
   const cartItem = buildCartItem(product, selectedVariant);
+  const breadcrumbCategory = resolveBreadcrumbCategory(product.category);
 
   return (
     <>
@@ -110,7 +118,7 @@ export function ProductDetailsPage({
         <div className="breadcrumbs">
           <Link to="/">Home</Link>
           <span>/</span>
-          <span>{product.category}</span>
+          <span>{breadcrumbCategory}</span>
           <span>/</span>
           <strong>{product.name}</strong>
         </div>

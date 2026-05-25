@@ -8,6 +8,7 @@ import type { CartItem, CatalogProduct } from '../types';
 
 type HomePageProps = {
   items: CatalogProduct[];
+  searchQuery: string;
   loading: boolean;
   error: string | null;
   warning: string | null;
@@ -18,6 +19,7 @@ type HomePageProps = {
 
 export function HomePage({
   items,
+  searchQuery,
   loading,
   error,
   warning,
@@ -188,7 +190,11 @@ export function HomePage({
           </div>
         )}
         {!loading && !error && items.length === 0 && (
-          <div className="status">Sem produtos cadastrados no momento.</div>
+          <div className="status">
+            {searchQuery.trim().length > 0
+              ? `Nenhum produto encontrado para "${searchQuery.trim()}".`
+              : 'Sem produtos cadastrados no momento.'}
+          </div>
         )}
         {!loading && !error && items.length > 0 && (
           <div className="product-grid">
