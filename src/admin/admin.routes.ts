@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { AdminController } from './admin.controller';
 import { requireAdminKey } from '../middlewares/auth.middleware';
 import { validateUpdateStock } from '../middlewares/validate.middleware';
+import { listOrders, getOrder, updateOrder } from './orders.controller';
 
 const adminRouter = Router();
 const controller = new AdminController();
@@ -40,5 +41,10 @@ adminRouter.patch(
   validateUpdateStock,
   (req: Request, res: Response) => controller.updateStock(req, res)
 );
+
+// ── Orders management ────────────────────────────────────────────────────────
+adminRouter.get('/orders', (req: Request, res: Response) => listOrders(req, res));
+adminRouter.get('/orders/:id', (req: Request, res: Response) => getOrder(req, res));
+adminRouter.patch('/orders/:id', (req: Request, res: Response) => updateOrder(req, res));
 
 export { adminRouter };

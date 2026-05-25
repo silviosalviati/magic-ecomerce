@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Menu, Search, ShoppingBag, X } from 'lucide-react';
+import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { LogoMark } from './LogoMark';
 
 type HeaderProps = {
@@ -19,6 +20,7 @@ export function Header({
   showSearch = true,
 }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   function closeMenu() {
     setMenuOpen(false);
@@ -46,6 +48,14 @@ export function Header({
             />
           </label>
         )}
+        <Link
+          to={user ? '/minha-conta' : '/entrar'}
+          className="header-account"
+          aria-label={user ? `Minha conta — ${user.name}` : 'Entrar'}
+        >
+          <User size={15} strokeWidth={1.6} aria-hidden="true" />
+          <span>{user ? user.name.split(' ')[0] : 'Entrar'}</span>
+        </Link>
         <button className="header-bag" type="button" onClick={onOpenCart}>
           <ShoppingBag size={15} strokeWidth={1.6} aria-hidden="true" />
           <span>Sacola</span>

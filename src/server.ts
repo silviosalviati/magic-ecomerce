@@ -6,6 +6,8 @@ import cors from 'cors';
 import { productsRouter } from './products/products.routes';
 import { adminRouter } from './admin/admin.routes';
 import { checkoutRouter } from './checkout/checkout.routes';
+import { ordersRouter } from './orders/orders.routes';
+import { authRouter } from './auth/auth.routes';
 import { prisma } from './config/database';
 
 const app = express();
@@ -59,7 +61,7 @@ app.use(
       }
     },
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'x-admin-key', 'X-Tunnel-Skip-AntiPhishing-Page'],
+    allowedHeaders: ['Content-Type', 'x-admin-key', 'Authorization', 'X-Tunnel-Skip-AntiPhishing-Page'],
   })
 );
 
@@ -70,6 +72,8 @@ app.use(express.json({ limit: '25mb' }));
 app.use('/products', productsRouter);
 app.use('/admin', adminRouter);
 app.use('/checkout', checkoutRouter);
+app.use('/orders', ordersRouter);
+app.use('/auth', authRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {

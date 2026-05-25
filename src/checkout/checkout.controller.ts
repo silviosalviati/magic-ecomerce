@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { prisma } from '../config/database';
+import { sendStoreNotification, sendCustomerConfirmation } from '../config/mailer';
+import { notifyStoreWhatsApp } from '../config/whatsapp';
 import {
   findOrCreateCustomer,
   createPixPayment,
@@ -33,6 +35,13 @@ interface CheckoutBody {
   postalCode?: string;
   addressNumber?: string;
   installments?: number;
+  // Shipping address
+  addressStreet?: string;
+  addressComplement?: string;
+  addressNeighborhood?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressZip?: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,7 +61,23 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     postalCode,
     addressNumber,
     installments = 1,
+    addressStreet,
+    addressComplement,
+    addressNeighborhood,
+    addressCity,
+    addressState,
+    addressZip,
   } = req.body as CheckoutBody;
+
+  const addressData = {
+    addressStreet: addressStreet?.trim() || null,
+    addressNumber: addressNumber?.trim() || null,
+    addressComplement: addressComplement?.trim() || null,
+    addressNeighborhood: addressNeighborhood?.trim() || null,
+    addressCity: addressCity?.trim() || null,
+    addressState: addressState?.trim() || null,
+    addressZip: addressZip?.replace(/\D/g, '') || null,
+  };
 
   // ── Input validation ──────────────────────────────────────────────────────
   if (!name?.trim() || !email?.trim() || !cpf || !Array.isArray(items) || items.length === 0) {
@@ -133,6 +158,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           pixQrCode: pix.encodedImage,
           pixCopyPaste: pix.payload,
           pixExpiresAt: pix.expirationDate ? new Date(pix.expirationDate) : null,
+          ...addressData,
           items: {
             create: items.map((i) => ({
               variantId: i.variantId,
@@ -171,6 +197,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           boletoUrl: boleto.bankSlipUrl,
           boletoBarcode: boleto.nossoNumero,
           boletoDueDate: boleto.dueDate ? new Date(boleto.dueDate) : null,
+          ...addressData,
           items: {
             create: items.map((i) => ({
               variantId: i.variantId,
@@ -231,6 +258,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         guestName: name.trim(),
         guestEmail: email.trim(),
         guestCpf: cpfClean,
+        ...addressData,
         items: {
           create: items.map((i) => ({
             variantId: i.variantId,
@@ -323,10 +351,90 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
   }
 
   try {
-    await prisma.order.updateMany({
+    const orders = await prisma.order.findMany({
       where: { paymentId: payment.id },
-      data: { status: newStatus },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: { product: true },
+            },
+          },
+        },
+      },
     });
+
+    for (const order of orders) {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { status: newStatus },
+      });
+
+      await prisma.orderStatusUpdate.create({
+        data: { orderId: order.id, status: newStatus },
+      });
+
+      if (newStatus === 'PAID') {
+        // Decrement stock
+        for (const item of order.items) {
+          await prisma.variant.update({
+            where: { id: item.variantId },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
+
+        // Send notifications (non-blocking)
+        const emailItems = order.items.map((item) => ({
+          variantId: item.variantId,
+          quantity: item.quantity,
+          priceAtPurchase: item.priceAtPurchase,
+          productName: item.variant.product.name,
+          color: item.variant.color,
+          size: item.variant.size,
+        }));
+
+        const emailData = {
+          orderId: order.id,
+          customerName: order.guestName || 'Cliente',
+          customerEmail: order.guestEmail || '',
+          customerCpf: order.guestCpf || '',
+          paymentMethod: order.paymentMethod || 'PIX',
+          total: Number(order.total),
+          items: emailItems.map((item) => ({
+            ...item,
+            priceAtPurchase: Number(item.priceAtPurchase),
+          })),
+          address: {
+            street: order.addressStreet || undefined,
+            number: order.addressNumber || undefined,
+            complement: order.addressComplement || undefined,
+            neighborhood: order.addressNeighborhood || undefined,
+            city: order.addressCity || undefined,
+            state: order.addressState || undefined,
+            zip: order.addressZip || undefined,
+          },
+        };
+
+        sendStoreNotification(emailData).catch((err) =>
+          console.error('[webhook][email-store]', err.message)
+        );
+
+        if (order.guestEmail) {
+          sendCustomerConfirmation(emailData).catch((err) =>
+            console.error('[webhook][email-customer]', err.message)
+          );
+        }
+
+        notifyStoreWhatsApp({
+          orderId: order.id,
+          customerName: order.guestName || 'Cliente',
+          paymentMethod: order.paymentMethod || 'PIX',
+          total: Number(order.total),
+          itemCount: order.items.length,
+        }).catch((err) => console.error('[webhook][whatsapp]', err.message));
+      }
+    }
+
     res.sendStatus(200);
   } catch (error) {
     console.error('[webhook]', error);

@@ -82,6 +82,57 @@ export interface CheckoutPayload {
   postalCode?: string;
   addressNumber?: string;
   installments?: number;
+  // Shipping address
+  addressStreet?: string;
+  addressComplement?: string;
+  addressNeighborhood?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressZip?: string;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface OrderItem {
+  id: string;
+  quantity: number;
+  priceAtPurchase: number;
+  productName: string;
+  color: string;
+  size: string;
+  productId: string;
+}
+
+export interface OrderStatusUpdate {
+  status: string;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface Order {
+  id: string;
+  status: string;
+  paymentMethod: string | null;
+  total: number;
+  createdAt: string;
+  shippingMethod: string | null;
+  trackingCode: string | null;
+  trackingUrl: string | null;
+  items: OrderItem[];
+  statusHistory?: OrderStatusUpdate[];
+  address?: {
+    street: string | null;
+    number: string | null;
+    complement: string | null;
+    neighborhood: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+  } | null;
 }
 
 export interface CheckoutResponse {

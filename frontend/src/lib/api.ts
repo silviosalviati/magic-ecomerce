@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ApiProduct, CatalogProduct, CheckoutPayload, CheckoutResponse } from '../types';
+import type { ApiProduct, AuthUser, CatalogProduct, CheckoutPayload, CheckoutResponse, Order } from '../types';
 
 const api = axios.create({
   baseURL:
@@ -198,4 +198,44 @@ export async function checkout(payload: CheckoutPayload): Promise<CheckoutRespon
     }
     throw error;
   }
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+export async function authRegister(
+  name: string,
+  email: string,
+  password: string
+): Promise<{ token: string; user: AuthUser }> {
+  const { data } = await api.post('/auth/register', { name, email, password });
+  return data;
+}
+
+export async function authLogin(
+  email: string,
+  password: string
+): Promise<{ token: string; user: AuthUser }> {
+  const { data } = await api.post('/auth/login', { email, password });
+  return data;
+}
+
+export async function authMe(token: string): Promise<AuthUser> {
+  const { data } = await api.get('/auth/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+
+export async function lookupOrders(email: string, cpf: string): Promise<Order[]> {
+  const { data } = await api.get('/orders/lookup', { params: { email, cpf } });
+  return data;
+}
+
+export async function getMyOrders(token: string): Promise<Order[]> {
+  const { data } = await api.get('/orders', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
 }

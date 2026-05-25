@@ -61,6 +61,16 @@ export function CheckoutPage({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
+  // Address
+  const [addressZip, setAddressZip] = useState('');
+  const [addressStreet, setAddressStreet] = useState('');
+  const [addressNumber, setAddressNumber] = useState('');
+  const [addressComplement, setAddressComplement] = useState('');
+  const [addressNeighborhood, setAddressNeighborhood] = useState('');
+  const [addressCity, setAddressCity] = useState('');
+  const [addressState, setAddressState] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
   const [cardData, setCardData] = useState<CreditCardFormData>(EMPTY_CARD);
   const [loading, setLoading] = useState(false);
@@ -78,8 +88,42 @@ export function CheckoutPage({
     }
   }, [cartItems.length, step, navigate]);
 
+  async function handleCepBlur() {
+    const clean = addressZip.replace(/\D/g, '');
+    if (clean.length !== 8) return;
+
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setAddressStreet(data.logradouro || '');
+        setAddressNeighborhood(data.bairro || '');
+        setAddressCity(data.localidade || '');
+        setAddressState(data.uf || '');
+        // Pre-fill card CEP too
+        setCardData((prev) => ({ ...prev, postalCode: clean }));
+      }
+    } catch {
+      // Ignore CEP lookup errors silently
+    } finally {
+      setCepLoading(false);
+    }
+  }
+
+  function formatCep(raw: string): string {
+    const d = raw.replace(/\D/g, '').slice(0, 8);
+    return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+  }
+
   function canProceedFromDetails(): boolean {
-    return name.trim().length > 0 && email.trim().length > 0 && cpfDigits.length === 11;
+    return (
+      name.trim().length > 0 &&
+      email.trim().length > 0 &&
+      cpfDigits.length === 11 &&
+      addressZip.replace(/\D/g, '').length === 8 &&
+      addressNumber.trim().length > 0
+    );
   }
 
   function canConfirmPayment(): boolean {
@@ -114,6 +158,13 @@ export function CheckoutPage({
           priceAtPurchase: i.price,
         })),
         paymentMethod,
+        addressZip: addressZip.replace(/\D/g, ''),
+        addressStreet: addressStreet.trim(),
+        addressNumber: addressNumber.trim(),
+        addressComplement: addressComplement.trim() || undefined,
+        addressNeighborhood: addressNeighborhood.trim(),
+        addressCity: addressCity.trim(),
+        addressState: addressState.trim(),
       };
 
       let result: CheckoutResponse;
@@ -126,8 +177,8 @@ export function CheckoutPage({
           cardExpiry: cardData.cardExpiry,
           cardCvv: cardData.cardCvv,
           phone: cardData.phone.replace(/\D/g, ''),
-          postalCode: cardData.postalCode.replace(/\D/g, ''),
-          addressNumber: cardData.addressNumber,
+          postalCode: cardData.postalCode.replace(/\D/g, '') || addressZip.replace(/\D/g, ''),
+          addressNumber: cardData.addressNumber || addressNumber.trim(),
           installments: cardData.installments,
         });
       } else {
@@ -247,6 +298,107 @@ export function CheckoutPage({
                     value={cpf}
                     onChange={(e) => setCpf(formatCpf(e.target.value))}
                   />
+                </div>
+
+                <div className="checkout-divider">
+                  <span>Endereço de entrega</span>
+                </div>
+
+                <div className="field-row">
+                  <div className="field-group" style={{ flex: '0 0 160px' }}>
+                    <label className="field-label" htmlFor="co-zip">
+                      CEP {cepLoading && <span className="cep-loading">buscando…</span>}
+                    </label>
+                    <input
+                      id="co-zip"
+                      className="field-input"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      placeholder="00000-000"
+                      value={addressZip}
+                      onChange={(e) => setAddressZip(formatCep(e.target.value))}
+                      onBlur={handleCepBlur}
+                    />
+                  </div>
+                  <div className="field-group" style={{ flex: 1 }}>
+                    <label className="field-label" htmlFor="co-street">Rua / Avenida</label>
+                    <input
+                      id="co-street"
+                      className="field-input"
+                      type="text"
+                      autoComplete="street-address"
+                      placeholder="Nome da rua"
+                      value={addressStreet}
+                      onChange={(e) => setAddressStreet(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="field-row">
+                  <div className="field-group" style={{ flex: '0 0 110px' }}>
+                    <label className="field-label" htmlFor="co-number">Número</label>
+                    <input
+                      id="co-number"
+                      className="field-input"
+                      type="text"
+                      placeholder="123"
+                      value={addressNumber}
+                      onChange={(e) => setAddressNumber(e.target.value)}
+                    />
+                  </div>
+                  <div className="field-group" style={{ flex: 1 }}>
+                    <label className="field-label" htmlFor="co-complement">
+                      Complemento <span className="field-optional">(opcional)</span>
+                    </label>
+                    <input
+                      id="co-complement"
+                      className="field-input"
+                      type="text"
+                      placeholder="Apto, bloco, casa…"
+                      value={addressComplement}
+                      onChange={(e) => setAddressComplement(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="field-row">
+                  <div className="field-group" style={{ flex: 1 }}>
+                    <label className="field-label" htmlFor="co-neighborhood">Bairro</label>
+                    <input
+                      id="co-neighborhood"
+                      className="field-input"
+                      type="text"
+                      placeholder="Bairro"
+                      value={addressNeighborhood}
+                      onChange={(e) => setAddressNeighborhood(e.target.value)}
+                    />
+                  </div>
+                  <div className="field-group" style={{ flex: 2 }}>
+                    <label className="field-label" htmlFor="co-city">Cidade</label>
+                    <input
+                      id="co-city"
+                      className="field-input"
+                      type="text"
+                      autoComplete="address-level2"
+                      placeholder="Cidade"
+                      value={addressCity}
+                      onChange={(e) => setAddressCity(e.target.value)}
+                    />
+                  </div>
+                  <div className="field-group" style={{ flex: '0 0 70px' }}>
+                    <label className="field-label" htmlFor="co-state">UF</label>
+                    <input
+                      id="co-state"
+                      className="field-input"
+                      type="text"
+                      autoComplete="address-level1"
+                      placeholder="SP"
+                      maxLength={2}
+                      value={addressState}
+                      onChange={(e) => setAddressState(e.target.value.toUpperCase())}
+                    />
+                  </div>
                 </div>
               </div>
 

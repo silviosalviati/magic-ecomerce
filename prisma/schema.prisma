@@ -58,6 +58,28 @@ model Order {
   boletoBarcode String?
   boletoDueDate DateTime?
   createdAt     DateTime    @default(now())
+  // Entrega
+  shippingMethod      String?
+  trackingCode        String?
+  trackingUrl         String?
+  // Endereço de entrega
+  addressStreet       String?
+  addressNumber       String?
+  addressComplement   String?
+  addressNeighborhood String?
+  addressCity         String?
+  addressState        String?
+  addressZip          String?
+  statusUpdates       OrderStatusUpdate[]
+}
+
+model OrderStatusUpdate {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
 }
 
 model OrderItem {

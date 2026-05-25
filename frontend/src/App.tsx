@@ -3,10 +3,16 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CartSidebar } from './components/CartSidebar';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
+import { AuthProvider } from './contexts/AuthContext';
 import { fetchCatalog } from './lib/api';
+import { AccountPage } from './pages/AccountPage';
+import { AdminOrdersPage } from './pages/AdminOrdersPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { OrderLookupPage } from './pages/OrderLookupPage';
 import { ProductDetailsPage } from './pages/ProductDetailsPage';
+import { RegisterPage } from './pages/RegisterPage';
 import type { CartItem, CatalogProduct } from './types';
 
 const CATALOG_CACHE_KEY = 'magic.catalog.cache.v1';
@@ -171,11 +177,13 @@ function App() {
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const location = useLocation();
   const isCheckoutPage = location.pathname === '/checkout';
+  const isAuthPage = ['/entrar', '/cadastrar'].includes(location.pathname);
   const showHeaderSearch = location.pathname === '/';
 
   return (
+    <AuthProvider>
     <div className="page-shell">
-      {!isCheckoutPage && (
+      {!isCheckoutPage && !isAuthPage && (
         <>
           <div className="announcement-bar" role="banner">
             <strong>Frete grátis</strong> acima de R$&nbsp;299 &nbsp;·&nbsp; Troca fácil em até 30 dias &nbsp;·&nbsp; <strong>Compra 100% segura</strong>
@@ -230,10 +238,15 @@ function App() {
             />
           }
         />
+        <Route path="/entrar" element={<LoginPage />} />
+        <Route path="/cadastrar" element={<RegisterPage />} />
+        <Route path="/minha-conta" element={<AccountPage />} />
+        <Route path="/rastrear-pedido" element={<OrderLookupPage />} />
+        <Route path="/admin/pedidos" element={<AdminOrdersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {!isCheckoutPage && (
+      {!isCheckoutPage && !isAuthPage && (
         <>
           <CartSidebar
             items={cartItems}
@@ -247,6 +260,7 @@ function App() {
         </>
       )}
     </div>
+    </AuthProvider>
   );
 }
 
