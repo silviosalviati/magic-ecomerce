@@ -32,6 +32,9 @@ export function ProductCard({ product, onAddToCart, onBuyNow, style }: ProductCa
         >
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
         </Link>
+        <div className="product-hover-overlay" aria-hidden="true">
+          <span className="product-hover-cta">Ver produto</span>
+        </div>
       </div>
       <div className="product-content">
         <p className="product-meta">{product.category.toUpperCase()}</p>
@@ -41,7 +44,6 @@ export function ProductCard({ product, onAddToCart, onBuyNow, style }: ProductCa
           </Link>
         </h3>
         <strong className="price-tag">{toCurrency(product.price)}</strong>
-        <p className="product-description">{product.description}</p>
 
         <div className="product-footer-actions">
           <button

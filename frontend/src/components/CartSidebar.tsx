@@ -24,6 +24,9 @@ export function CartSidebar({
 }: CartSidebarProps) {
   const navigate = useNavigate();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const FREE_SHIPPING_THRESHOLD = 299;
+  const shippingRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const shippingProgress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
 
   function handleClose() {
     onClose();
@@ -48,11 +51,34 @@ export function CartSidebar({
           </button>
         </div>
 
+        <div className="cart-shipping-bar">
+          {shippingRemaining > 0 ? (
+            <p className="cart-shipping-label">
+              Falta <strong>{toCurrency(shippingRemaining)}</strong> para frete grátis
+            </p>
+          ) : (
+            <p className="cart-shipping-label cart-shipping-achieved">
+              Você ganhou <strong>frete grátis!</strong>
+            </p>
+          )}
+          <div className="cart-shipping-track">
+            <div
+              className="cart-shipping-fill"
+              style={{ width: `${shippingProgress}%` }}
+              role="progressbar"
+              aria-valuenow={Math.round(shippingProgress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            />
+          </div>
+        </div>
+
         <div className="cart-body">
           {items.length === 0 && (
             <div className="cart-empty">
               <strong>Sua sacola está vazia.</strong>
               <p>Escolha cor, tamanho e adicione as peças que deseja comprar.</p>
+              <p className="cart-empty-note">Frete grátis acima de R$&nbsp;299</p>
             </div>
           )}
           {items.map((item) => (

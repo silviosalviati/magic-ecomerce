@@ -176,13 +176,18 @@ function App() {
   return (
     <div className="page-shell">
       {!isCheckoutPage && (
-        <Header
-          cartCount={cartCount}
-          onOpenCart={() => setCartOpen(true)}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          showSearch={showHeaderSearch}
-        />
+        <>
+          <div className="announcement-bar" role="banner">
+            <strong>Frete grátis</strong> acima de R$&nbsp;299 &nbsp;·&nbsp; Troca fácil em até 30 dias &nbsp;·&nbsp; <strong>Compra 100% segura</strong>
+          </div>
+          <Header
+            cartCount={cartCount}
+            onOpenCart={() => setCartOpen(true)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            showSearch={showHeaderSearch}
+          />
+        </>
       )}
 
       <Routes>

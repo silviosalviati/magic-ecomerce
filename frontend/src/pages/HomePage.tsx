@@ -138,15 +138,14 @@ export function HomePage({
         </div>
 
         <div className="hero-right">
-          <p className="hero-eyebrow">Seu estilo, sua magia</p>
+          <p className="hero-eyebrow">Nova coleção disponível</p>
           <h1 className="hero-headline">
-            Roupas com<br />
-            <strong>linguagem de marca,</strong>
-            <br />não vitrine genérica.
+            Moda que você<br />
+            <strong>vai querer usar</strong>
+            <br />todo dia.
           </h1>
           <p className="hero-sub">
-            Peças selecionadas para uma experiência de compra mais limpa e visualmente
-            precisa — como nas melhores lojas de moda digital.
+            Peças com caimento impecável, selecionadas com cuidado. Entrega rápida, troca fácil e compra 100% segura.
           </p>
           <div className="hero-ctas">
             <a className="btn-primary" href="#novidades">Explorar coleção</a>
@@ -154,6 +153,38 @@ export function HomePage({
           </div>
         </div>
       </section>
+
+      {/* ── TRUST BAR ── */}
+      <div className="trust-bar" aria-label="Garantias da loja">
+        <div className="trust-item">
+          <svg className="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>Compra Segura</span>
+        </div>
+        <div className="trust-item">
+          <svg className="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
+          </svg>
+          <span>Troca em 30 Dias</span>
+        </div>
+        <div className="trust-item">
+          <svg className="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="1" y="3" width="15" height="13" rx="1" />
+            <path d="M16 8h4l3 5v3h-7V8z" />
+            <circle cx="5.5" cy="18.5" r="2.5" />
+            <circle cx="18.5" cy="18.5" r="2.5" />
+          </svg>
+          <span>Envio Rápido</span>
+        </div>
+        <div className="trust-item">
+          <svg className="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <span>Atendimento via WhatsApp</span>
+        </div>
+      </div>
 
       {/* ── FEATURES ── */}
       <div className="features" aria-label="Destaques da experiência">
@@ -179,7 +210,20 @@ export function HomePage({
           <p className="section-label-inline">Novidades da coleção</p>
         </div>
 
-        {loading && <div className="status">Carregando produtos...</div>}
+        {loading && (
+          <div className="product-grid">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="product-card skeleton-card">
+                <div className="product-media skeleton-card" style={{ height: 'clamp(280px, 40vw, 480px)' }} />
+                <div className="product-content" style={{ gap: 8 }}>
+                  <span className="skeleton-line" style={{ width: '38%', height: 10 }} />
+                  <span className="skeleton-line" style={{ width: '72%', height: 16, marginTop: 4 }} />
+                  <span className="skeleton-line" style={{ width: '28%', height: 15, marginTop: 4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {warning && <div className="status warning">{warning}</div>}
         {error && (
           <div className="status status-row">
