@@ -7,8 +7,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SALT_ROUNDS = 10;
 const TOKEN_EXPIRY = '30d';
 
+function getJwtSecret(): string | null {
+  const secret = process.env.JWT_SECRET?.trim();
+  return secret && secret.length > 0 ? secret : null;
+}
+
 function generateToken(userId: string, email: string): string {
-  const secret = process.env.JWT_SECRET;
+  const secret = getJwtSecret();
   if (!secret) throw new Error('JWT_SECRET não configurado.');
   return jwt.sign({ userId, email }, secret, { expiresIn: TOKEN_EXPIRY });
 }
@@ -32,6 +37,11 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   if (password.length < 6) {
     res.status(400).json({ message: 'Senha deve ter pelo menos 6 caracteres.' });
+    return;
+  }
+
+  if (!getJwtSecret()) {
+    res.status(503).json({ message: 'Autenticação indisponível no momento.' });
     return;
   }
 
@@ -65,6 +75,11 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   if (!email?.trim() || !password?.trim()) {
     res.status(400).json({ message: 'email e senha são obrigatórios.' });
+    return;
+  }
+
+  if (!getJwtSecret()) {
+    res.status(503).json({ message: 'Autenticação indisponível no momento.' });
     return;
   }
 

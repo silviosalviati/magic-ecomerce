@@ -75,6 +75,7 @@ DATABASE_URL="postgresql://user:password@host:5432/dbname"
 PORT=3001
 ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173,https://vistamagic.com.br,https://www.vistamagic.com.br"
 ADMIN_SECRET_KEY="sua-chave-secreta"
+JWT_SECRET="chave-secreta-longa-e-unica"
 GCP_PROJECT_ID="seu-projeto-gcp"
 GCP_BUCKET_NAME="seu-bucket"
 GCP_PUBLIC_BASE_URL="https://storage.googleapis.com/seu-bucket"
