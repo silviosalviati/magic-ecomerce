@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { authRegister } from '../lib/api';
 
@@ -13,6 +13,9 @@ export function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as { from?: string } | null;
+  const from = locationState?.from;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,6 +40,7 @@ export function RegisterPage() {
         state: {
           message: response.message,
           email,
+          from,
         },
       });
     } catch (err: unknown) {
@@ -49,18 +53,51 @@ export function RegisterPage() {
 
   return (
     <main className="auth-page">
-      <aside className="auth-brand">
+      <aside className="auth-brand auth-brand--register-story">
         <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
           <img src="/logo/logo-transparent.png" alt="MAGI.C" />
         </Link>
-        <div className="auth-brand-body">
-          <div className="auth-brand-ornament">
-            <span className="auth-brand-ornament-diamond" />
-          </div>
-          <p className="auth-brand-tagline">
-            Sua jornada<br />começa aqui.
-          </p>
-          <p className="auth-brand-caption">Crie sua conta com e-mail verificado</p>
+        <div className="auth-brand-body auth-brand-body--register-story">
+          <article className="auth-brand-story-panel auth-brand-story-panel--vision">
+            <img
+              className="auth-brand-story-mark"
+              src="/logo/logo-transparent.png"
+              alt="Manifesto MAGI.C"
+            />
+            <p className="auth-brand-story-line">
+              TUDO COMECA
+              <br />
+              COM UMA <span>VISAO.</span>
+            </p>
+            <div className="auth-brand-story-waves" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </article>
+
+          <article className="auth-brand-story-panel auth-brand-story-panel--courage">
+            <div className="auth-brand-story-shatter" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+            <p className="auth-brand-story-line">
+              MAS CRESCER
+              <br />
+              EXIGE <span>CORAGEM.</span>
+            </p>
+          </article>
+
+          <article className="auth-brand-story-panel auth-brand-story-panel--essence">
+            <p className="auth-brand-story-line">
+              MUDAR E PERMITIR
+              <br />
+              QUE A ESSENCIA
+              <br />
+              <span>EVOLUA.</span>
+            </p>
+          </article>
         </div>
       </aside>
 
