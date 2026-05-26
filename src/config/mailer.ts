@@ -189,21 +189,50 @@ export async function sendEmailVerification(params: {
   if (!process.env.SMTP_USER) return;
 
   const verifyUrl = buildFrontendUrl(`/verificar-email?token=${encodeURIComponent(params.token)}`);
+  const safeName = escapeHtml(params.name);
 
   await transporter.sendMail({
     from: `"MAGI.C" <${process.env.SMTP_USER}>`,
     to: params.email,
     subject: 'Confirme seu e-mail para ativar sua conta — MAGI.C',
+    text: `Olá, ${params.name}.\n\nPara ativar sua conta na MAGI.C, confirme seu e-mail acessando o link abaixo:\n${verifyUrl}\n\nEste link expira em 24 horas.\n\nSe você não criou esta conta, ignore este e-mail.`,
     html: `
-      <div style="font-family:sans-serif;background:#0d0d0d;color:#f5ede8;padding:32px;max-width:600px;margin:auto">
-        <h1 style="font-size:22px;margin:0 0 12px;color:#e8b4b0">Confirme seu e-mail</h1>
-        <p style="margin:0 0 18px">Olá, ${escapeHtml(params.name)}. Para ativar sua conta, confirme seu e-mail clicando no botão abaixo.</p>
-        <div style="margin:24px 0;text-align:center">
-          <a href="${verifyUrl}" style="background:#e8b4b0;color:#0d0d0d;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">
-            Confirmar e-mail
-          </a>
-        </div>
-        <p style="font-size:12px;color:#a89b95;word-break:break-all">Se o botão não abrir, use este link: ${verifyUrl}</p>
+      <div style="margin:0;padding:0;background:#06080f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#f5f2ee;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#06080f;padding:32px 14px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#10141f;border:1px solid #2a3248;border-radius:18px;overflow:hidden;">
+                <tr>
+                  <td style="padding:26px 30px;background:linear-gradient(115deg,#161b2b 0%,#1a2438 48%,#2f2a36 100%);border-bottom:1px solid #2a3248;">
+                    <p style="margin:0 0 10px;color:#d9c3ba;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;">Ativação de conta</p>
+                    <h1 style="margin:0;color:#f7ede8;font-size:30px;line-height:1.2;">Bem-vindo(a) à MAGI.C</h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 30px 12px;">
+                    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:#e8e1db;">Olá, <strong style="color:#ffffff;">${safeName}</strong>.</p>
+                    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#d6cdc7;">Sua conta foi criada com sucesso. Para começar com segurança, confirme seu e-mail no botão abaixo.</p>
+                    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0 10px;">
+                      <tr>
+                        <td align="center" bgcolor="#e5b7b0" style="border-radius:10px;">
+                          <a href="${verifyUrl}" style="display:inline-block;padding:14px 28px;font-weight:700;font-size:15px;color:#101219;text-decoration:none;">Confirmar e-mail</a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin:14px 0 0;font-size:13px;color:#b8ada7;line-height:1.6;">Este link expira em <strong>24 horas</strong>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 30px 30px;">
+                    <p style="margin:0 0 8px;font-size:13px;color:#9f9aa5;line-height:1.6;">Se o botão não abrir, copie e cole este endereço no navegador:</p>
+                    <p style="margin:0;padding:14px;border-radius:10px;background:#0b0f1a;border:1px solid #222a3d;font-size:12px;line-height:1.7;color:#b9c3e4;word-break:break-all;">${verifyUrl}</p>
+                    <p style="margin:16px 0 0;font-size:12px;color:#8f8791;line-height:1.6;">Se você não criou esta conta, pode ignorar este e-mail com segurança.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </div>`,
   });
 }
