@@ -236,8 +236,19 @@ export async function authRegister(
   email: string,
   password: string
 ): Promise<AuthRegisterResponse> {
-  const { data } = await api.post<AuthRegisterResponse>('/auth/register', { name, email, password });
-  return data;
+  try {
+    const { data } = await api.post<AuthRegisterResponse>('/auth/register', { name, email, password });
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiMessage = error.response?.data?.message;
+      if (typeof apiMessage === 'string' && apiMessage.trim().length > 0) {
+        throw new Error(apiMessage.trim());
+      }
+    }
+
+    throw error;
+  }
 }
 
 export async function authLogin(
