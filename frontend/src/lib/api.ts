@@ -28,6 +28,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message =
+      (error.response?.data as { message?: string } | undefined)?.message || error.message;
+    return Promise.reject(new Error(message));
+  },
+);
+
 const DEFAULT_API_BASE_URL = 'https://magic-ecomerce-api-731025483706.us-central1.run.app';
 
 function normalizeBaseUrl(value: string): string {
