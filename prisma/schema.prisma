@@ -77,6 +77,8 @@ model Order {
   addressCity         String?
   addressState        String?
   addressZip          String?
+  couponCode          String?
+  discountAmount      Decimal? @db.Decimal(10, 2)
   statusUpdates       OrderStatusUpdate[]
 }
 
@@ -97,4 +99,16 @@ model OrderItem {
   variant         Variant @relation(fields: [variantId], references: [id])
   quantity        Int
   priceAtPurchase Decimal
+}
+
+model Coupon {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  type      String   @default("PERCENTAGE")
+  discount  Decimal  @db.Decimal(10, 2)
+  expiresAt DateTime
+  maxUses   Int?
+  usedCount Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }

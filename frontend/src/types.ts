@@ -67,12 +67,21 @@ export interface CreditCardFormData {
   installments: number;
 }
 
+export interface CouponValidationResponse {
+  valid: boolean;
+  message: string;
+  type?: string;
+  discountAmount?: number;
+  finalTotal?: number;
+}
+
 export interface CheckoutPayload {
   name: string;
   email: string;
   cpf: string;
   items: { variantId: string; quantity: number; priceAtPurchase: number }[];
   paymentMethod: PaymentMethod;
+  couponCode?: string;
   // Credit card fields
   cardHolderName?: string;
   cardNumber?: string;

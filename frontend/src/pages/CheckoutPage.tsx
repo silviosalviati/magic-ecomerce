@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { checkout, getCheckoutInstallments } from '../lib/api';
+import { checkout, getCheckoutInstallments, validateCoupon } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type {
   CartItem,
   CheckoutInstallmentsResponse,
   CheckoutResponse,
+  CouponValidationResponse,
   CreditCardFormData,
   PaymentMethod,
 } from '../types';
@@ -86,7 +87,15 @@ export function CheckoutPage({
   const [error, setError] = useState<string | null>(null);
   const [orderResult, setOrderResult] = useState<CheckoutResponse | null>(null);
 
+  // Coupon
+  const [couponInput, setCouponInput] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponResult, setCouponResult] = useState<CouponValidationResponse | null>(null);
+  const [couponError, setCouponError] = useState('');
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const discount = couponResult?.valid ? (couponResult.discountAmount ?? 0) : 0;
+  const total = Math.max(0, subtotal - discount);
   const cpfDigits = cpf.replace(/\D/g, '');
   const stepIndex = STEP_ORDER.indexOf(step);
 
@@ -187,6 +196,31 @@ export function CheckoutPage({
     return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
   }
 
+  async function applyCoupon() {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+    setCouponResult(null);
+    try {
+      const result = await validateCoupon(couponInput.trim(), subtotal);
+      if (result.valid) {
+        setCouponResult(result);
+      } else {
+        setCouponError(result.message);
+      }
+    } catch {
+      setCouponError('Não foi possível validar o cupom.');
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  function removeCoupon() {
+    setCouponResult(null);
+    setCouponInput('');
+    setCouponError('');
+  }
+
   function canProceedFromDetails(): boolean {
     return (
       cpfDigits.length === 11 &&
@@ -227,6 +261,7 @@ export function CheckoutPage({
           priceAtPurchase: i.price,
         })),
         paymentMethod,
+        couponCode: couponResult?.valid ? couponInput.trim() : undefined,
         addressZip: addressZip.replace(/\D/g, ''),
         addressStreet: addressStreet.trim(),
         addressNumber: addressNumber.trim(),
@@ -506,7 +541,7 @@ export function CheckoutPage({
                 <CreditCardForm
                   data={cardData}
                   onChange={setCardData}
-                  total={subtotal}
+                  total={total}
                   installmentOptions={installmentsData?.options ?? []}
                   maxNoInterestInstallments={installmentsData?.maxNoInterestInstallments}
                 />
@@ -632,11 +667,58 @@ export function CheckoutPage({
             onIncrease={step === 'details' ? onIncrease : undefined}
             onRemove={step === 'details' ? onRemove : undefined}
           />
+
           {step !== 'confirmation' && (
-            <div className="order-summary-total-cta">
-              <div className="order-summary-row order-summary-total">
-                <span>Total</span>
-                <strong>{toCurrency(subtotal)}</strong>
+            <div className="checkout-pricing">
+              {/* Coupon */}
+              {couponResult?.valid ? (
+                <div className="coupon-applied">
+                  <span className="coupon-applied-badge">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    {couponInput.toUpperCase()}
+                  </span>
+                  <button type="button" className="coupon-remove" onClick={removeCoupon}>Remover</button>
+                </div>
+              ) : (
+                <div className="coupon-row">
+                  <input
+                    type="text"
+                    className="coupon-input"
+                    placeholder="Cupom de desconto"
+                    value={couponInput}
+                    onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void applyCoupon(); }}
+                  />
+                  <button
+                    type="button"
+                    className="coupon-btn"
+                    onClick={() => void applyCoupon()}
+                    disabled={couponLoading || !couponInput.trim()}
+                  >
+                    {couponLoading
+                      ? <span className="coupon-spinner" />
+                      : 'Aplicar'}
+                  </button>
+                </div>
+              )}
+              {couponError && <p className="coupon-error">{couponError}</p>}
+
+              {/* Price breakdown */}
+              <div className="checkout-price-rows">
+                <div className="checkout-price-row">
+                  <span>Subtotal</span>
+                  <span>{toCurrency(subtotal)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="checkout-price-row checkout-price-row--discount">
+                    <span>Desconto</span>
+                    <span>− {toCurrency(discount)}</span>
+                  </div>
+                )}
+                <div className="checkout-price-row checkout-price-row--total">
+                  <span>Total</span>
+                  <strong>{toCurrency(total)}</strong>
+                </div>
               </div>
             </div>
           )}

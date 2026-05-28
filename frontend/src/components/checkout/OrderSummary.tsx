@@ -12,8 +12,6 @@ function toCurrency(value: number): string {
 }
 
 export function OrderSummary({ items, onDecrease, onIncrease, onRemove }: OrderSummaryProps) {
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
   return (
     <div className="order-summary-panel">
       <h3 className="order-summary-title">Resumo do pedido</h3>
@@ -54,17 +52,6 @@ export function OrderSummary({ items, onDecrease, onIncrease, onRemove }: OrderS
           </li>
         ))}
       </ul>
-
-      <div className="order-summary-divider" />
-
-      <div className="order-summary-row">
-        <span>Subtotal</span>
-        <span>{toCurrency(subtotal)}</span>
-      </div>
-      <div className="order-summary-row order-summary-total">
-        <span>Total</span>
-        <strong>{toCurrency(subtotal)}</strong>
-      </div>
     </div>
   );
 }

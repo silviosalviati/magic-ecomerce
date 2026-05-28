@@ -9,6 +9,7 @@ import type {
   CheckoutInstallmentsResponse,
   CheckoutPayload,
   CheckoutResponse,
+  CouponValidationResponse,
   Order,
 } from '../types';
 
@@ -228,6 +229,11 @@ export async function checkout(payload: CheckoutPayload): Promise<CheckoutRespon
     }
     throw error;
   }
+}
+
+export async function validateCoupon(code: string, subtotal: number): Promise<CouponValidationResponse> {
+  const { data } = await api.post<CouponValidationResponse>('/checkout/validate-coupon', { code, subtotal });
+  return data;
 }
 
 export async function getCheckoutInstallments(total: number): Promise<CheckoutInstallmentsResponse> {

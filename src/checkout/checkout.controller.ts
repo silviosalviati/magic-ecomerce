@@ -3,6 +3,7 @@ import axios from 'axios';
 import { prisma } from '../config/database';
 import { sendStoreNotification, sendCustomerConfirmation } from '../config/mailer';
 import { notifyStoreWhatsApp } from '../config/whatsapp';
+import { validateCoupon } from './coupon.service';
 import {
   findOrCreateCustomer,
   createPixPayment,
@@ -28,6 +29,7 @@ interface CheckoutBody {
   cpf: string;
   items: CheckoutItem[];
   paymentMethod?: 'PIX' | 'CREDIT_CARD' | 'BOLETO';
+  couponCode?: string;
   // Credit card fields
   cardHolderName?: string;
   cardNumber?: string;
@@ -147,6 +149,17 @@ export async function getCheckoutInstallments(req: Request, res: Response): Prom
   }
 }
 
+export async function validateCouponEndpoint(req: Request, res: Response): Promise<void> {
+  const { code, subtotal } = req.body as { code?: string; subtotal?: unknown };
+  const sub = Number(subtotal);
+  if (!code?.trim() || !Number.isFinite(sub) || sub <= 0) {
+    res.status(400).json({ valid: false, message: 'code e subtotal são obrigatórios.' });
+    return;
+  }
+  const result = await validateCoupon(code, sub);
+  res.json(result);
+}
+
 export async function createCheckout(req: Request, res: Response): Promise<void> {
   const userId = (req as AuthRequest).userId ?? null;
   const {
@@ -163,6 +176,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     postalCode,
     addressNumber,
     installments = 1,
+    couponCode,
     addressStreet,
     addressComplement,
     addressNeighborhood,
@@ -240,7 +254,22 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
       }
     }
 
-    const total = items.reduce((sum, i) => sum + i.priceAtPurchase * i.quantity, 0);
+    const subtotal = items.reduce((sum, i) => sum + i.priceAtPurchase * i.quantity, 0);
+
+    // Apply coupon if provided
+    let discountAmount = 0;
+    let appliedCouponCode: string | null = null;
+    let appliedCouponId: string | null = null;
+    if (couponCode?.trim()) {
+      const couponResult = await validateCoupon(couponCode.trim(), subtotal);
+      if (couponResult.valid && couponResult.couponId) {
+        discountAmount = couponResult.discountAmount ?? 0;
+        appliedCouponCode = couponResult.code ?? null;
+        appliedCouponId = couponResult.couponId;
+      }
+    }
+    const total = Math.max(0, Math.round((subtotal - discountAmount) * 100) / 100);
+
     const customer = await findOrCreateCustomer(name.trim(), email.trim(), cpfClean);
 
     // ── PIX ───────────────────────────────────────────────────────────────
@@ -260,6 +289,8 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           pixQrCode: pix.encodedImage,
           pixCopyPaste: pix.payload,
           pixExpiresAt: pix.expirationDate ? new Date(pix.expirationDate) : null,
+          couponCode: appliedCouponCode,
+          discountAmount: discountAmount > 0 ? discountAmount : null,
           ...(userId ? { userId } : {}),
           ...addressData,
           items: {
@@ -271,6 +302,10 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           },
         },
       });
+
+      if (appliedCouponId) {
+        await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
+      }
 
       res.json({
         orderId: order.id,
@@ -300,6 +335,8 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           boletoUrl: boleto.bankSlipUrl,
           boletoBarcode: boleto.nossoNumero,
           boletoDueDate: boleto.dueDate ? new Date(boleto.dueDate) : null,
+          couponCode: appliedCouponCode,
+          discountAmount: discountAmount > 0 ? discountAmount : null,
           ...(userId ? { userId } : {}),
           ...addressData,
           items: {
@@ -311,6 +348,10 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           },
         },
       });
+
+      if (appliedCouponId) {
+        await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
+      }
 
       res.json({
         orderId: order.id,
@@ -362,6 +403,8 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         guestName: name.trim(),
         guestEmail: email.trim(),
         guestCpf: cpfClean,
+        couponCode: appliedCouponCode,
+        discountAmount: discountAmount > 0 ? discountAmount : null,
         ...(userId ? { userId } : {}),
         ...addressData,
         items: {
@@ -373,6 +416,10 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         },
       },
     });
+
+    if (appliedCouponId) {
+      await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
+    }
 
     res.json({
       orderId: order.id,

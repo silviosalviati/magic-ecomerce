@@ -329,9 +329,10 @@ export class AdminController {
   // GET /admin/dashboard
   async dashboard(_req: Request, res: Response): Promise<void> {
     try {
-      const [totalProducts, totalVariants, lowStock] = await Promise.all([
+      const [totalProducts, totalVariants, totalUsers, lowStock] = await Promise.all([
         prisma.product.count(),
         prisma.variant.count(),
+        prisma.user.count(),
         prisma.variant.findMany({
           where: { stock: { lte: 5 } },
           include: { product: { select: { name: true } } },
@@ -342,9 +343,261 @@ export class AdminController {
       res.json({
         totalProducts,
         totalVariants,
+        totalUsers,
         lowStockAlerts: lowStock.length,
         lowStockItems: lowStock,
       });
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // GET /admin/users
+  async listUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const page = Math.max(1, Number(req.query['page']) || 1);
+      const limit = Math.min(50, Math.max(1, Number(req.query['limit']) || 25));
+      const search = String(req.query['search'] || '').trim();
+      const skip = (page - 1) * limit;
+
+      const where = search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {};
+
+      const [users, total] = await Promise.all([
+        prisma.user.findMany({
+          where,
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            isAdmin: true,
+            emailVerifiedAt: true,
+            failedLoginAttempts: true,
+            lockedUntil: true,
+            createdAt: true,
+            _count: { select: { orders: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.user.count({ where }),
+      ]);
+
+      res.json({ users, total, page, limit, totalPages: Math.ceil(total / limit) });
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // GET /admin/users/:id
+  async getUser(req: Request, res: Response): Promise<void> {
+    try {
+      const id = String(req.params['id']);
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          isAdmin: true,
+          emailVerifiedAt: true,
+          failedLoginAttempts: true,
+          lockedUntil: true,
+          createdAt: true,
+          orders: {
+            select: { id: true, total: true, status: true, createdAt: true, paymentMethod: true },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          },
+        },
+      });
+
+      if (!user) {
+        res.status(404).json({ error: 'Usuário não encontrado.' });
+        return;
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // PATCH /admin/users/:id
+  async updateUser(req: Request, res: Response): Promise<void> {
+    try {
+      const id = String(req.params['id']);
+      const { name, email, isAdmin, unlockAccount } = req.body as {
+        name?: string;
+        email?: string;
+        isAdmin?: boolean;
+        unlockAccount?: boolean;
+      };
+
+      const existing = await prisma.user.findUnique({ where: { id } });
+      if (!existing) {
+        res.status(404).json({ error: 'Usuário não encontrado.' });
+        return;
+      }
+
+      const data: Record<string, unknown> = {};
+      if (name !== undefined) data['name'] = String(name).trim();
+      if (email !== undefined) data['email'] = String(email).trim().toLowerCase();
+      if (isAdmin !== undefined) data['isAdmin'] = Boolean(isAdmin);
+      if (unlockAccount) {
+        data['failedLoginAttempts'] = 0;
+        data['lockedUntil'] = null;
+      }
+
+      const updated = await prisma.user.update({
+        where: { id },
+        data,
+        select: {
+          id: true, name: true, email: true, isAdmin: true,
+          failedLoginAttempts: true, lockedUntil: true,
+        },
+      });
+
+      res.json({ message: 'Usuário atualizado.', user: updated });
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // DELETE /admin/users/:id
+  async deleteUser(req: Request, res: Response): Promise<void> {
+    try {
+      const id = String(req.params['id']);
+
+      const existing = await prisma.user.findUnique({ where: { id } });
+      if (!existing) {
+        res.status(404).json({ error: 'Usuário não encontrado.' });
+        return;
+      }
+
+      await prisma.order.updateMany({ where: { userId: id }, data: { userId: null } });
+      await prisma.user.delete({ where: { id } });
+
+      res.json({ message: 'Usuário removido com sucesso.' });
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // GET /admin/coupons
+  async listCoupons(_req: Request, res: Response): Promise<void> {
+    try {
+      const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } });
+      res.json({ coupons });
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // POST /admin/coupons
+  async createCoupon(req: Request, res: Response): Promise<void> {
+    try {
+      const { code, type, discount, expiresAt, maxUses } = req.body as {
+        code?: string;
+        type?: string;
+        discount?: unknown;
+        expiresAt?: string;
+        maxUses?: unknown;
+      };
+
+      if (!code?.trim()) {
+        res.status(400).json({ error: 'Código do cupom é obrigatório.' });
+        return;
+      }
+      if (!['PERCENTAGE', 'FIXED'].includes(String(type || ''))) {
+        res.status(400).json({ error: 'Tipo deve ser PERCENTAGE ou FIXED.' });
+        return;
+      }
+      const discountNum = Number(discount);
+      if (!Number.isFinite(discountNum) || discountNum <= 0) {
+        res.status(400).json({ error: 'Desconto deve ser um número positivo.' });
+        return;
+      }
+      if (!expiresAt || isNaN(new Date(expiresAt).getTime())) {
+        res.status(400).json({ error: 'Data de expiração inválida.' });
+        return;
+      }
+
+      const coupon = await prisma.coupon.create({
+        data: {
+          code: String(code).toUpperCase().trim(),
+          type: String(type),
+          discount: discountNum,
+          expiresAt: new Date(expiresAt),
+          maxUses: maxUses != null && Number.isFinite(Number(maxUses)) && Number(maxUses) > 0
+            ? Number(maxUses)
+            : null,
+        },
+      });
+
+      res.status(201).json({ coupon });
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
+        res.status(409).json({ error: 'Já existe um cupom com esse código.' });
+        return;
+      }
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // PATCH /admin/coupons/:id
+  async updateCoupon(req: Request, res: Response): Promise<void> {
+    try {
+      const id = String(req.params['id']);
+      const { active, expiresAt, maxUses } = req.body as {
+        active?: boolean;
+        expiresAt?: string;
+        maxUses?: unknown;
+      };
+
+      const existing = await prisma.coupon.findUnique({ where: { id } });
+      if (!existing) {
+        res.status(404).json({ error: 'Cupom não encontrado.' });
+        return;
+      }
+
+      const data: Record<string, unknown> = {};
+      if (active !== undefined) data['active'] = Boolean(active);
+      if (expiresAt && !isNaN(new Date(expiresAt).getTime())) data['expiresAt'] = new Date(expiresAt);
+      if (maxUses !== undefined) {
+        data['maxUses'] = maxUses != null && Number.isFinite(Number(maxUses)) && Number(maxUses) > 0
+          ? Number(maxUses)
+          : null;
+      }
+
+      const updated = await prisma.coupon.update({ where: { id }, data });
+      res.json({ coupon: updated });
+    } catch (error) {
+      res.status(500).json({ error: clientError(error) });
+    }
+  }
+
+  // DELETE /admin/coupons/:id
+  async deleteCoupon(req: Request, res: Response): Promise<void> {
+    try {
+      const id = String(req.params['id']);
+      const existing = await prisma.coupon.findUnique({ where: { id } });
+      if (!existing) {
+        res.status(404).json({ error: 'Cupom não encontrado.' });
+        return;
+      }
+      await prisma.coupon.delete({ where: { id } });
+      res.json({ message: 'Cupom removido.' });
     } catch (error) {
       res.status(500).json({ error: clientError(error) });
     }
