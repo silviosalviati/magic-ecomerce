@@ -48,26 +48,22 @@ export function AboutPage() {
       {/* ── HERO ── */}
       <section className="about-hero">
         <div className="about-hero-bg" aria-hidden="true">
-          <span className="about-hero-ghost">Magic</span>
+          <span className="about-hero-ghost">MAGI.C</span>
         </div>
-        <div className="about-hero-content">
-          <p className="about-eyebrow">Nossa história</p>
-          <h1 className="about-headline">
-            Moda que <em>encanta.</em><br />
-            Estilo que <em>transforma.</em>
-          </h1>
-          <p className="about-hero-sub">
-            A Vista Magic nasceu da crença de que cada pessoa merece
-            se vestir com confiança, elegância e autenticidade —
-            sem abrir mão da qualidade ou do encanto.
-          </p>
-        </div>
-        <div className="about-hero-scroll" aria-hidden="true">
-          <span>Role para descobrir</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <polyline points="19 12 12 19 5 12" />
-          </svg>
+        <div className="about-brand-lockup">
+          <div className="about-brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" fill="none">
+              <circle cx="60" cy="60" r="47" stroke="currentColor" strokeWidth="2.2" />
+              <path d="M42 74V45l15 25 20-34v39" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <p className="about-brand-name">MAGI.C</p>
+          <div className="about-brand-copy">
+            <p>MAIS MODERNA.</p>
+            <p>MAIS FORTE.</p>
+            <p>MAIS VERSATIL.</p>
+          </div>
+          <div className="about-hero-rule" aria-hidden="true" />
         </div>
       </section>
 
@@ -83,7 +79,7 @@ export function AboutPage() {
             é a linguagem silenciosa com que contamos
             ao mundo quem somos e quem queremos ser."
           </blockquote>
-          <p className="about-manifesto-sig">— Vista Magic</p>
+          <p className="about-manifesto-sig">— MAGI.C</p>
         </div>
         <div className="about-manifesto-deco" aria-hidden="true">
           <div className="about-deco-circle" />
@@ -100,7 +96,7 @@ export function AboutPage() {
             feita com <em>paixão</em>
           </h2>
           <p className="about-body">
-            A Vista Magic surgiu com um propósito claro: democratizar o acesso
+            A MAGI.C surgiu com um propósito claro: democratizar o acesso
             à moda de qualidade no Brasil. Fundada por quem vive e respira estilo,
             a marca nasceu da insatisfação com o óbvio e do desejo de oferecer
             algo verdadeiramente especial.
@@ -122,7 +118,7 @@ export function AboutPage() {
         <div className="about-story-visual" aria-hidden="true">
           <div className="about-visual-frame">
             <div className="about-visual-inner">
-              <span className="about-visual-text">Vista<br />Magic</span>
+              <span className="about-visual-text">MAGI.C</span>
               <div className="about-visual-accent" />
             </div>
           </div>
@@ -197,7 +193,7 @@ export function AboutPage() {
           </div>
         </div>
         <div className="about-contact-deco" aria-hidden="true">
-          <span>magic</span>
+          <span>MAGI.C</span>
         </div>
       </section>
 
