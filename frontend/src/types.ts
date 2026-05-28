@@ -165,3 +165,18 @@ export interface CheckoutResponse {
   boletoBarcode?: string;
   boletoDueDate?: string;
 }
+
+export interface InstallmentOption {
+  installments: number;
+  installmentValue: number;
+  total: number;
+  hasInterest: boolean;
+  interestAmount: number;
+}
+
+export interface CheckoutInstallmentsResponse {
+  currency: 'BRL';
+  source: 'asaas' | 'fallback';
+  maxNoInterestInstallments: number;
+  options: InstallmentOption[];
+}

@@ -61,6 +61,53 @@ export interface CreditCardHolderInfo {
   phone: string;
 }
 
+export interface InstallmentSimulation {
+  installmentCount: number;
+  installmentValue: number;
+  totalValue: number;
+}
+
+function toNumber(value: unknown): number | null {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function collectSimulationCandidates(value: unknown, out: InstallmentSimulation[]): void {
+  if (!value) return;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectSimulationCandidates(item, out);
+    }
+    return;
+  }
+
+  if (typeof value !== 'object') return;
+
+  const node = value as Record<string, unknown>;
+
+  const installmentCount = toNumber(node.installmentCount);
+  const installmentValue = toNumber(node.installmentValue);
+  const totalValue = toNumber(node.totalValue);
+
+  if (installmentCount && installmentCount > 0) {
+    const resolvedInstallmentValue = installmentValue ?? (totalValue ? totalValue / installmentCount : null);
+    const resolvedTotalValue = totalValue ?? (installmentValue ? installmentValue * installmentCount : null);
+
+    if (resolvedInstallmentValue && resolvedTotalValue) {
+      out.push({
+        installmentCount,
+        installmentValue: resolvedInstallmentValue,
+        totalValue: resolvedTotalValue,
+      });
+    }
+  }
+
+  for (const nested of Object.values(node)) {
+    collectSimulationCandidates(nested, out);
+  }
+}
+
 export async function findOrCreateCustomer(
   name: string,
   email: string,
@@ -146,6 +193,44 @@ export async function createCreditCardPayment(
 
   const { data } = await client.post<AsaasPayment>('/payments', payload);
   return data;
+}
+
+export async function getPaymentLimits(): Promise<{ maxInstallmentCount?: number }> {
+  const { data } = await client.get<Record<string, unknown>>('/payments/limits');
+
+  const direct = toNumber((data as Record<string, unknown>).maxInstallmentCount);
+  if (direct && direct > 0) {
+    return { maxInstallmentCount: direct };
+  }
+
+  const nested = [] as InstallmentSimulation[];
+  collectSimulationCandidates(data, nested);
+  const maxFromNested = nested.reduce((max, row) => Math.max(max, row.installmentCount), 0);
+  if (maxFromNested > 0) {
+    return { maxInstallmentCount: maxFromNested };
+  }
+
+  return {};
+}
+
+export async function simulateInstallments(
+  value: number,
+  installmentCount: number,
+): Promise<InstallmentSimulation | null> {
+  const body = {
+    value,
+    installmentCount,
+    billingTypes: ['CREDIT_CARD'],
+  };
+
+  const { data } = await client.post<Record<string, unknown>>('/payments/simulate', body);
+  const found: InstallmentSimulation[] = [];
+  collectSimulationCandidates(data, found);
+
+  const preferred = found.find((row) => row.installmentCount === installmentCount);
+  if (preferred) return preferred;
+
+  return found[0] ?? null;
 }
 
 export async function getPixQrCode(paymentId: string): Promise<PixQrCode> {

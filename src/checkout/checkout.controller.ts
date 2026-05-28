@@ -10,6 +10,8 @@ import {
   createBoletoPayment,
   getBoletoData,
   createCreditCardPayment,
+  getPaymentLimits,
+  simulateInstallments,
   type CreditCardData,
   type CreditCardHolderInfo,
 } from './asaas.service';
@@ -47,6 +49,103 @@ interface CheckoutBody {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type AuthRequest = Request & { userId?: string };
+
+interface InstallmentOptionDto {
+  installments: number;
+  installmentValue: number;
+  total: number;
+  hasInterest: boolean;
+  interestAmount: number;
+}
+
+function roundCurrency(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function buildFallbackInstallments(total: number): InstallmentOptionDto[] {
+  return Array.from({ length: 12 }, (_, index) => {
+    const installments = index + 1;
+    const installmentValue = roundCurrency(total / installments);
+    const resolvedTotal = roundCurrency(installmentValue * installments);
+    return {
+      installments,
+      installmentValue,
+      total: resolvedTotal,
+      hasInterest: false,
+      interestAmount: 0,
+    };
+  });
+}
+
+export async function getCheckoutInstallments(req: Request, res: Response): Promise<void> {
+  const total = Number(req.query.total);
+
+  if (!Number.isFinite(total) || total <= 0) {
+    res.status(400).json({ message: 'Parametro total invalido.' });
+    return;
+  }
+
+  try {
+    const limits = await getPaymentLimits();
+    const maxInstallments = Math.max(1, Math.min(12, limits.maxInstallmentCount ?? 12));
+
+    const options: InstallmentOptionDto[] = [];
+    for (let installments = 1; installments <= maxInstallments; installments += 1) {
+      try {
+        const simulation = await simulateInstallments(total, installments);
+        if (!simulation) continue;
+
+        const simulatedTotal = roundCurrency(simulation.totalValue);
+        const installmentValue = roundCurrency(simulation.installmentValue);
+        const interestAmount = roundCurrency(Math.max(0, simulatedTotal - total));
+
+        options.push({
+          installments,
+          installmentValue,
+          total: simulatedTotal,
+          hasInterest: interestAmount > 0,
+          interestAmount,
+        });
+      } catch {
+        // Mantem resiliencia: se uma faixa falhar, continuamos nas outras.
+      }
+    }
+
+    if (options.length === 0) {
+      const fallback = buildFallbackInstallments(total);
+      res.json({
+        currency: 'BRL',
+        source: 'fallback',
+        maxNoInterestInstallments: fallback[fallback.length - 1].installments,
+        options: fallback,
+      });
+      return;
+    }
+
+    options.sort((a, b) => a.installments - b.installments);
+
+    const maxNoInterestInstallments = options
+      .filter((option) => !option.hasInterest)
+      .reduce((max, option) => Math.max(max, option.installments), 1);
+
+    res.json({
+      currency: 'BRL',
+      source: 'asaas',
+      maxNoInterestInstallments,
+      options,
+    });
+  } catch (error) {
+    console.error('[checkout][installments]', error);
+
+    const fallback = buildFallbackInstallments(total);
+    res.json({
+      currency: 'BRL',
+      source: 'fallback',
+      maxNoInterestInstallments: fallback[fallback.length - 1].installments,
+      options: fallback,
+    });
+  }
+}
 
 export async function createCheckout(req: Request, res: Response): Promise<void> {
   const userId = (req as AuthRequest).userId ?? null;

@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import type { CreditCardFormData } from '../../types';
+import type { CreditCardFormData, InstallmentOption } from '../../types';
 
 interface CreditCardFormProps {
   data: CreditCardFormData;
   onChange: (data: CreditCardFormData) => void;
   total: number;
+  installmentOptions: InstallmentOption[];
+  maxNoInterestInstallments?: number;
 }
 
 function detectBrand(number: string): 'visa' | 'mastercard' | 'amex' | 'elo' | 'unknown' {
@@ -51,9 +53,13 @@ function toCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-const INSTALLMENT_OPTIONS = [1, 2, 3, 4, 6, 8, 10, 12];
-
-export function CreditCardForm({ data, onChange, total }: CreditCardFormProps) {
+export function CreditCardForm({
+  data,
+  onChange,
+  total,
+  installmentOptions,
+  maxNoInterestInstallments,
+}: CreditCardFormProps) {
   const [cvvFlip, setCvvFlip] = useState(false);
 
   const brand = detectBrand(data.cardNumber);
@@ -66,6 +72,10 @@ export function CreditCardForm({ data, onChange, total }: CreditCardFormProps) {
   function set(field: keyof CreditCardFormData, value: string | number) {
     onChange({ ...data, [field]: value });
   }
+
+  const options = installmentOptions.length > 0
+    ? installmentOptions
+    : [{ installments: 1, installmentValue: total, total, hasInterest: false, interestAmount: 0 }];
 
   return (
     <div className="card-form">
@@ -167,12 +177,22 @@ export function CreditCardForm({ data, onChange, total }: CreditCardFormProps) {
             value={data.installments}
             onChange={(e) => set('installments', Number(e.target.value))}
           >
-            {INSTALLMENT_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n}x de {toCurrency(total / n)}{n === 1 ? '' : ' sem juros'}
+            {options.map((option) => (
+              <option key={option.installments} value={option.installments}>
+                {option.installments}x de {toCurrency(option.installmentValue)}
+                {option.installments === 1
+                  ? ' a vista'
+                  : option.hasInterest
+                    ? ` com juros (total ${toCurrency(option.total)})`
+                    : ' sem juros'}
               </option>
             ))}
           </select>
+          {Number(maxNoInterestInstallments) > 0 && (
+            <small className="field-hint">
+              Sem juros em ate {maxNoInterestInstallments}x.
+            </small>
+          )}
         </div>
       </div>
 

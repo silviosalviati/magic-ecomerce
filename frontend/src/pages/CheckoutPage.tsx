@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { checkout } from '../lib/api';
+import { checkout, getCheckoutInstallments } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { CartItem, CheckoutResponse, CreditCardFormData, PaymentMethod } from '../types';
+import type {
+  CartItem,
+  CheckoutInstallmentsResponse,
+  CheckoutResponse,
+  CreditCardFormData,
+  PaymentMethod,
+} from '../types';
 import { BoletoConfirmation } from '../components/checkout/BoletoConfirmation';
 import { CreditCardForm } from '../components/checkout/CreditCardForm';
 import { OrderSummary } from '../components/checkout/OrderSummary';
@@ -60,7 +66,9 @@ export function CheckoutPage({
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState<Step>('details');
-  const [cpf, setCpf] = useState('');
+  const [cpf, setCpf] = useState(() => {
+    try { return formatCpf(localStorage.getItem('magic.checkout.cpf') || ''); } catch { return ''; }
+  });
   // Address
   const [addressZip, setAddressZip] = useState('');
   const [addressStreet, setAddressStreet] = useState('');
@@ -73,6 +81,7 @@ export function CheckoutPage({
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
   const [cardData, setCardData] = useState<CreditCardFormData>(EMPTY_CARD);
+  const [installmentsData, setInstallmentsData] = useState<CheckoutInstallmentsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderResult, setOrderResult] = useState<CheckoutResponse | null>(null);
@@ -97,6 +106,55 @@ export function CheckoutPage({
       navigate('/');
     }
   }, [cartItems.length, step, navigate]);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadInstallments() {
+      if (!Number.isFinite(subtotal) || subtotal <= 0) {
+        if (alive) setInstallmentsData(null);
+        return;
+      }
+
+      try {
+        const data = await getCheckoutInstallments(subtotal);
+        if (!alive) return;
+
+        setInstallmentsData(data);
+
+        const available = new Set(data.options.map((o) => o.installments));
+        setCardData((prev) => {
+          if (available.has(prev.installments)) return prev;
+          const nextInstallments = data.options[0]?.installments ?? 1;
+          return { ...prev, installments: nextInstallments };
+        });
+      } catch {
+        if (!alive) return;
+        setInstallmentsData({
+          currency: 'BRL',
+          source: 'fallback',
+          maxNoInterestInstallments: 12,
+          options: Array.from({ length: 12 }, (_, i) => {
+            const installments = i + 1;
+            const installmentValue = Number((subtotal / installments).toFixed(2));
+            return {
+              installments,
+              installmentValue,
+              total: Number((installmentValue * installments).toFixed(2)),
+              hasInterest: false,
+              interestAmount: 0,
+            };
+          }),
+        });
+      }
+    }
+
+    loadInstallments();
+
+    return () => {
+      alive = false;
+    };
+  }, [subtotal]);
 
   // Render nothing while auth is resolving — prevents flash and wrong redirects
   if (authLoading) return null;
@@ -278,7 +336,9 @@ export function CheckoutPage({
                 </div>
 
                 <div className="field-group">
-                  <label className="field-label" htmlFor="co-cpf">CPF</label>
+                  <label className="field-label" htmlFor="co-cpf">
+                    CPF <span className="field-optional">obrigatório para o pagamento</span>
+                  </label>
                   <input
                     id="co-cpf"
                     className="field-input"
@@ -287,7 +347,11 @@ export function CheckoutPage({
                     autoComplete="off"
                     placeholder="000.000.000-00"
                     value={cpf}
-                    onChange={(e) => setCpf(formatCpf(e.target.value))}
+                    onChange={(e) => {
+                      const formatted = formatCpf(e.target.value);
+                      setCpf(formatted);
+                      try { localStorage.setItem('magic.checkout.cpf', formatted.replace(/\D/g, '')); } catch { /* noop */ }
+                    }}
                   />
                 </div>
 
@@ -423,10 +487,18 @@ export function CheckoutPage({
 
               {paymentMethod === 'PIX' && (
                 <div className="payment-info-box">
-                  <p>⚡ O QR Code PIX será gerado ao confirmar.</p>
-                  <p className="payment-info-note">
-                    Válido por 30 minutos após a geração.
-                  </p>
+                  <div className="payment-info-icon">
+                    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" width="20" height="20">
+                      <path d="M8 12L12 8L16 12L12 16L8 12Z" fill="currentColor" opacity="0.9"/>
+                      <path d="M16 12L20 8L24 12L20 16L16 12Z" fill="currentColor" opacity="0.6"/>
+                      <path d="M8 20L12 16L16 20L12 24L8 20Z" fill="currentColor" opacity="0.6"/>
+                      <path d="M16 20L20 16L24 20L20 24L16 20Z" fill="currentColor" opacity="0.9"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p>O QR Code PIX será gerado ao confirmar.</p>
+                    <p className="payment-info-note">Válido por 30 minutos após a geração.</p>
+                  </div>
                 </div>
               )}
 
@@ -435,15 +507,28 @@ export function CheckoutPage({
                   data={cardData}
                   onChange={setCardData}
                   total={subtotal}
+                  installmentOptions={installmentsData?.options ?? []}
+                  maxNoInterestInstallments={installmentsData?.maxNoInterestInstallments}
                 />
               )}
 
               {paymentMethod === 'BOLETO' && (
                 <div className="payment-info-box">
-                  <p>📄 O boleto será gerado ao confirmar.</p>
-                  <p className="payment-info-note">
-                    Vencimento em 3 dias úteis. Pague em qualquer banco ou app.
-                  </p>
+                  <div className="payment-info-icon">
+                    <svg viewBox="0 0 28 22" fill="none" aria-hidden="true" width="20" height="16">
+                      <rect x="1" y="1" width="3" height="20" rx="0.5" fill="currentColor" opacity="0.9"/>
+                      <rect x="6" y="1" width="1.5" height="20" rx="0.5" fill="currentColor" opacity="0.6"/>
+                      <rect x="9" y="1" width="3" height="20" rx="0.5" fill="currentColor" opacity="0.9"/>
+                      <rect x="14" y="1" width="1.5" height="20" rx="0.5" fill="currentColor" opacity="0.6"/>
+                      <rect x="17.5" y="1" width="2.5" height="20" rx="0.5" fill="currentColor" opacity="0.9"/>
+                      <rect x="22" y="1" width="1.5" height="20" rx="0.5" fill="currentColor" opacity="0.6"/>
+                      <rect x="25" y="1" width="2" height="20" rx="0.5" fill="currentColor" opacity="0.9"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p>O boleto será gerado ao confirmar.</p>
+                    <p className="payment-info-note">Vencimento em 3 dias úteis. Pague em qualquer banco ou app.</p>
+                  </div>
                 </div>
               )}
 
@@ -459,7 +544,11 @@ export function CheckoutPage({
               </button>
 
               <p className="checkout-security-note">
-                🔒 Seus dados são protegidos com criptografia SSL
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="12" height="12" aria-hidden="true" style={{display:'inline',verticalAlign:'middle',marginRight:5}}>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Dados protegidos com criptografia SSL
               </p>
             </section>
           )}
@@ -488,24 +577,38 @@ export function CheckoutPage({
               {orderResult.paymentMethod === 'CREDIT_CARD' && (
                 <div className="payment-confirmation card-confirmation">
                   {orderResult.cardStatus === 'CONFIRMED' || orderResult.cardStatus === 'RECEIVED' ? (
-                    <>
-                      <div className="confirmation-icon">✅</div>
-                      <h3 className="confirmation-title">Pagamento aprovado!</h3>
-                      <p className="confirmation-subtitle">
-                        Total de {toCurrency(orderResult.total)} debitado com sucesso.
-                      </p>
-                    </>
+                    <div className="confirm-header">
+                      <div className="confirm-icon confirm-icon--success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="confirmation-title">Pagamento aprovado</h3>
+                        <p className="confirmation-subtitle">
+                          Total de <strong>{toCurrency(orderResult.total)}</strong> debitado com sucesso.
+                        </p>
+                      </div>
+                    </div>
                   ) : (
-                    <>
-                      <div className="confirmation-icon">⚠️</div>
-                      <h3 className="confirmation-title">Pagamento em análise</h3>
-                      <p className="confirmation-subtitle">
-                        Seu pagamento está sendo processado. Você receberá a confirmação por e-mail.
-                      </p>
-                    </>
+                    <div className="confirm-header">
+                      <div className="confirm-icon confirm-icon--pending">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="confirmation-title">Pagamento em análise</h3>
+                        <p className="confirmation-subtitle">
+                          Seu pagamento está sendo processado. Você receberá a confirmação por e-mail.
+                        </p>
+                      </div>
+                    </div>
                   )}
                   <p className="confirmation-note">
-                    Pedido #{orderResult.orderId.slice(0, 8).toUpperCase()} registrado.
+                    Pedido #{orderResult.orderId.slice(0, 8).toUpperCase()} registrado com sucesso.
                   </p>
                 </div>
               )}

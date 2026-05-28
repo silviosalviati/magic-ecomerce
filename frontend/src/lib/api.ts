@@ -6,6 +6,7 @@ import type {
   AuthRegisterResponse,
   AuthUser,
   CatalogProduct,
+  CheckoutInstallmentsResponse,
   CheckoutPayload,
   CheckoutResponse,
   Order,
@@ -227,6 +228,14 @@ export async function checkout(payload: CheckoutPayload): Promise<CheckoutRespon
     }
     throw error;
   }
+}
+
+export async function getCheckoutInstallments(total: number): Promise<CheckoutInstallmentsResponse> {
+  const normalizedTotal = Number.isFinite(total) ? total : 0;
+  const { data } = await api.get<CheckoutInstallmentsResponse>('/checkout/installments', {
+    params: { total: normalizedTotal.toFixed(2) },
+  });
+  return data;
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
