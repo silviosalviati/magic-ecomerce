@@ -48,7 +48,13 @@ export function AboutPage() {
       {/* ── HERO ── */}
       <section className="about-hero">
         <div className="about-hero-bg" aria-hidden="true">
-          <span className="about-hero-ghost">MAGI.C</span>
+          <div className="about-hero-glow" />
+          <div className="about-hero-waves">
+            <span className="about-wave about-wave--1" />
+            <span className="about-wave about-wave--2" />
+            <span className="about-wave about-wave--3" />
+            <span className="about-wave about-wave--4" />
+          </div>
         </div>
         <div className="about-brand-lockup">
           <div className="about-brand-mark" aria-hidden="true">
@@ -57,13 +63,11 @@ export function AboutPage() {
               <path d="M42 74V45l15 25 20-34v39" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <p className="about-brand-name">MAGI.C</p>
+          <h1 className="about-brand-name">MAGI.C</h1>
           <div className="about-brand-copy">
-            <p>MAIS MODERNA.</p>
-            <p>MAIS FORTE.</p>
-            <p>MAIS VERSATIL.</p>
+            <p>TUDO COMECA</p>
+            <p>COM UMA VISAO.</p>
           </div>
-          <div className="about-hero-rule" aria-hidden="true" />
         </div>
       </section>
 

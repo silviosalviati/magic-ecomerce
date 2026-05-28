@@ -5870,16 +5870,16 @@ textarea:focus-visible {
 /* ── HERO ── */
 .about-hero {
   position: relative;
-  min-height: min(78vh, 720px);
+  min-height: min(72vh, 640px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(64px, 10vh, 110px) 24px;
+  padding: clamp(56px, 10vh, 96px) 24px;
   border-bottom: 0.5px solid var(--color-border);
   animation: pageReveal 0.6s var(--ease-spring) both;
   background:
-    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.96), rgba(245, 238, 232, 0.92) 48%, rgba(231, 220, 212, 0.86) 100%),
-    linear-gradient(180deg, #f7f1eb 0%, #efe4dc 100%);
+    radial-gradient(circle at 50% 20%, rgba(255, 190, 190, 0.06), transparent 30%),
+    linear-gradient(180deg, #040404 0%, #070707 100%);
 }
 
 .about-hero-bg {
@@ -5887,24 +5887,22 @@ textarea:focus-visible {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse 72% 55% at 50% 34%, rgba(255, 255, 255, 0.75) 0%, transparent 72%),
-    radial-gradient(ellipse 90% 70% at 50% 50%, rgba(112, 82, 58, 0.10) 0%, transparent 78%);
 }
 
-.about-hero-ghost {
+.about-hero-glow {
   position: absolute;
-  inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
-  font-family: var(--font-ui);
-  font-size: clamp(120px, 22vw, 280px);
-  font-weight: 500;
-  line-height: 1;
-  color: rgba(75, 52, 36, 0.045);
-  pointer-events: none;
-  user-select: none;
-  letter-spacing: 0.22em;
-  white-space: nowrap;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 26%, rgba(248, 174, 177, 0.08), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(244, 152, 160, 0.1), transparent 32%);
+}
+
+.about-hero-waves {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -26px;
+  height: 170px;
 }
 
 .about-brand-lockup {
@@ -5914,15 +5912,16 @@ textarea:focus-visible {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  color: #181311;
+  color: #f4a4a8;
 }
 
 .about-brand-mark {
-  width: clamp(88px, 12vw, 118px);
-  height: clamp(88px, 12vw, 118px);
+  width: clamp(94px, 12vw, 124px);
+  height: clamp(94px, 12vw, 124px);
   display: grid;
   place-items: center;
-  color: #111;
+  color: #f0a0a5;
+  filter: drop-shadow(0 0 12px rgba(244, 164, 168, 0.12));
 }
 
 .about-brand-mark svg {
@@ -5934,32 +5933,62 @@ textarea:focus-visible {
   margin: 14px 0 0;
   font-family: var(--font-ui);
   font-size: clamp(24px, 4vw, 36px);
-  letter-spacing: 0.24em;
+  letter-spacing: 0.28em;
   font-weight: 500;
-  color: #121212;
+  color: #f3a1a8;
+  text-shadow: 0 0 18px rgba(243, 161, 168, 0.08);
 }
 
 .about-brand-copy {
-  margin-top: 26px;
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .about-brand-copy p {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: clamp(14px, 1.4vw, 18px);
-  letter-spacing: 0.18em;
+  font-size: clamp(12px, 1vw, 14px);
+  letter-spacing: 0.2em;
   line-height: 1.45;
-  color: #2c2320;
+  color: rgba(255, 240, 240, 0.92);
 }
 
-.about-hero-rule {
-  width: clamp(96px, 16vw, 142px);
-  height: 1px;
-  margin-top: 30px;
-  background: linear-gradient(90deg, transparent 0%, rgba(225, 154, 144, 0.95) 18%, rgba(225, 154, 144, 0.95) 82%, transparent 100%);
+.about-wave {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 54%;
+  height: 110px;
+  border: 1px solid rgba(244, 164, 168, 0.7);
+  border-color: rgba(244, 164, 168, 0.7) transparent transparent transparent;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  transform-origin: center bottom;
+  filter: drop-shadow(0 0 6px rgba(244, 164, 168, 0.28));
+  opacity: 0.9;
+}
+
+.about-wave--1 {
+  transform: translateX(-75%) scaleX(1.8) scaleY(0.9);
+}
+
+.about-wave--2 {
+  bottom: 16px;
+  transform: translateX(-50%) scaleX(1.6) scaleY(1.02);
+  opacity: 0.72;
+}
+
+.about-wave--3 {
+  bottom: 4px;
+  transform: translateX(-25%) scaleX(1.85) scaleY(0.84);
+  opacity: 0.64;
+}
+
+.about-wave--4 {
+  bottom: 22px;
+  transform: translateX(-88%) scaleX(1.25) scaleY(0.72);
+  opacity: 0.48;
 }
 
 /* ── MANIFESTO ── */
@@ -6483,6 +6512,17 @@ textarea:focus-visible {
   .about-brand-copy p {
     font-size: 13px;
     letter-spacing: 0.14em;
+  }
+
+  .about-hero-waves {
+    left: -24%;
+    right: -24%;
+    bottom: -34px;
+  }
+
+  .about-wave {
+    width: 82%;
+    height: 96px;
   }
 
   .about-stats-inner {
