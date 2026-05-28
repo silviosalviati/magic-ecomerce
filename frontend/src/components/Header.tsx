@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogoMark } from './LogoMark';
 
@@ -36,6 +36,7 @@ export function Header({
           <a href="/#novidades">Novidades</a>
           <a href="/#feminino">Moda Feminina</a>
           <a href="/#masculino">Moda Masculina</a>
+          <NavLink to="/sobre" className={({ isActive }) => isActive ? 'nav-active' : ''}>Sobre</NavLink>
         </nav>
         {showSearch && (
           <label className="header-search" aria-label="Pesquisar produtos">
@@ -76,6 +77,7 @@ export function Header({
           <a href="/#novidades" onClick={closeMenu}>Novidades</a>
           <a href="/#feminino" onClick={closeMenu}>Moda Feminina</a>
           <a href="/#masculino" onClick={closeMenu}>Moda Masculina</a>
+          <NavLink to="/sobre" onClick={closeMenu}>Sobre</NavLink>
         </nav>
       )}
     </>

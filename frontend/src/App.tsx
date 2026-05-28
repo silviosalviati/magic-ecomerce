@@ -5,6 +5,7 @@ import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { AuthProvider } from './contexts/AuthContext';
 import { fetchCatalog } from './lib/api';
+import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
 import { AdminOrdersPage } from './pages/AdminOrdersPage';
 import { CheckoutPage } from './pages/CheckoutPage';
@@ -246,6 +247,7 @@ function App() {
         <Route path="/verificar-email" element={<VerifyEmailPage />} />
         <Route path="/recuperar-senha" element={<PasswordRecoveryPage />} />
         <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+        <Route path="/sobre" element={<AboutPage />} />
         <Route path="/minha-conta" element={<AccountPage />} />
         <Route path="/rastrear-pedido" element={<OrderLookupPage />} />
         <Route path="/admin/pedidos" element={<AdminOrdersPage />} />

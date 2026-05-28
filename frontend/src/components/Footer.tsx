@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export function Footer() {
   return (
     <footer className="site-footer" id="sobre">
@@ -48,7 +50,8 @@ export function Footer() {
               WhatsApp
             </a>
             <a href="mailto:contato@vistamagic.com.br">contato@vistamagic.com.br</a>
-            <a href="/#sobre">Trocas e Devoluções</a>
+            <Link to="/sobre">Sobre a Vista Magic</Link>
+            <a href="https://wa.me/5511969707136" target="_blank" rel="noopener noreferrer">Trocas e Devoluções</a>
           </nav>
         </div>
       </div>
