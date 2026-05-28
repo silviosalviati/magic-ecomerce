@@ -189,7 +189,7 @@ function App() {
       {!isCheckoutPage && !isAuthPage && (
         <>
           <div className="announcement-bar" role="banner">
-            <strong>Frete grátis</strong> acima de R$&nbsp;299 &nbsp;·&nbsp; Troca fácil em até 30 dias &nbsp;·&nbsp; <strong>Compra 100% segura</strong>
+            <strong>Frete grátis</strong> acima de R$&nbsp;299 &nbsp;·&nbsp; Troca fácil em até 7 dias &nbsp;·&nbsp; <strong>Compra 100% segura</strong>
           </div>
           <Header
             cartCount={cartCount}

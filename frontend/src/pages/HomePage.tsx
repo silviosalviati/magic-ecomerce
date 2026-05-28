@@ -138,7 +138,7 @@ export function HomePage({
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
             <polyline points="17 6 23 6 23 12" />
           </svg>
-          <span>Troca em 30 Dias</span>
+          <span>Troca em 7 Dias</span>
         </div>
         <div className="trust-item">
           <svg className="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
