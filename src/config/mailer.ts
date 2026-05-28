@@ -73,114 +73,280 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const BG     = '#080808';
+const CARD   = '#0F0F0F';
+const CARD2  = '#141414';
+const BORDER = '#1E1E1E';
+const BORD2  = '#252525';
+const ACCENT = '#E8B4B0';
+const TEXT   = '#F0E8E4';
+const MUTED  = '#9A8D87';
+const FAINT  = '#6B5F5C';
+const GHOST  = '#3D3330';
+const SERIF  = "Georgia,'Times New Roman',Times,serif";
+const SANS   = 'Arial,Helvetica,sans-serif';
+const MONO   = "'Courier New',Courier,monospace";
+
+// ─── Layout helpers ───────────────────────────────────────────────────────────
+function emailHeader(): string {
+  return `
+  <tr>
+    <td style="background:${CARD};padding:30px 40px 22px;text-align:center;border:1px solid ${BORDER};border-bottom:none;">
+      <p style="margin:0;font-family:${SERIF};font-size:18px;font-weight:400;letter-spacing:8px;color:${TEXT};text-transform:uppercase;">VISTA MAGIC</p>
+      <div style="width:28px;height:1px;background:${ACCENT};margin:10px auto 0;"></div>
+    </td>
+  </tr>`;
+}
+
+function emailFooter(note?: string): string {
+  return `
+  <tr>
+    <td style="background:${BG};padding:26px 40px 30px;text-align:center;border:1px solid ${BORDER};border-top:1px solid ${BORDER};">
+      ${note ? `<p style="margin:0 0 16px;font-family:${SANS};font-size:12px;color:${FAINT};line-height:1.6;">${note}</p><div style="width:24px;height:1px;background:${BORDER};margin:0 auto 16px;"></div>` : ''}
+      <p style="margin:0 0 5px;font-family:${SERIF};font-size:10px;letter-spacing:4px;color:${GHOST};text-transform:uppercase;">Vista Magic</p>
+      <p style="margin:0 0 4px;font-family:${SANS};font-size:11px;color:${GHOST};">vistamagic.com.br</p>
+      <p style="margin:0;font-family:${SANS};font-size:10px;color:${GHOST};">&copy; 2024 Vista Magic &middot; Todos os direitos reservados</p>
+    </td>
+  </tr>`;
+}
+
+function emailShell(rows: string): string {
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>Vista Magic</title>
+</head>
+<body style="margin:0;padding:0;background:${BG};">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${BG}" style="padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="max-width:580px;width:100%;">
+          ${rows}
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// ─── Store notification (internal) ───────────────────────────────────────────
 export async function sendStoreNotification(data: OrderEmailData): Promise<void> {
   const storeEmail = process.env.STORE_EMAIL;
   if (!storeEmail || !process.env.SMTP_USER) return;
 
-  const itemsHtml = data.items
-    .map(
-      (item) => `
-      <tr>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a">${item.productName || item.variantId}</td>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a">${item.color || '—'} / ${item.size || '—'}</td>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a;text-align:center">${item.quantity}</td>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a;text-align:right">${formatCurrency(Number(item.priceAtPurchase) * item.quantity)}</td>
-      </tr>`
-    )
-    .join('');
+  const orderRef = `#${data.orderId.slice(0, 8).toUpperCase()}`;
+
+  const itemsHtml = data.items.map((item) => `
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid ${BORD2};font-family:${SANS};font-size:13px;color:${TEXT};">${escapeHtml(item.productName || item.variantId)}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid ${BORD2};font-family:${SANS};font-size:13px;color:${MUTED};">${escapeHtml(item.color || '—')} / ${escapeHtml(item.size || '—')}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid ${BORD2};font-family:${SANS};font-size:13px;color:${MUTED};text-align:center;">${item.quantity}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid ${BORD2};font-family:${SANS};font-size:13px;color:${TEXT};text-align:right;white-space:nowrap;">${formatCurrency(Number(item.priceAtPurchase) * item.quantity)}</td>
+    </tr>`).join('');
 
   const addressHtml = data.address?.street
-    ? `<p style="margin:4px 0"><strong>Endereço:</strong> ${data.address.street}, ${data.address.number}${data.address.complement ? ` — ${data.address.complement}` : ''}, ${data.address.neighborhood || ''}, ${data.address.city || ''}/${data.address.state || ''} — CEP ${data.address.zip || ''}</p>`
+    ? `<p style="margin:0;padding:14px 16px;background:${BG};border:1px solid ${BORDER};font-family:${SANS};font-size:13px;color:${TEXT};line-height:1.6;">
+        <span style="color:${MUTED};">Endereço: </span>${escapeHtml(data.address.street)}, ${escapeHtml(data.address.number || '')}${data.address.complement ? ` &mdash; ${escapeHtml(data.address.complement)}` : ''}, ${escapeHtml(data.address.neighborhood || '')}, ${escapeHtml(data.address.city || '')}/${escapeHtml(data.address.state || '')} &mdash; CEP&nbsp;${escapeHtml(data.address.zip || '')}
+      </p>`
     : '';
 
-  await transporter.sendMail({
-    from: `"MAGI.C Loja" <${process.env.SMTP_USER}>`,
-    to: storeEmail,
-    subject: `🛍️ Nova venda aprovada — ${formatCurrency(data.total)}`,
-    html: `
-      <div style="font-family:sans-serif;background:#0d0d0d;color:#f5ede8;padding:32px;max-width:600px;margin:auto">
-        <h1 style="font-size:22px;margin:0 0 24px;color:#e8b4b0">✅ Nova venda aprovada!</h1>
-        <p style="margin:4px 0"><strong>Pedido:</strong> #${data.orderId.slice(0, 8).toUpperCase()}</p>
-        <p style="margin:4px 0"><strong>Cliente:</strong> ${data.customerName}</p>
-        <p style="margin:4px 0"><strong>E-mail:</strong> ${data.customerEmail}</p>
-        <p style="margin:4px 0"><strong>CPF:</strong> ${data.customerCpf}</p>
-        <p style="margin:4px 0"><strong>Pagamento:</strong> ${PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod}</p>
-        ${addressHtml}
-        <table style="width:100%;border-collapse:collapse;margin-top:20px;font-size:14px">
+  const html = emailShell(`
+    ${emailHeader()}
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:32px 40px 36px;">
+
+        <p style="margin:0 0 4px;font-family:${SANS};font-size:11px;letter-spacing:2px;color:${FAINT};text-transform:uppercase;">Nova venda aprovada</p>
+        <p style="margin:0 0 28px;font-family:${SERIF};font-size:28px;font-weight:400;color:${ACCENT};">${formatCurrency(data.total)}</p>
+
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid ${BORDER};width:38%;">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Pedido</p>
+            </td>
+            <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${MONO};font-size:13px;color:${TEXT};">${orderRef}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Cliente</p>
+            </td>
+            <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${SANS};font-size:13px;color:${TEXT};">${escapeHtml(data.customerName)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">E-mail</p>
+            </td>
+            <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${SANS};font-size:13px;color:${TEXT};">${escapeHtml(data.customerEmail)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">CPF</p>
+            </td>
+            <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${MONO};font-size:13px;color:${TEXT};">${escapeHtml(data.customerCpf)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;${addressHtml ? '' : 'border-bottom:none;'}">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Pagamento</p>
+            </td>
+            <td style="padding:10px 0 10px 16px;${addressHtml ? '' : 'border-bottom:none;'}">
+              <p style="margin:0;font-family:${SANS};font-size:13px;color:${TEXT};">${PAYMENT_LABELS[data.paymentMethod] || escapeHtml(data.paymentMethod)}</p>
+            </td>
+          </tr>
+        </table>
+
+        ${addressHtml ? `<div style="margin-bottom:24px;">${addressHtml}</div>` : ''}
+
+        <p style="margin:0 0 10px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Itens do pedido</p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid ${BORDER};">
           <thead>
-            <tr style="background:#1a1a1a">
-              <th style="padding:8px;text-align:left">Produto</th>
-              <th style="padding:8px;text-align:left">Variante</th>
-              <th style="padding:8px;text-align:center">Qtd</th>
-              <th style="padding:8px;text-align:right">Subtotal</th>
+            <tr style="background:${CARD2};">
+              <th style="padding:10px 12px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;text-align:left;font-weight:400;">Produto</th>
+              <th style="padding:10px 12px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;text-align:left;font-weight:400;">Variante</th>
+              <th style="padding:10px 12px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;text-align:center;font-weight:400;">Qtd</th>
+              <th style="padding:10px 12px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;text-align:right;font-weight:400;">Subtotal</th>
             </tr>
           </thead>
           <tbody>${itemsHtml}</tbody>
           <tfoot>
-            <tr>
-              <td colspan="3" style="padding:10px 8px;text-align:right;font-weight:bold">Total</td>
-              <td style="padding:10px 8px;text-align:right;font-weight:bold;color:#e8b4b0;font-size:16px">${formatCurrency(data.total)}</td>
+            <tr style="background:${CARD2};">
+              <td colspan="3" style="padding:14px 12px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;text-align:right;">Total</td>
+              <td style="padding:14px 12px;font-family:${SERIF};font-size:20px;font-weight:400;color:${ACCENT};text-align:right;white-space:nowrap;">${formatCurrency(data.total)}</td>
             </tr>
           </tfoot>
         </table>
-      </div>`,
+
+      </td>
+    </tr>
+    ${emailFooter()}
+  `);
+
+  await transporter.sendMail({
+    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    to: storeEmail,
+    subject: `Nova venda · ${data.customerName} · ${formatCurrency(data.total)}`,
+    html,
   });
 }
 
+// ─── Customer order confirmation ──────────────────────────────────────────────
 export async function sendCustomerConfirmation(data: OrderEmailData): Promise<void> {
   if (!process.env.SMTP_USER) return;
 
-  const frontendUrl = process.env.FRONTEND_URL || 'https://vistamagic.com.br';
+  const trackUrl = buildFrontendUrl('/rastrear-pedido');
+  const orderRef = `#${data.orderId.slice(0, 8).toUpperCase()}`;
+  const firstName = escapeHtml(data.customerName.split(' ')[0]);
+  const paymentLabel = PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod;
 
-  const itemsHtml = data.items
-    .map(
-      (item) => `
-      <tr>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a">${item.productName || item.variantId}</td>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a">${item.color || '—'} / ${item.size || '—'}</td>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a;text-align:center">${item.quantity}</td>
-        <td style="padding:8px;border-bottom:1px solid #2a2a2a;text-align:right">${formatCurrency(Number(item.priceAtPurchase) * item.quantity)}</td>
-      </tr>`
-    )
-    .join('');
+  const itemsHtml = data.items.map((item) => `
+    <tr>
+      <td style="padding:16px 0;border-bottom:1px solid ${BORD2};vertical-align:top;">
+        <p style="margin:0 0 4px;font-family:${SANS};font-size:14px;color:${TEXT};">${escapeHtml(item.productName || item.variantId)}</p>
+        <p style="margin:0;font-family:${SANS};font-size:12px;color:${MUTED};">${escapeHtml(item.color || '—')} &middot; ${escapeHtml(item.size || '—')}</p>
+      </td>
+      <td style="padding:16px 0 16px 20px;border-bottom:1px solid ${BORD2};vertical-align:top;text-align:center;white-space:nowrap;">
+        <p style="margin:0;font-family:${SANS};font-size:13px;color:${FAINT};">&times;&nbsp;${item.quantity}</p>
+      </td>
+      <td style="padding:16px 0 16px 20px;border-bottom:1px solid ${BORD2};vertical-align:top;text-align:right;white-space:nowrap;">
+        <p style="margin:0;font-family:${SANS};font-size:13px;color:${TEXT};">${formatCurrency(Number(item.priceAtPurchase) * item.quantity)}</p>
+      </td>
+    </tr>`).join('');
+
+  const html = emailShell(`
+    ${emailHeader()}
+
+    <!-- Hero -->
+    <tr>
+      <td style="background:linear-gradient(160deg,#1A1210 0%,#1E1614 55%,#1A1210 100%);border:1px solid ${BORDER};border-top:none;border-bottom:none;padding:40px 40px 36px;">
+        <p style="margin:0 0 6px;font-family:${SANS};font-size:11px;letter-spacing:2px;color:${FAINT};text-transform:uppercase;">Confirmação de pedido</p>
+        <h1 style="margin:0 0 6px;font-family:${SERIF};font-size:30px;font-weight:400;color:${TEXT};line-height:1.3;">Obrigada pela<br>sua compra, <em>${firstName}</em>.</h1>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:18px;">
+          <tr>
+            <td style="background:#1A1A1A;border:1px solid ${BORD2};padding:5px 12px;">
+              <span style="font-family:${MONO};font-size:12px;letter-spacing:1px;color:${MUTED};">${orderRef}</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Payment method -->
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;border-bottom:none;padding:24px 40px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="border-left:2px solid ${ACCENT};padding-left:14px;">
+              <p style="margin:0 0 3px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Método de pagamento</p>
+              <p style="margin:0;font-family:${SANS};font-size:14px;color:${TEXT};">${paymentLabel}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Items -->
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:0 40px 0;">
+        <div style="border-top:1px solid ${BORDER};padding-top:20px;">
+          <p style="margin:0 0 0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;padding-bottom:4px;">Itens do pedido</p>
+        </div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+          ${itemsHtml}
+          <tr>
+            <td colspan="2" style="padding:20px 0 8px;text-align:right;">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Total do pedido</p>
+            </td>
+            <td style="padding:20px 0 8px 20px;text-align:right;white-space:nowrap;">
+              <p style="margin:0;font-family:${SERIF};font-size:24px;font-weight:400;color:${ACCENT};">${formatCurrency(data.total)}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- CTA -->
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:28px 40px 36px;">
+        <div style="border-top:1px solid ${BORDER};padding-top:28px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td bgcolor="${ACCENT}">
+                <a href="${trackUrl}" style="display:inline-block;padding:15px 36px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:2px;color:#0A0A0A;text-decoration:none;text-transform:uppercase;">ACOMPANHAR PEDIDO</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:22px 0 0;font-family:${SANS};font-size:12px;color:${FAINT};line-height:1.6;">
+            Dúvidas? Fale conosco pelo WhatsApp:
+            <a href="https://wa.me/5511969707136" style="color:${MUTED};text-decoration:none;">(11)&nbsp;96970&#8209;7136</a>
+          </p>
+        </div>
+      </td>
+    </tr>
+
+    ${emailFooter('Você receberá atualizações sobre seu pedido por e-mail.')}
+  `);
 
   await transporter.sendMail({
-    from: `"MAGI.C" <${process.env.SMTP_USER}>`,
+    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
     to: data.customerEmail,
-    subject: `Seu pedido foi confirmado! ✨ — MAGI.C`,
-    html: `
-      <div style="font-family:sans-serif;background:#0d0d0d;color:#f5ede8;padding:32px;max-width:600px;margin:auto">
-        <h1 style="font-size:22px;margin:0 0 8px;color:#e8b4b0">Pedido confirmado!</h1>
-        <p style="margin:0 0 24px;color:#a89b95">Obrigada pela sua compra, ${data.customerName.split(' ')[0]}. 🎉</p>
-        <p style="margin:4px 0"><strong>Pedido:</strong> #${data.orderId.slice(0, 8).toUpperCase()}</p>
-        <p style="margin:4px 0"><strong>Pagamento:</strong> ${PAYMENT_LABELS[data.paymentMethod] || data.paymentMethod}</p>
-        <table style="width:100%;border-collapse:collapse;margin-top:20px;font-size:14px">
-          <thead>
-            <tr style="background:#1a1a1a">
-              <th style="padding:8px;text-align:left">Produto</th>
-              <th style="padding:8px;text-align:left">Variante</th>
-              <th style="padding:8px;text-align:center">Qtd</th>
-              <th style="padding:8px;text-align:right">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>${itemsHtml}</tbody>
-          <tfoot>
-            <tr>
-              <td colspan="3" style="padding:10px 8px;text-align:right;font-weight:bold">Total</td>
-              <td style="padding:10px 8px;text-align:right;font-weight:bold;color:#e8b4b0;font-size:16px">${formatCurrency(data.total)}</td>
-            </tr>
-          </tfoot>
-        </table>
-        <div style="margin-top:28px;text-align:center">
-          <a href="${frontendUrl}/rastrear-pedido" style="background:#e8b4b0;color:#0d0d0d;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">
-            Acompanhar meu pedido
-          </a>
-        </div>
-        <p style="margin-top:24px;font-size:12px;color:#5a5050">Dúvidas? Fale conosco no WhatsApp: (11) 96970-7136</p>
-      </div>`,
+    subject: `Pedido confirmado ${orderRef} — Vista Magic`,
+    html,
   });
 }
 
+// ─── Email verification / account activation ──────────────────────────────────
 export async function sendEmailVerification(params: {
   email: string;
   name: string;
@@ -189,54 +355,62 @@ export async function sendEmailVerification(params: {
   if (!process.env.SMTP_USER) return;
 
   const verifyUrl = buildFrontendUrl(`/verificar-email?token=${encodeURIComponent(params.token)}`);
-  const safeName = escapeHtml(params.name);
+  const firstName = escapeHtml(params.name.split(' ')[0]);
 
-  await transporter.sendMail({
-    from: `"MAGI.C" <${process.env.SMTP_USER}>`,
-    to: params.email,
-    subject: 'Confirme seu e-mail para ativar sua conta — MAGI.C',
-    text: `Olá, ${params.name}.\n\nPara ativar sua conta na MAGI.C, confirme seu e-mail acessando o link abaixo:\n${verifyUrl}\n\nEste link expira em 24 horas.\n\nSe você não criou esta conta, ignore este e-mail.`,
-    html: `
-      <div style="margin:0;padding:0;background:#06080f;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#f5f2ee;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#06080f;padding:32px 14px;">
+  const html = emailShell(`
+    ${emailHeader()}
+
+    <!-- Hero -->
+    <tr>
+      <td style="background:linear-gradient(160deg,#1A1210 0%,#1E1614 55%,#1A1210 100%);border:1px solid ${BORDER};border-top:none;border-bottom:none;padding:40px 40px 36px;">
+        <p style="margin:0 0 6px;font-family:${SANS};font-size:11px;letter-spacing:2px;color:${FAINT};text-transform:uppercase;">Ativação de conta</p>
+        <h1 style="margin:0;font-family:${SERIF};font-size:30px;font-weight:400;color:${TEXT};line-height:1.3;">Bem-vinda(o),<br><em>${firstName}</em>.</h1>
+      </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:32px 40px 36px;">
+        <p style="margin:0 0 12px;font-family:${SANS};font-size:15px;line-height:1.7;color:${TEXT};">
+          Sua conta na <strong>Vista Magic</strong> foi criada com sucesso.
+        </p>
+        <p style="margin:0 0 28px;font-family:${SANS};font-size:14px;line-height:1.7;color:${MUTED};">
+          Para garantir a segurança da sua conta e começar a explorar nossa coleção exclusiva, confirme seu endereço de e-mail.
+        </p>
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
           <tr>
-            <td align="center">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#10141f;border:1px solid #2a3248;border-radius:18px;overflow:hidden;">
-                <tr>
-                  <td style="padding:26px 30px;background:linear-gradient(115deg,#161b2b 0%,#1a2438 48%,#2f2a36 100%);border-bottom:1px solid #2a3248;">
-                    <p style="margin:0 0 10px;color:#d9c3ba;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;">Ativação de conta</p>
-                    <h1 style="margin:0;color:#f7ede8;font-size:30px;line-height:1.2;">Bem-vindo(a) à MAGI.C</h1>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px 30px 12px;">
-                    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:#e8e1db;">Olá, <strong style="color:#ffffff;">${safeName}</strong>.</p>
-                    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#d6cdc7;">Sua conta foi criada com sucesso. Para começar com segurança, confirme seu e-mail no botão abaixo.</p>
-                    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0 10px;">
-                      <tr>
-                        <td align="center" bgcolor="#e5b7b0" style="border-radius:10px;">
-                          <a href="${verifyUrl}" style="display:inline-block;padding:14px 28px;font-weight:700;font-size:15px;color:#101219;text-decoration:none;">Confirmar e-mail</a>
-                        </td>
-                      </tr>
-                    </table>
-                    <p style="margin:14px 0 0;font-size:13px;color:#b8ada7;line-height:1.6;">Este link expira em <strong>24 horas</strong>.</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:10px 30px 30px;">
-                    <p style="margin:0 0 8px;font-size:13px;color:#9f9aa5;line-height:1.6;">Se o botão não abrir, copie e cole este endereço no navegador:</p>
-                    <p style="margin:0;padding:14px;border-radius:10px;background:#0b0f1a;border:1px solid #222a3d;font-size:12px;line-height:1.7;color:#b9c3e4;word-break:break-all;">${verifyUrl}</p>
-                    <p style="margin:16px 0 0;font-size:12px;color:#8f8791;line-height:1.6;">Se você não criou esta conta, pode ignorar este e-mail com segurança.</p>
-                  </td>
-                </tr>
-              </table>
+            <td bgcolor="${ACCENT}">
+              <a href="${verifyUrl}" style="display:inline-block;padding:15px 40px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:2px;color:#0A0A0A;text-decoration:none;text-transform:uppercase;">CONFIRMAR E-MAIL</a>
             </td>
           </tr>
         </table>
-      </div>`,
+
+        <div style="margin-top:32px;border-top:1px solid ${BORDER};padding-top:24px;">
+          <p style="margin:0 0 10px;font-family:${SANS};font-size:12px;color:${FAINT};line-height:1.6;">
+            Este link expira em <strong style="color:${MUTED};">24 horas</strong>. Se o botão não funcionar, copie e cole este endereço no seu navegador:
+          </p>
+          <p style="margin:0;padding:13px 16px;background:${BG};border:1px solid ${BORDER};font-family:${MONO};font-size:11px;color:${MUTED};word-break:break-all;line-height:1.7;">${verifyUrl}</p>
+          <p style="margin:18px 0 0;font-family:${SANS};font-size:12px;color:${GHOST};">
+            Não criou esta conta? Pode ignorar este e-mail com segurança.
+          </p>
+        </div>
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `);
+
+  await transporter.sendMail({
+    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    to: params.email,
+    subject: 'Confirme seu e-mail — Vista Magic',
+    text: `Olá, ${params.name}.\n\nPara ativar sua conta na Vista Magic, confirme seu e-mail:\n${verifyUrl}\n\nEste link expira em 24 horas.\n\nSe você não criou esta conta, ignore este e-mail.`,
+    html,
   });
 }
 
+// ─── Password reset ───────────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(params: {
   email: string;
   name: string;
@@ -245,21 +419,56 @@ export async function sendPasswordResetEmail(params: {
   if (!process.env.SMTP_USER) return;
 
   const resetUrl = buildFrontendUrl(`/redefinir-senha?token=${encodeURIComponent(params.token)}`);
+  const firstName = escapeHtml(params.name.split(' ')[0]);
+
+  const html = emailShell(`
+    ${emailHeader()}
+
+    <!-- Hero -->
+    <tr>
+      <td style="background:linear-gradient(160deg,#1A1210 0%,#1E1614 55%,#1A1210 100%);border:1px solid ${BORDER};border-top:none;border-bottom:none;padding:40px 40px 36px;">
+        <p style="margin:0 0 6px;font-family:${SANS};font-size:11px;letter-spacing:2px;color:${FAINT};text-transform:uppercase;">Segurança da conta</p>
+        <h1 style="margin:0;font-family:${SERIF};font-size:30px;font-weight:400;color:${TEXT};line-height:1.3;">Redefinir<br>sua senha</h1>
+      </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:32px 40px 36px;">
+        <p style="margin:0 0 12px;font-family:${SANS};font-size:15px;line-height:1.7;color:${TEXT};">
+          Olá, <strong>${firstName}</strong>.
+        </p>
+        <p style="margin:0 0 28px;font-family:${SANS};font-size:14px;line-height:1.7;color:${MUTED};">
+          Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha. Este link é válido por <strong style="color:${TEXT};">1 hora</strong>.
+        </p>
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td bgcolor="${ACCENT}">
+              <a href="${resetUrl}" style="display:inline-block;padding:15px 40px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:2px;color:#0A0A0A;text-decoration:none;text-transform:uppercase;">CRIAR NOVA SENHA</a>
+            </td>
+          </tr>
+        </table>
+
+        <div style="margin-top:32px;border-top:1px solid ${BORDER};padding-top:24px;">
+          <p style="margin:0 0 10px;font-family:${SANS};font-size:12px;color:${FAINT};line-height:1.6;">
+            Se o botão não funcionar, copie e cole este endereço no seu navegador:
+          </p>
+          <p style="margin:0;padding:13px 16px;background:${BG};border:1px solid ${BORDER};font-family:${MONO};font-size:11px;color:${MUTED};word-break:break-all;line-height:1.7;">${resetUrl}</p>
+          <p style="margin:18px 0 0;font-family:${SANS};font-size:12px;color:${GHOST};">
+            Se você não solicitou esta redefinição, ignore este e-mail. Sua senha permanece inalterada.
+          </p>
+        </div>
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `);
 
   await transporter.sendMail({
-    from: `"MAGI.C" <${process.env.SMTP_USER}>`,
+    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
     to: params.email,
-    subject: 'Redefinição de senha — MAGI.C',
-    html: `
-      <div style="font-family:sans-serif;background:#0d0d0d;color:#f5ede8;padding:32px;max-width:600px;margin:auto">
-        <h1 style="font-size:22px;margin:0 0 12px;color:#e8b4b0">Redefinir sua senha</h1>
-        <p style="margin:0 0 18px">Olá, ${escapeHtml(params.name)}. Recebemos uma solicitação para redefinir sua senha.</p>
-        <div style="margin:24px 0;text-align:center">
-          <a href="${resetUrl}" style="background:#e8b4b0;color:#0d0d0d;padding:12px 28px;text-decoration:none;font-weight:600;display:inline-block">
-            Criar nova senha
-          </a>
-        </div>
-        <p style="font-size:12px;color:#a89b95;word-break:break-all">Se o botão não abrir, use este link: ${resetUrl}</p>
-      </div>`,
+    subject: 'Redefinição de senha — Vista Magic',
+    html,
   });
 }

@@ -16,9 +16,7 @@ export function BoletoConfirmation({ boletoUrl, boletoBarcode, boletoDueDate, to
 
   const dueDateText = boletoDueDate
     ? new Date(boletoDueDate).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
+        day: '2-digit', month: '2-digit', year: 'numeric',
       })
     : null;
 
@@ -35,27 +33,41 @@ export function BoletoConfirmation({ boletoUrl, boletoBarcode, boletoDueDate, to
 
   return (
     <div className="payment-confirmation boleto-confirmation">
-      <div className="confirmation-icon">📄</div>
-      <h3 className="confirmation-title">Boleto gerado!</h3>
-      <p className="confirmation-subtitle">
-        Total: <strong>{toCurrency(total)}</strong>
-        {dueDateText && <> · Vence em {dueDateText}</>}
-      </p>
+
+      <div className="confirm-header">
+        <div className="confirm-icon confirm-icon--success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="confirmation-title">Boleto gerado</h3>
+          <p className="confirmation-subtitle">
+            Total: <strong>{toCurrency(total)}</strong>
+            {dueDateText && <span className="confirm-expiry"> · Vence em {dueDateText}</span>}
+          </p>
+        </div>
+      </div>
 
       <a
         href={boletoUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="primary-btn boleto-open-btn"
+        className="boleto-open-btn"
       >
-        📥 Abrir boleto PDF
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Abrir boleto PDF
       </a>
 
       {boletoBarcode && (
-        <>
+        <div className="pix-copy-section">
           <p className="pix-copy-label">Linha digitável</p>
           <div
-            className="pix-code-box boleto-barcode"
+            className="pix-code-box"
             onClick={handleCopy}
             role="button"
             tabIndex={0}
@@ -64,17 +76,32 @@ export function BoletoConfirmation({ boletoUrl, boletoBarcode, boletoDueDate, to
           >
             {boletoBarcode}
           </div>
-          <button type="button" className="primary-btn pix-copy-btn" onClick={handleCopy}>
-            {copied ? '✓ Código copiado!' : 'Copiar linha digitável'}
+          <button type="button" className="pix-copy-btn" onClick={handleCopy}>
+            {copied ? (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Código copiado
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                Copiar linha digitável
+              </>
+            )}
           </button>
-        </>
+        </div>
       )}
 
       <div className="boleto-instructions">
-        <p className="boleto-instruction-title">Como pagar:</p>
+        <p className="boleto-instruction-title">Como pagar</p>
         <ul>
           <li>Abra o PDF e pague em qualquer banco ou app bancário</li>
-          <li>Cole a linha digitável no app do seu banco</li>
+          <li>Cole a linha digitável diretamente no app do seu banco</li>
           <li>O prazo de compensação é de até 3 dias úteis</li>
         </ul>
       </div>
