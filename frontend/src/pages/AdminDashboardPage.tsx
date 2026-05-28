@@ -60,7 +60,7 @@ export function AdminDashboardPage() {
               <p className="adm-stat-label">Clientes</p>
             </div>
             <div className="adm-stat">
-              <p className={`adm-stat-value${data.lowStockAlerts > 0 ? ' accent' : ''}`}>
+              <p className={`adm-stat-value${data.lowStockAlerts > 0 ? ' adm-stat-value--alert' : ''}`}>
                 {data.lowStockAlerts}
               </p>
               <p className="adm-stat-label">Alertas estoque</p>

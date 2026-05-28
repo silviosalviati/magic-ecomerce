@@ -17,9 +17,7 @@ export function AdminLoginPage() {
     );
   }
 
-  if (isAuthenticated) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
+  if (isAuthenticated) return <Navigate to="/admin/dashboard" replace />;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,43 +36,54 @@ export function AdminLoginPage() {
 
   return (
     <div className="adm-login">
-      <div className="adm-login-card">
+      <div className="adm-login-wrap">
+        {/* Brand */}
         <div className="adm-login-brand">
           <p className="adm-login-wordmark">Vista Magic</p>
-          <div className="adm-login-sep" />
-          <p className="adm-login-subtitle">Acesso Administrativo</p>
+          <div className="adm-login-rule" />
+          <p className="adm-login-tagline">Painel Administrativo</p>
         </div>
 
-        <h2 className="adm-login-title">Entrar no painel</h2>
+        {/* Card */}
+        <div className="adm-login-card">
+          {error && (
+            <div className="adm-login-error">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{flexShrink:0}}>
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {error}
+            </div>
+          )}
 
-        {error && <p className="adm-login-error">{error}</p>}
+          <form onSubmit={handleSubmit}>
+            <div className="adm-login-field">
+              <label className="adm-login-label" htmlFor="adm-key">Senha de acesso</label>
+              <input
+                id="adm-key"
+                type="password"
+                className="adm-login-input"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder="••••••••••••"
+                autoComplete="current-password"
+                required
+                autoFocus
+              />
+            </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="adm-login-field">
-            <label className="adm-login-label" htmlFor="adm-key">
-              Senha de acesso
-            </label>
-            <input
-              id="adm-key"
-              type="password"
-              className="adm-login-input"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="••••••••••••"
-              autoComplete="current-password"
-              required
-              autoFocus
-            />
-          </div>
+            <button
+              type="submit"
+              className="adm-login-btn"
+              disabled={loading || !key.trim()}
+            >
+              {loading
+                ? <span className="adm-spinner" style={{ borderTopColor: '#080808', borderColor: 'rgba(8,8,8,0.25)', width: 14, height: 14 }} />
+                : 'Acessar painel'}
+            </button>
+          </form>
+        </div>
 
-          <button type="submit" className="adm-login-btn" disabled={loading || !key.trim()}>
-            {loading ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)' }} /> : 'Acessar painel'}
-          </button>
-        </form>
-
-        <p style={{ textAlign: 'center', marginTop: 28, fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#3D3330' }}>
-          vistamagic.com.br
-        </p>
+        <p className="adm-login-footer">vistamagic.com.br</p>
       </div>
     </div>
   );
