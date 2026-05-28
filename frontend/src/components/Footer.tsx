@@ -40,6 +40,7 @@ export function Footer() {
             <a href="/#novidades">Novidades</a>
             <a href="/#feminino">Moda Feminina</a>
             <a href="/#masculino">Moda Masculina</a>
+            <Link to="/rastrear-pedido">Rastrear pedido</Link>
           </nav>
         </div>
 

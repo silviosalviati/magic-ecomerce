@@ -78,6 +78,7 @@ export function Header({
           <a href="/#feminino" onClick={closeMenu}>Moda Feminina</a>
           <a href="/#masculino" onClick={closeMenu}>Moda Masculina</a>
           <NavLink to="/sobre" onClick={closeMenu}>Sobre</NavLink>
+          <NavLink to="/rastrear-pedido" onClick={closeMenu}>Meus Pedidos</NavLink>
         </nav>
       )}
     </>
