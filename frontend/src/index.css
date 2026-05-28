@@ -267,8 +267,9 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 18px 32px;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 14px 20px;
   background: var(--color-bg-base);
   border-bottom: 0.5px solid var(--color-border);
   position: sticky;
@@ -1437,6 +1438,7 @@ textarea:focus-visible {
 @media (min-width: 768px) {
   .site-header {
     flex-wrap: nowrap;
+    padding: 18px 32px;
   }
 
   .hero {
