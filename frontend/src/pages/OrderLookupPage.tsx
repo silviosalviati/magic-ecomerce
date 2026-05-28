@@ -32,7 +32,7 @@ export function OrderLookupPage() {
     setError('');
     getMyOrders(token)
       .then((data) => setOrders(data))
-      .catch(() => setError('Não foi possível carregar seus pedidos. Tente novamente.'))
+      .catch(() => setError('Ainda não encontramos pedidos para esta conta.'))
       .finally(() => setLoading(false));
   }, [authLoading, user, token]);
 
@@ -126,7 +126,7 @@ export function OrderLookupPage() {
                     setError('');
                     getMyOrders(token)
                       .then(setOrders)
-                      .catch(() => setError('Não foi possível carregar seus pedidos.'))
+                      .catch(() => setError('Ainda não encontramos pedidos para esta conta.'))
                       .finally(() => setLoading(false));
                   }}
                 >

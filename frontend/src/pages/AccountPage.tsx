@@ -31,7 +31,7 @@ export function AccountPage() {
     setLoadingOrders(true);
     getMyOrders(token)
       .then(setOrders)
-      .catch(() => setError('Erro ao carregar pedidos.'))
+      .catch(() => setError('Ainda não encontramos pedidos para esta conta.'))
       .finally(() => setLoadingOrders(false));
   }, [token]);
 
