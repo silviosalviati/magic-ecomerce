@@ -68,13 +68,15 @@ npm run dev
 
 ## Variáveis de Ambiente
 
-Crie um arquivo `.env` na raiz com as seguintes variáveis:
+Este projeto não lê mais um arquivo `.env` automaticamente.
+
+Em produção, as variáveis são injetadas pelo Cloud Run e pelo Secret Manager.
+Para execução local, exporte as variáveis no shell ou configure-as no ambiente da sua sessão antes de iniciar a API ou rodar comandos do Prisma.
 
 ```env
 DATABASE_URL="postgresql://user:password@host:5432/dbname"
 PORT=3001
 ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173,https://vistamagic.com.br,https://www.vistamagic.com.br"
-ADMIN_SECRET_KEY="sua-chave-secreta"
 JWT_SECRET="chave-secreta-longa-e-unica"
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
@@ -88,7 +90,7 @@ GCP_PUBLIC_BASE_URL="https://storage.googleapis.com/seu-bucket"
 GOOGLE_APPLICATION_CREDENTIALS="./secrets/gcp-key.json"
 ```
 
-> **Atenção:** Nunca commite o arquivo `.env` nem a pasta `secrets/` (já estão no `.gitignore`).
+> **Atenção:** Não volte a introduzir segredos em `.env`. Use variáveis do ambiente da sessão local e, em produção, Secret Manager/Cloud Run.
 
 ## Scripts
 

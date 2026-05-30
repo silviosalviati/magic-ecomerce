@@ -1,6 +1,3 @@
-// ✅ DEVE ser a primeira instrução — carrega .env antes de qualquer import
-import 'dotenv/config';
-
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { productsRouter } from './products/products.routes';
