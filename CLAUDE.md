@@ -29,7 +29,7 @@ This is a Node.js + TypeScript REST API backend for the **Vista Magic** fashion 
 
 ### Auth
 
-Admin routes require the `x-admin-key` header matching `ADMIN_SECRET_KEY` env var. Implemented in `src/middlewares/auth.middleware.ts`. There is no JWT — it's a single static key.
+Admin routes require a valid JWT for a user with `isAdmin=true`. Implemented in `src/middlewares/auth.middleware.ts` and backed by the auth flow in `src/auth/`.
 
 ### Data model
 
@@ -61,7 +61,6 @@ GCP_PROJECT_ID                 # GCP project ID
 GCP_BUCKET_NAME                # GCS bucket (default: magic-ecommerce-fotos)
 GCP_PUBLIC_BASE_URL            # Public base URL for GCS images
 GOOGLE_APPLICATION_CREDENTIALS # Path to service account JSON (fallback: ./secrets/gcp-key.json)
-ADMIN_SECRET_KEY               # Static key for x-admin-key header
 ASAAS_BASE_URL                 # Asaas API base URL (default: sandbox)
 ASAAS_API_KEY                  # Asaas API key
 PORT                           # Server port (default: 3001)
