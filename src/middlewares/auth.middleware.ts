@@ -6,7 +6,7 @@ import { prisma } from '../config/database';
 export interface AdminPayload {
   id: string;
   role: string;
-  source?: 'jwt' | 'api-key';
+  source?: 'jwt';
 }
 
 declare global {
@@ -48,15 +48,7 @@ async function tryAuthorizeByJwt(req: Request): Promise<AdminPayload | null> {
   }
 }
 
-function tryAuthorizeByApiKey(req: Request): AdminPayload | null {
-  const key = req.headers['x-admin-key'];
-  const expectedKey = process.env.ADMIN_SECRET_KEY;
-  if (!expectedKey) return null;
-  if (!key || key !== expectedKey) return null;
-  return { id: 'admin', role: 'admin', source: 'api-key' };
-}
-
-// JWT+isAdmin is the primary method. x-admin-key remains as temporary fallback.
+// JWT+isAdmin is the only accepted admin auth method.
 export async function requireAdminAccess(
   req: Request,
   res: Response,
@@ -65,13 +57,6 @@ export async function requireAdminAccess(
   const jwtAdmin = await tryAuthorizeByJwt(req);
   if (jwtAdmin) {
     req.admin = jwtAdmin;
-    next();
-    return;
-  }
-
-  const keyAdmin = tryAuthorizeByApiKey(req);
-  if (keyAdmin) {
-    req.admin = keyAdmin;
     next();
     return;
   }

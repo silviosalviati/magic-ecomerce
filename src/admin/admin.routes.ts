@@ -7,7 +7,7 @@ import { listOrders, getOrder, updateOrder } from './orders.controller';
 const adminRouter = Router();
 const controller = new AdminController();
 
-// 🔒 Todas as rotas admin exigem JWT com isAdmin=true (x-admin-key temporariamente aceito)
+// 🔒 Todas as rotas admin exigem JWT com isAdmin=true
 adminRouter.use(requireAdminAccess);
 
 // ── Dashboard ────────────────────────────────────────────────────────────────

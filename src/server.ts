@@ -61,7 +61,7 @@ app.use(
       }
     },
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'x-admin-key', 'Authorization', 'X-Tunnel-Skip-AntiPhishing-Page'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tunnel-Skip-AntiPhishing-Page'],
   })
 );
 
