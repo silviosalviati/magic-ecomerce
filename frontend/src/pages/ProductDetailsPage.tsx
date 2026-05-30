@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { buildCartItem, colorToken, pickInitialVariant, toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct, CatalogVariant } from '../types';
@@ -56,6 +57,7 @@ export function ProductDetailsPage({
   const [selectedColor, setSelectedColor] = useState(initialVariant?.color ?? '');
   const [selectedSize, setSelectedSize] = useState(initialVariant?.size ?? '');
   const [activeImage, setActiveImage] = useState(product?.images[0] ?? '');
+  const [zoomedOpen, setZoomedOpen] = useState(false);
 
   useEffect(() => {
     if (!initialVariant || !product) return;
@@ -66,10 +68,58 @@ export function ProductDetailsPage({
 
   useEffect(() => {
     setRecommendationPage(0);
+    setZoomedOpen(false);
   }, [product?.productId]);
 
+  // Escape key closes lightbox
+  useEffect(() => {
+    if (!zoomedOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setZoomedOpen(false);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [zoomedOpen]);
+
   if (loading) {
-    return <section className="page-status">Carregando produto...</section>;
+    return (
+      <section className="product-detail-page">
+        <div className="breadcrumbs">
+          <span className="skeleton-line" style={{ width: 240, height: 13, display: 'block' }} />
+        </div>
+        <div className="product-detail-layout">
+          <div className="detail-gallery">
+            <div className="detail-main-image">
+              <div className="skeleton-pulse" style={{ width: '100%', aspectRatio: '3/4', display: 'block' }} />
+            </div>
+            <div className="detail-thumbs">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="skeleton-pulse" style={{ height: 92, display: 'block' }} />
+              ))}
+            </div>
+          </div>
+          <div className="detail-copy">
+            <span className="skeleton-line" style={{ width: '38%', height: 11, display: 'block' }} />
+            <span className="skeleton-line" style={{ width: '72%', height: 42, display: 'block', marginTop: 8 }} />
+            <span className="skeleton-line" style={{ width: '30%', height: 22, display: 'block', marginTop: 4 }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 20, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="skeleton-pulse" style={{ width: 44, height: 44, borderRadius: '50%', display: 'block', flexShrink: 0 }} />
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="skeleton-pulse" style={{ width: 44, height: 44, borderRadius: 2, display: 'block', flexShrink: 0 }} />
+              ))}
+            </div>
+            <div className="cta-row" style={{ marginTop: 16 }}>
+              <div className="skeleton-pulse" style={{ height: 44, borderRadius: 2, display: 'block' }} />
+              <div className="skeleton-pulse" style={{ height: 44, borderRadius: 2, display: 'block' }} />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   if (error) {
@@ -126,7 +176,22 @@ export function ProductDetailsPage({
         <div className="product-detail-layout">
           <div className="detail-gallery">
             <div className="detail-main-image">
-              <img src={activeImage || product.imageUrl} alt={product.name} />
+              <button
+                type="button"
+                className="detail-zoom-btn"
+                onClick={() => setZoomedOpen(true)}
+                aria-label="Ampliar imagem do produto"
+              >
+                <img src={activeImage || product.imageUrl} alt={product.name} />
+                <span className="detail-zoom-hint" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="11" y1="8" x2="11" y2="14" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  </svg>
+                </span>
+              </button>
             </div>
             <div className="detail-thumbs">
               {product.images.map((image, index) => (
@@ -262,6 +327,31 @@ export function ProductDetailsPage({
           </div>
         </div>
       </section>
+
+      {zoomedOpen && (
+        <div
+          className="lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Imagem ampliada"
+          onClick={() => setZoomedOpen(false)}
+        >
+          <button
+            type="button"
+            className="lightbox-close"
+            aria-label="Fechar imagem ampliada"
+            onClick={() => setZoomedOpen(false)}
+          >
+            <X size={20} strokeWidth={1.6} aria-hidden="true" />
+          </button>
+          <img
+            className="lightbox-img"
+            src={activeImage || product.imageUrl}
+            alt={product.name}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {recommendations.length > 0 && (
         <section className="recommendations">

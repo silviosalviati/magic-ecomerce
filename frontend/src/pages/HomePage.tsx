@@ -5,6 +5,8 @@ import { ProductCard } from '../components/ProductCard';
 import { toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
 
+const SIZE_ORDER = ['PP', 'P', 'M', 'G', 'GG', 'GGG', 'XGG', 'EGG', 'ÚNICO'];
+
 type HomePageProps = {
   items: CatalogProduct[];
   searchQuery: string;
@@ -33,13 +35,37 @@ export function HomePage({
   onAddToCart,
   onBuyNow,
 }: HomePageProps) {
+  const [selectedSizes, setSelectedSizes] = useState<Set<string>>(new Set());
+
+  const allSizes = useMemo(() => {
+    const seen = new Set<string>();
+    items.forEach((item) => item.variants.forEach((v) => seen.add(v.size)));
+    const known = SIZE_ORDER.filter((s) => seen.has(s));
+    const numeric = Array.from(seen)
+      .filter((s) => !SIZE_ORDER.includes(s) && /^\d+$/.test(s))
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(String);
+    const other = Array.from(seen)
+      .filter((s) => !SIZE_ORDER.includes(s) && !/^\d+$/.test(s))
+      .sort();
+    return [...known, ...numeric, ...other];
+  }, [items]);
+
+  const displayItems = useMemo(() => {
+    if (selectedSizes.size === 0) return items;
+    return items.filter((item) =>
+      item.variants.some((v) => selectedSizes.has(v.size) && v.stock > 0)
+    );
+  }, [items, selectedSizes]);
+
   const feminineItems = useMemo(
-    () => items.filter((item) => item.category.toLowerCase().includes('femin')),
-    [items]
+    () => displayItems.filter((item) => item.category.toLowerCase().includes('femin')),
+    [displayItems]
   );
   const masculineItems = useMemo(
-    () => items.filter((item) => item.category.toLowerCase().includes('mascul')),
-    [items]
+    () => displayItems.filter((item) => item.category.toLowerCase().includes('mascul')),
+    [displayItems]
   );
 
   const heroItems = useMemo(() => items.slice(0, 5), [items]);
@@ -166,10 +192,51 @@ export function HomePage({
         </div>
       </div>
 
+      {/* ── FILTROS ── */}
+      {!loading && !error && allSizes.length > 0 && (
+        <div className="catalog-filters" aria-label="Filtrar por tamanho">
+          <span className="filter-label">Tamanho</span>
+          <div className="filter-chips" role="group" aria-label="Tamanhos disponíveis">
+            {allSizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={selectedSizes.has(size) ? 'filter-chip active' : 'filter-chip'}
+                aria-pressed={selectedSizes.has(size)}
+                onClick={() =>
+                  setSelectedSizes((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(size)) next.delete(size);
+                    else next.add(size);
+                    return next;
+                  })
+                }
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+          {selectedSizes.size > 0 && (
+            <button
+              type="button"
+              className="filter-clear"
+              onClick={() => setSelectedSizes(new Set())}
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── NOVIDADES — catálogo completo ── */}
       <section className="catalog" id="novidades">
         <div className="section-head">
-          <p className="section-label-inline">Novidades da coleção</p>
+          <p className="section-label-inline">
+            Novidades da coleção
+            {selectedSizes.size > 0 && (
+              <span className="filter-active-count"> · {displayItems.length} produto{displayItems.length !== 1 ? 's' : ''}</span>
+            )}
+          </p>
         </div>
 
         {loading && (
@@ -195,16 +262,18 @@ export function HomePage({
             </button>
           </div>
         )}
-        {!loading && !error && items.length === 0 && (
+        {!loading && !error && displayItems.length === 0 && (
           <div className="status">
-            {searchQuery.trim().length > 0
-              ? `Nenhum produto encontrado para "${searchQuery.trim()}".`
-              : 'Sem produtos cadastrados no momento.'}
+            {selectedSizes.size > 0
+              ? `Nenhum produto disponível no tamanho selecionado.`
+              : searchQuery.trim().length > 0
+                ? `Nenhum produto encontrado para "${searchQuery.trim()}".`
+                : 'Sem produtos cadastrados no momento.'}
           </div>
         )}
-        {!loading && !error && items.length > 0 && (
+        {!loading && !error && displayItems.length > 0 && (
           <div className="product-grid">
-            {items.map((item, index) => (
+            {displayItems.map((item, index) => (
               <ProductCard
                 key={item.productId}
                 product={item}

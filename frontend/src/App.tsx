@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CartSidebar } from './components/CartSidebar';
+import { Toast } from './components/Toast';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
@@ -53,6 +54,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [toastKey, setToastKey] = useState(0);
+  const [toastOpen, setToastOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -110,6 +113,8 @@ function App() {
           : entry
       );
     });
+    setToastKey((k) => k + 1);
+    setToastOpen(true);
   }
 
   function buyNow(item: CartItem) { addToCart(item); setCartOpen(true); }
@@ -168,7 +173,7 @@ function App() {
       <div className="page-shell">
         {!isCheckoutPage && !isAuthPage && (
           <>
-            <div className="announcement-bar" role="banner">
+            <div className="announcement-bar" role="region" aria-label="Promoções e informações de envio">
               <strong>Frete grátis</strong> acima de R$&nbsp;299 &nbsp;·&nbsp; Troca fácil em até 7 dias &nbsp;·&nbsp; <strong>Compra 100% segura</strong>
             </div>
             <Header
@@ -201,6 +206,10 @@ function App() {
             <CartSidebar items={cartItems} open={cartOpen} onClose={() => setCartOpen(false)} onDecrease={(k) => changeCartQuantity(k, -1)} onIncrease={(k) => changeCartQuantity(k, 1)} onRemove={removeFromCart} />
             <Footer />
           </>
+        )}
+
+        {toastOpen && (
+          <Toast key={toastKey} onDismiss={() => setToastOpen(false)} />
         )}
       </div>
     </AuthProvider>
