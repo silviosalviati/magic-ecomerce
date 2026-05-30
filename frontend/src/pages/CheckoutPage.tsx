@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 import { checkout, getCheckoutInstallments, validateCoupon } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import type {
@@ -318,6 +319,7 @@ export function CheckoutPage({
 
   return (
     <div className="checkout-page">
+      <SEO title="Finalizar Compra" noindex />
       {/* Minimal header */}
       <header className="checkout-header">
         <button

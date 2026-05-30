@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 const VALUES = [
   {
@@ -44,6 +45,11 @@ const STATS = [
 export function AboutPage() {
   return (
     <main className="about-page">
+      <SEO
+        title="Sobre a MAGI.C — Nossa História e Valores"
+        description="Conheça a Vista Magic, a marca brasileira de moda com curadoria premium. Qualidade impecável, estilo único e compromisso com quem veste."
+        canonical="/sobre"
+      />
 
       {/* ── HERO ── */}
       <section className="about-hero">

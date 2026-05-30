@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin
+Disallow: /checkout
+Disallow: /entrar
+Disallow: /cadastrar
+Disallow: /verificar-email
+Disallow: /recuperar-senha
+Disallow: /redefinir-senha
+Disallow: /minha-conta
+
+Sitemap: https://www.vistamagic.com.br/sitemap.xml

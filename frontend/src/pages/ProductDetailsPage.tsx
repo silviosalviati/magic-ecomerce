@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { buildCartItem, colorToken, pickInitialVariant, toCurrency } from '../lib/catalog';
+import { buildCartItem, colorToken, pickInitialVariant, toCurrency, toInstallmentLabel } from '../lib/catalog';
+import { SEO } from '../components/SEO';
 import type { CartItem, CatalogProduct, CatalogVariant } from '../types';
 
 type ProductDetailsPageProps = {
@@ -161,9 +162,50 @@ export function ProductDetailsPage({
 
   const cartItem = buildCartItem(product, selectedVariant);
   const breadcrumbCategory = resolveBreadcrumbCategory(product.category);
+  const installment = toInstallmentLabel(product.price);
+
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.images.length > 0 ? product.images : [product.imageUrl],
+    brand: { '@type': 'Brand', name: 'MAGI.C' },
+    sku: selectedVariant.barcode,
+    offers: {
+      '@type': 'Offer',
+      url: `https://www.vistamagic.com.br/produto/${product.productId}`,
+      priceCurrency: 'BRL',
+      price: product.price.toFixed(2),
+      availability:
+        selectedVariant.stock > 0
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@type': 'Organization', name: 'Vista Magic' },
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.vistamagic.com.br/' },
+      { '@type': 'ListItem', position: 2, name: breadcrumbCategory },
+      { '@type': 'ListItem', position: 3, name: product.name },
+    ],
+  };
 
   return (
     <>
+      <SEO
+        title={product.name}
+        description={`${product.name} — ${product.description} Compre na MAGI.C com entrega rápida e compra segura.`}
+        canonical={`/produto/${product.productId}`}
+        ogImage={product.images[0] || product.imageUrl}
+        ogType="product"
+        jsonLd={[productJsonLd, breadcrumbJsonLd]}
+      />
       <section className="product-detail-page">
         <div className="breadcrumbs">
           <Link to="/">Home</Link>
@@ -213,7 +255,10 @@ export function ProductDetailsPage({
             <p className="detail-description">{product.description}</p>
 
             <div className="detail-meta">
-              <strong className="price-tag">{toCurrency(product.price)}</strong>
+              <div>
+                <strong className="price-tag">{toCurrency(product.price)}</strong>
+                {installment && <p className="price-installment detail-installment">{installment}</p>}
+              </div>
               <span className={`stock ${stockClass}`}>{stockLabel}</span>
             </div>
 

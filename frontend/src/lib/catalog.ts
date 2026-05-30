@@ -28,6 +28,12 @@ export function pickInitialVariant(variants: CatalogVariant[]): CatalogVariant {
   return variants.find((variant) => variant.stock > 0) || variants[0];
 }
 
+export function toInstallmentLabel(price: number, maxInstallments = 3): string | null {
+  const MIN_PER_INSTALLMENT = 10;
+  if (price < MIN_PER_INSTALLMENT * maxInstallments) return null;
+  return `${maxInstallments}× ${toCurrency(price / maxInstallments)} sem juros`;
+}
+
 export function buildCartItem(product: CatalogProduct, variant: CatalogVariant): CartItem {
   return {
     cartKey: `${product.productId}-${variant.variantId}`,

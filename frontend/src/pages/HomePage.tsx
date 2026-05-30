@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import type React from 'react';
 import { Link } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
+import { SEO } from '../components/SEO';
 import { toCurrency } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
 
@@ -86,6 +87,11 @@ export function HomePage({
 
   return (
     <>
+      <SEO
+        title="Moda Feminina e Masculina com Curadoria Premium"
+        description="Descubra a coleção MAGI.C: moda feminina e masculina com caimento impecável, tecidos nobres e entrega rápida para todo o Brasil. Compra 100% segura."
+        canonical="/"
+      />
       {/* ── HERO — Full-Bleed ── */}
       <section className="hero" id="marca">
         <div className="hero-bg">

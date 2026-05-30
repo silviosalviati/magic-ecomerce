@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { authRegister } from '../lib/api';
+import { SEO } from '../components/SEO';
 
 export function RegisterPage() {
   const [name, setName] = useState('');
@@ -53,6 +54,7 @@ export function RegisterPage() {
 
   return (
     <main className="auth-page">
+      <SEO title="Criar conta" noindex />
       <aside className="auth-brand auth-brand--register-story">
         <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
           <img src="/logo/logo-transparent.png" alt="MAGI.C" />

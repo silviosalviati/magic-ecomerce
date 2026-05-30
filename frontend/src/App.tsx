@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CartSidebar } from './components/CartSidebar';
+import { FloatingActions } from './components/FloatingActions';
 import { Toast } from './components/Toast';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { Footer } from './components/Footer';
@@ -29,6 +30,16 @@ import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import type { CartItem, CatalogProduct } from './types';
 
 const CATALOG_CACHE_KEY = 'magic.catalog.cache.v1';
+const CART_KEY = 'magic.cart.v1';
+
+function readCartCache(): CartItem[] {
+  try {
+    const raw = window.localStorage.getItem(CART_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CartItem[]) : [];
+  } catch { return []; }
+}
 
 function readCatalogCache(): CatalogProduct[] {
   if (typeof window === 'undefined') return [];
@@ -52,7 +63,7 @@ function normalizeSearchText(value: string): string {
 function App() {
   const [items, setItems] = useState<CatalogProduct[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>(readCartCache);
   const [cartOpen, setCartOpen] = useState(false);
   const [toastKey, setToastKey] = useState(0);
   const [toastOpen, setToastOpen] = useState(false);
@@ -87,6 +98,11 @@ function App() {
     void loadCatalog();
     return () => { active = false; };
   }, []);
+
+  // Persiste carrinho no localStorage a cada mudança
+  useEffect(() => {
+    try { window.localStorage.setItem(CART_KEY, JSON.stringify(cartItems)); } catch { /* ignore */ }
+  }, [cartItems]);
 
   async function retryCatalogLoad() {
     setLoading(true);
@@ -211,6 +227,8 @@ function App() {
         {toastOpen && (
           <Toast key={toastKey} onDismiss={() => setToastOpen(false)} />
         )}
+
+        {!isCheckoutPage && !isAuthPage && <FloatingActions />}
       </div>
     </AuthProvider>
   );

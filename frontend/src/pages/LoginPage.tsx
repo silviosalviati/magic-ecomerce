@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { authLogin, requestEmailVerification } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { SEO } from '../components/SEO';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -68,6 +69,7 @@ export function LoginPage() {
 
   return (
     <main className="auth-page">
+      <SEO title="Entrar na sua conta" noindex />
       <aside className="auth-brand auth-brand--login-manifesto">
         <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
           <img src="/logo/logo-transparent.png" alt="MAGI.C" />

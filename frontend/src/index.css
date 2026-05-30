@@ -7646,6 +7646,71 @@ textarea:focus-visible {
   letter-spacing: 0.02em;
 }
 
+/* ── FLOATING ACTIONS — WhatsApp + Voltar ao topo ── */
+.floating-actions {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 35;
+  align-items: center;
+}
+
+.floating-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.40);
+  transition:
+    transform var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.floating-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.50);
+}
+
+.floating-top {
+  background: var(--color-bg-deep);
+  border: 0.5px solid var(--color-border-strong);
+  color: var(--color-text-primary);
+  animation: floatIn 0.22s var(--ease-spring) both;
+}
+
+.floating-whatsapp {
+  background: #25D366;
+  color: #fff;
+}
+
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── PRICE INSTALLMENT ── */
+.price-installment {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--color-text-faint);
+  letter-spacing: 0.02em;
+  margin: 2px 0 0;
+}
+
+.detail-installment {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
 /* ── LIGHTBOX — Zoom de imagem ── */
 .lightbox {
   position: fixed;

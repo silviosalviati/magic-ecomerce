@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type React from 'react';
 import { Link } from 'react-router-dom';
-import { buildCartItem, pickInitialVariant, toCurrency } from '../lib/catalog';
+import { buildCartItem, pickInitialVariant, toCurrency, toInstallmentLabel } from '../lib/catalog';
 import type { CartItem, CatalogProduct } from '../types';
 
 type ProductCardProps = {
@@ -44,6 +44,9 @@ export function ProductCard({ product, onAddToCart, onBuyNow, style }: ProductCa
           </Link>
         </h3>
         <strong className="price-tag">{toCurrency(product.price)}</strong>
+        {toInstallmentLabel(product.price) && (
+          <p className="price-installment">{toInstallmentLabel(product.price)}</p>
+        )}
 
         <div className="product-footer-actions">
           <button

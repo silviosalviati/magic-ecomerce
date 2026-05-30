@@ -3,6 +3,7 @@ import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getMyOrders } from '../lib/api';
 import { OrderCard } from '../components/OrderCard';
+import { SEO } from '../components/SEO';
 import type { Order } from '../types';
 
 function getInitials(name: string): string {
@@ -66,6 +67,7 @@ export function AccountPage() {
 
   return (
     <main className="account-page">
+      <SEO title="Minha Conta" noindex />
       {/* ── Profile Hero ── */}
       <header className="acc-hero">
         <div className="acc-hero-glow" aria-hidden="true" />

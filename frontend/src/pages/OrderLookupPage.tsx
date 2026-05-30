@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMyOrders, lookupOrders } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { SEO } from '../components/SEO';
 import type { Order } from '../types';
 import { OrderCard } from '../components/OrderCard';
 
@@ -68,6 +69,11 @@ export function OrderLookupPage() {
 
   return (
     <main className="olp-page">
+      <SEO
+        title="Rastrear Pedido"
+        description="Acompanhe o status do seu pedido Vista Magic. Consulte pelo CPF ou acesse sua conta para ver todos os seus pedidos."
+        canonical="/rastrear-pedido"
+      />
       <div className="olp-shell">
 
         {/* ── HEADER ── */}
