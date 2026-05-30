@@ -18,10 +18,10 @@ function getJwtSecret(): string | null {
   return secret && secret.length > 0 ? secret : null;
 }
 
-function generateToken(userId: string, email: string): string {
+function generateToken(userId: string, email: string, isAdmin: boolean): string {
   const secret = getJwtSecret();
   if (!secret) throw new Error('JWT_SECRET não configurado.');
-  return jwt.sign({ userId, email }, secret, { expiresIn: TOKEN_EXPIRY });
+  return jwt.sign({ userId, email, isAdmin }, secret, { expiresIn: TOKEN_EXPIRY });
 }
 
 function normalizeEmail(email: string): string {
@@ -203,8 +203,8 @@ export async function login(req: Request, res: Response): Promise<void> {
       },
     });
 
-    const token = generateToken(user.id, user.email);
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    const token = generateToken(user.id, user.email, user.isAdmin);
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, isAdmin: user.isAdmin } });
   } catch (error) {
     console.error('[auth/login]', error);
     res.status(500).json({ message: 'Erro ao fazer login.' });
@@ -359,7 +359,7 @@ export async function me(req: Request, res: Response): Promise<void> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, createdAt: true, emailVerifiedAt: true },
+      select: { id: true, name: true, email: true, createdAt: true, emailVerifiedAt: true, isAdmin: true },
     });
 
     if (!user) {

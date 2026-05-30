@@ -166,26 +166,23 @@ function App() {
   const isAdminPage = location.pathname.startsWith('/admin');
   const showHeaderSearch = location.pathname === '/';
 
-  // Admin routes rendered without storefront chrome
-  if (isAdminPage) {
-    return (
-      <AdminProvider>
-        <Routes>
-          <Route path="/admin" element={<AdminLoginPage />} />
-          <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboardPage /></AdminGuard>} />
-          <Route path="/admin/pedidos"   element={<AdminGuard><AdminOrdersPage /></AdminGuard>} />
-          <Route path="/admin/foto"      element={<AdminGuard><AdminFotoPage /></AdminGuard>} />
-          <Route path="/admin/leitor"    element={<AdminGuard><AdminLeitorPage /></AdminGuard>} />
-          <Route path="/admin/usuarios"  element={<AdminGuard><AdminUsersPage /></AdminGuard>} />
-          <Route path="/admin/cupons"    element={<AdminGuard><AdminCouponsPage /></AdminGuard>} />
-          <Route path="/admin/*"         element={<Navigate to="/admin/dashboard" replace />} />
-        </Routes>
-      </AdminProvider>
-    );
-  }
-
   return (
     <AuthProvider>
+      {/* Admin routes rendered without storefront chrome */}
+      {isAdminPage ? (
+        <AdminProvider>
+          <Routes>
+            <Route path="/admin" element={<AdminLoginPage />} />
+            <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboardPage /></AdminGuard>} />
+            <Route path="/admin/pedidos"   element={<AdminGuard><AdminOrdersPage /></AdminGuard>} />
+            <Route path="/admin/foto"      element={<AdminGuard><AdminFotoPage /></AdminGuard>} />
+            <Route path="/admin/leitor"    element={<AdminGuard><AdminLeitorPage /></AdminGuard>} />
+            <Route path="/admin/usuarios"  element={<AdminGuard><AdminUsersPage /></AdminGuard>} />
+            <Route path="/admin/cupons"    element={<AdminGuard><AdminCouponsPage /></AdminGuard>} />
+            <Route path="/admin/*"         element={<Navigate to="/admin/dashboard" replace />} />
+          </Routes>
+        </AdminProvider>
+      ) : (
       <div className="page-shell">
         {!isCheckoutPage && !isAuthPage && (
           <>
@@ -230,6 +227,7 @@ function App() {
 
         {!isCheckoutPage && !isAuthPage && <FloatingActions />}
       </div>
+      )}
     </AuthProvider>
   );
 }

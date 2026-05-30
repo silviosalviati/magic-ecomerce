@@ -1,14 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { AdminController } from './admin.controller';
-import { requireAdminKey } from '../middlewares/auth.middleware';
+import { requireAdminAccess } from '../middlewares/auth.middleware';
 import { validateUpdateStock } from '../middlewares/validate.middleware';
 import { listOrders, getOrder, updateOrder } from './orders.controller';
 
 const adminRouter = Router();
 const controller = new AdminController();
 
-// 🔒 Todas as rotas admin exigem x-admin-key no header
-adminRouter.use(requireAdminKey);
+// 🔒 Todas as rotas admin exigem JWT com isAdmin=true (x-admin-key temporariamente aceito)
+adminRouter.use(requireAdminAccess);
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 adminRouter.get('/dashboard', (req: Request, res: Response) =>
