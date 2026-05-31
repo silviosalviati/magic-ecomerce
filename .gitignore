@@ -4,6 +4,9 @@ node_modules
 .env
 .env.*
 
+# Local temporary checkout diagnostics
+.tmp-checkout-*.json
+
 # Google Cloud service account key
 secrets/
 
