@@ -23,11 +23,16 @@ interface JwtPayload {
   isAdmin?: boolean;
 }
 
+function getJwtSecret(): string | null {
+  const secret = process.env.JWT_SECRET?.trim();
+  return secret && secret.length > 0 ? secret : null;
+}
+
 async function tryAuthorizeByJwt(req: Request): Promise<AdminPayload | null> {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) return null;
 
-  const secret = process.env.JWT_SECRET;
+  const secret = getJwtSecret();
   if (!secret) return null;
 
   try {

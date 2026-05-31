@@ -6,6 +6,11 @@ interface JwtPayload {
   email: string;
 }
 
+function getJwtSecret(): string | null {
+  const secret = process.env.JWT_SECRET?.trim();
+  return secret && secret.length > 0 ? secret : null;
+}
+
 type AuthRequest = Request & { userId?: string; userEmail?: string };
 
 export function requireCustomerAuth(req: Request, res: Response, next: NextFunction): void {
@@ -16,7 +21,7 @@ export function requireCustomerAuth(req: Request, res: Response, next: NextFunct
   }
 
   const token = header.slice(7);
-  const secret = process.env.JWT_SECRET;
+  const secret = getJwtSecret();
   if (!secret) {
     res.status(500).json({ message: 'Configuração de auth inválida.' });
     return;
@@ -36,7 +41,7 @@ export function optionalCustomerAuth(req: Request, _res: Response, next: NextFun
   const header = req.headers.authorization;
   if (header?.startsWith('Bearer ')) {
     const token = header.slice(7);
-    const secret = process.env.JWT_SECRET;
+    const secret = getJwtSecret();
     if (secret) {
       try {
         const payload = jwt.verify(token, secret) as JwtPayload;
