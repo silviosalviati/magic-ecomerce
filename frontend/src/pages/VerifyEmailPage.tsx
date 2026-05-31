@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { requestEmailVerification, verifyEmail } from '../lib/api';
+import { SEO } from '../components/SEO';
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -55,7 +56,9 @@ export function VerifyEmailPage() {
   }
 
   return (
-    <main className="auth-page">
+    <>
+      <SEO title="Verificar E-mail" noindex />
+      <main className="auth-page">
       <aside className="auth-brand">
         <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
           <img src="/logo/logo-transparent.png" alt="MAGI.C" />
@@ -119,6 +122,7 @@ export function VerifyEmailPage() {
           </p>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

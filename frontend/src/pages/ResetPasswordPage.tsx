@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { resetPassword } from '../lib/api';
+import { SEO } from '../components/SEO';
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -58,7 +59,9 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <main className="auth-page">
+    <>
+      <SEO title="Redefinir Senha" noindex />
+      <main className="auth-page">
       <aside className="auth-brand">
         <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
           <img src="/logo/logo-transparent.png" alt="MAGI.C" />
@@ -156,6 +159,7 @@ export function ResetPasswordPage() {
           </p>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

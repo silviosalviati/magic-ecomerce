@@ -8,6 +8,53 @@ import type { CartItem, CatalogProduct } from '../types';
 
 const SIZE_ORDER = ['PP', 'P', 'M', 'G', 'GG', 'GGG', 'XGG', 'EGG', 'ÚNICO'];
 
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Qual o prazo de entrega da Vista Magic?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Entregamos para todo o Brasil em 3 a 7 dias úteis, dependendo da sua localidade. O rastreamento é enviado por e-mail assim que o pedido for despachado.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Como funciona a troca gratuita?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Você tem até 7 dias após o recebimento para solicitar troca ou devolução. O frete de retorno é por nossa conta — basta entrar em contato pelo WhatsApp.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Quais são as formas de pagamento aceitas?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Aceitamos PIX (com desconto), cartão de crédito em até 12× sem juros e boleto bancário. Todas as transações são processadas com segurança.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Como rastrear meu pedido Vista Magic?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Acesse a página "Rastrear pedido" em vistamagic.com.br/rastrear-pedido e insira o número do seu pedido para acompanhar o status em tempo real.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Como escolho o tamanho correto?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Cada produto tem uma tabela de medidas detalhada na página do produto. Em caso de dúvida, nossa equipe no WhatsApp indica o tamanho ideal para você.',
+      },
+    },
+  ],
+};
+
 type HomePageProps = {
   items: CatalogProduct[];
   searchQuery: string;
@@ -89,8 +136,9 @@ export function HomePage({
     <>
       <SEO
         title="Moda Feminina e Masculina com Curadoria Premium"
-        description="Descubra a coleção MAGI.C: moda feminina e masculina com caimento impecável, tecidos nobres e entrega rápida para todo o Brasil. Compra 100% segura."
+        description="Compre online roupas femininas e masculinas MAGI.C — tecidos nobres, caimento impecável e entrega rápida para todo o Brasil. Troca grátis em 7 dias, pagamento por PIX ou cartão."
         canonical="/"
+        jsonLd={faqJsonLd}
       />
       {/* ── HERO — Full-Bleed ── */}
       <section className="hero" id="marca">

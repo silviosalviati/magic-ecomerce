@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { requestPasswordReset } from '../lib/api';
+import { SEO } from '../components/SEO';
 
 export function PasswordRecoveryPage() {
   const [email, setEmail] = useState('');
@@ -26,8 +27,10 @@ export function PasswordRecoveryPage() {
   }
 
   return (
-    <main className="auth-page">
-      <aside className="auth-brand">
+    <>
+      <SEO title="Recuperar Senha" noindex />
+      <main className="auth-page">
+        <aside className="auth-brand">
         <Link to="/" className="auth-brand-logo" aria-label="Voltar para MAGI.C">
           <img src="/logo/logo-transparent.png" alt="MAGI.C" />
         </Link>
@@ -87,6 +90,7 @@ export function PasswordRecoveryPage() {
           </p>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

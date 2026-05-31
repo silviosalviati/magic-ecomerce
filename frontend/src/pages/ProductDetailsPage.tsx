@@ -200,7 +200,7 @@ export function ProductDetailsPage({
     <>
       <SEO
         title={product.name}
-        description={`${product.name} — ${product.description} Compre na MAGI.C com entrega rápida e compra segura.`}
+        description={`${product.name} | Compre online na Vista Magic — ${(product.description ?? '').slice(0, 120)}. Entrega rápida para todo o Brasil, troca grátis em 7 dias.`}
         canonical={`/produto/${product.productId}`}
         ogImage={product.images[0] || product.imageUrl}
         ogType="product"
