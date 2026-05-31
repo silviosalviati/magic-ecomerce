@@ -169,28 +169,37 @@ export function CreditCardForm({
           </div>
         </div>
 
-        <div className="field-group">
-          <label className="field-label" htmlFor="card-installments">Parcelamento</label>
-          <select
-            id="card-installments"
-            className="field-input field-select"
-            value={data.installments}
-            onChange={(e) => set('installments', Number(e.target.value))}
-          >
-            {options.map((option) => (
-              <option key={option.installments} value={option.installments}>
-                {option.installments}x de {toCurrency(option.installmentValue)}
-                {option.installments === 1
-                  ? ' a vista'
-                  : option.hasInterest
-                    ? ` com juros (total ${toCurrency(option.total)})`
-                    : ' sem juros'}
-              </option>
-            ))}
-          </select>
+        <div className="field-group installment-field">
+          <span className="field-label">Parcelamento</span>
+          <div className="installment-list">
+            {options.map((option) => {
+              const isSelected = data.installments === option.installments;
+              const isVista = option.installments === 1;
+              const tag = isVista ? 'À VISTA' : option.hasInterest ? 'COM JUROS' : 'SEM JUROS';
+              return (
+                <button
+                  key={option.installments}
+                  type="button"
+                  className={`installment-option${isSelected ? ' selected' : ''}${option.hasInterest ? ' has-interest' : ''}`}
+                  onClick={() => set('installments', option.installments)}
+                >
+                  <span className="installment-count">{option.installments}×</span>
+                  <span className="installment-per-month">
+                    de {toCurrency(option.installmentValue)}
+                    {option.hasInterest && (
+                      <span className="installment-total"> · total {toCurrency(option.total)}</span>
+                    )}
+                  </span>
+                  <span className={`installment-tag${isVista ? ' tag-vista' : option.hasInterest ? ' tag-juros' : ' tag-free'}`}>
+                    {tag}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
           {Number(maxNoInterestInstallments) > 0 && (
             <small className="field-hint">
-              Sem juros em ate {maxNoInterestInstallments}x.
+              Sem juros em até {maxNoInterestInstallments}×.
             </small>
           )}
         </div>

@@ -116,7 +116,18 @@ export function HomePage({
     [displayItems]
   );
 
-  const heroItems = useMemo(() => items.slice(0, 5), [items]);
+  const heroItems = useMemo(() => {
+    const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
+    const fem = shuffle(items.filter((i) => i.category.toLowerCase().includes('femin')));
+    const masc = shuffle(items.filter((i) => !i.category.toLowerCase().includes('femin')));
+    const result: typeof items = [];
+    let fi = 0, mi = 0;
+    while (result.length < 5 && (fi < fem.length || mi < masc.length)) {
+      if (fi < fem.length) result.push(fem[fi++]);
+      if (result.length < 5 && mi < masc.length) result.push(masc[mi++]);
+    }
+    return result;
+  }, [items]);
   const [heroIndex, setHeroIndex] = useState(0);
   const spotlightItem = heroItems[heroIndex];
 
