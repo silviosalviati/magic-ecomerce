@@ -41,6 +41,7 @@
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body:    Georgia, serif;
   --font-ui:      'Manrope', sans-serif;
+  --font-number:  'Manrope', sans-serif;
   --font-mono:    'Courier New', 'Lucida Console', monospace;
 
   /* Type scale */
@@ -1671,11 +1672,13 @@ textarea:focus-visible {
 }
 
 .detail-meta .price-tag {
-  font-family: var(--font-display);
+  font-family: var(--font-number);
   font-size: clamp(22px, 4vw, 30px);
-  font-weight: 300;
-  font-style: italic;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   color: var(--color-accent);
 }
 
@@ -3251,9 +3254,11 @@ textarea:focus-visible {
 }
 
 .order-summary-price {
-  font-family: var(--font-ui);
+  font-family: var(--font-number);
   font-size: 13px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   color: var(--color-text-primary);
   white-space: nowrap;
   margin: 0;
@@ -3606,95 +3611,88 @@ textarea:focus-visible {
 
 .installment-list {
   margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  max-height: 280px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(232, 180, 176, 0.2) transparent;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
-.installment-list::-webkit-scrollbar {
-  width: 3px;
-}
-
-.installment-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.installment-list::-webkit-scrollbar-thumb {
-  background: rgba(232, 180, 176, 0.2);
-  border-radius: 2px;
+@media (max-width: 520px) {
+  .installment-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .installment-option {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 3px;
   width: 100%;
-  padding: 11px 14px;
+  padding: 12px 6px;
   background: rgba(245, 237, 232, 0.02);
-  border: 0.5px solid rgba(245, 237, 232, 0.06);
-  border-radius: 1px;
-  text-align: left;
+  border: 1px solid rgba(245, 237, 232, 0.08);
+  border-radius: 6px;
+  text-align: center;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  min-height: 76px;
 }
 
 .installment-option:hover {
-  background: rgba(232, 180, 176, 0.05);
-  border-color: rgba(232, 180, 176, 0.15);
+  background: rgba(232, 180, 176, 0.06);
+  border-color: rgba(232, 180, 176, 0.25);
 }
 
 .installment-option.selected {
-  background: rgba(232, 180, 176, 0.07);
-  border-color: rgba(232, 180, 176, 0.28);
+  background: rgba(232, 180, 176, 0.09);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 0.5px var(--color-accent);
 }
 
 .installment-count {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  font-style: italic;
-  color: var(--color-accent);
-  min-width: 36px;
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(245, 237, 232, 0.35);
   line-height: 1;
 }
 
-.installment-option:not(.selected) .installment-count {
-  color: rgba(245, 237, 232, 0.45);
+.installment-option.selected .installment-count {
+  color: var(--color-accent);
 }
 
 .installment-per-month {
   font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(245, 237, 232, 0.45);
   letter-spacing: 0.01em;
+  line-height: 1.3;
 }
 
-.installment-option:not(.selected) .installment-per-month {
-  color: rgba(245, 237, 232, 0.65);
+.installment-option.selected .installment-per-month {
+  color: var(--color-text-primary);
 }
 
 .installment-total {
-  font-size: 11px;
-  color: rgba(245, 237, 232, 0.35);
+  display: block;
+  font-size: 9px;
+  color: rgba(245, 237, 232, 0.3);
   font-weight: 400;
+  margin-top: 1px;
 }
 
 .installment-tag {
   font-family: var(--font-ui);
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 3px 7px;
-  border-radius: 1px;
+  padding: 2px 5px;
+  border-radius: 2px;
   white-space: nowrap;
-  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .installment-tag.tag-free {
@@ -5253,12 +5251,14 @@ textarea:focus-visible {
 }
 
 .oc-total {
-  font-family: var(--font-display);
+  font-family: var(--font-number);
   font-size: 22px;
-  font-weight: 300;
-  font-style: italic;
+  font-weight: 700;
+  font-style: normal;
   color: var(--color-accent-strong);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   line-height: 1;
 }
 
@@ -5703,9 +5703,11 @@ textarea:focus-visible {
 }
 
 .acc-stat-num {
-  font-family: var(--font-display);
+  font-family: var(--font-number);
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   color: var(--color-accent-strong);
   line-height: 1;
 }
@@ -6751,6 +6753,7 @@ textarea:focus-visible {
   --adm-gold:         #9A8050;
   --adm-font-ui:      'Manrope', sans-serif;
   --adm-font-display: 'Cormorant Garamond', serif;
+  --adm-font-number:  'Manrope', sans-serif;
 }
 
 /* ── Login ─────────────────────────────────────────────────── */
@@ -7116,11 +7119,13 @@ textarea:focus-visible {
   margin: 0 0 6px;
 }
 .adm-kpi-value {
-  font-family: var(--adm-font-display);
-  font-size: 52px;
-  font-weight: 300;
+  font-family: var(--adm-font-number);
+  font-size: 46px;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   color: var(--adm-text);
   margin: 0 0 8px;
 }
@@ -7186,10 +7191,12 @@ textarea:focus-visible {
   flex: 1;
 }
 .adm-alert-count {
-  font-family: var(--adm-font-ui);
+  font-family: var(--adm-font-number);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   padding: 2px 9px;
   background: var(--adm-accent-glow);
   border: 0.5px solid var(--adm-accent-bdr);
@@ -7250,10 +7257,12 @@ textarea:focus-visible {
   margin-top: 14px;
 }
 .adm-pagination-total {
-  font-family: var(--adm-font-ui);
+  font-family: var(--adm-font-number);
   font-size: 10px;
   color: var(--adm-text-3);
   letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
   margin-right: auto;
 }
 .adm-pagination-btn {
@@ -7272,13 +7281,15 @@ textarea:focus-visible {
 .adm-pagination-btn:hover:not(:disabled) { border-color: #252525; color: var(--adm-text); }
 .adm-pagination-btn:disabled { opacity: 0.28; cursor: not-allowed; }
 .adm-pagination-info {
-  font-family: var(--adm-font-ui);
+  font-family: var(--adm-font-number);
   font-size: 10px;
   font-weight: 500;
   color: var(--adm-text-2);
   min-width: 52px;
   text-align: center;
   letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
 }
 .adm-pagination-info span { color: var(--adm-text-3); margin: 0 2px; }
 
@@ -8099,11 +8110,13 @@ textarea:focus-visible {
   color: #9A8D87;
 }
 .checkout-price-row--total strong {
-  font-family: var(--font-display);
+  font-family: var(--font-number);
   font-size: 22px;
   color: var(--color-text, #F0E8E4);
-  font-weight: normal;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
 }
 
 /* ── FLOATING ACTIONS — WhatsApp + Voltar ao topo ── */

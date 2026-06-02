@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { CartItem } from '../types';
+import { formatCurrencyBRL } from '../lib/numberFormat';
 
 type CartSidebarProps = {
   items: CartItem[];
@@ -11,7 +12,7 @@ type CartSidebarProps = {
 };
 
 function toCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 export function CartSidebar({

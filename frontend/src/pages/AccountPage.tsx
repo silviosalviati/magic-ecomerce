@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getMyOrders } from '../lib/api';
+import { formatCurrencyBRL } from '../lib/numberFormat';
 import { OrderCard } from '../components/OrderCard';
 import { SEO } from '../components/SEO';
 import type { Order } from '../types';
@@ -18,7 +19,7 @@ function getInitials(name: string): string {
 
 function sumOrders(orders: Order[]): string {
   const total = orders.reduce((acc, o) => acc + Number(o.total), 0);
-  return total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(total);
 }
 
 export function AccountPage() {

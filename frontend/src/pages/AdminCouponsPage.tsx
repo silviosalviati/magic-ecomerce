@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { ADMIN_API, useAdmin } from '../contexts/AdminContext';
+import { formatCurrencyBRL, formatPercentBR } from '../lib/numberFormat';
 
 interface Coupon {
   id: string;
@@ -20,7 +21,9 @@ function formatDate(iso: string) {
 }
 
 function formatDiscount(type: string, discount: number | string) {
-  return type === 'PERCENTAGE' ? `${Number(discount)}%` : `R$ ${Number(discount).toFixed(2).replace('.', ',')}`;
+  return type === 'PERCENTAGE'
+    ? formatPercentBR(discount, { maximumFractionDigits: 2 })
+    : formatCurrencyBRL(discount);
 }
 
 const EMPTY_FORM = { code: '', type: 'PERCENTAGE', discount: '', expiresAt: '', maxUses: '' };

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { ADMIN_API, useAdmin } from '../contexts/AdminContext';
+import { formatCurrencyBRL, formatIntegerBR } from '../lib/numberFormat';
 
 interface AdminUser {
   id: string;
@@ -43,7 +44,7 @@ function formatDate(iso: string) {
 }
 
 function formatCurrency(v: number | string) {
-  return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(v);
 }
 
 export function AdminUsersPage() {
@@ -178,7 +179,7 @@ export function AdminUsersPage() {
           <button type="submit" className="adm-btn adm-btn--ghost">Buscar</button>
         </form>
         <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#6B5F5C', flexShrink: 0 }}>
-          {total} usuário(s)
+          {formatIntegerBR(total)} usuário(s)
         </p>
       </div>
 
@@ -242,7 +243,7 @@ export function AdminUsersPage() {
 
             {totalPages > 1 && (
               <div className="adm-pagination">
-                <span>Página {page} de {totalPages}</span>
+                <span>Página {formatIntegerBR(page)} de {formatIntegerBR(totalPages)}</span>
                 <div className="adm-pagination-btns">
                   <button
                     type="button"

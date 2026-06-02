@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { ADMIN_API, useAdmin } from '../contexts/AdminContext';
+import { formatIntegerBR } from '../lib/numberFormat';
 
 interface DashboardData {
   totalProducts: number;
@@ -128,7 +129,7 @@ function KpiCard({ icon, label, value, desc, accent }: KpiCardProps) {
         <div className={`adm-kpi-icon adm-kpi-icon--${accent}`}>{icon}</div>
       </div>
       <p className="adm-kpi-label">{label}</p>
-      <p className={`adm-kpi-value${accent === 'red' ? ' adm-kpi-value--red' : ''}`}>{value}</p>
+      <p className={`adm-kpi-value${accent === 'red' ? ' adm-kpi-value--red' : ''}`}>{formatIntegerBR(value)}</p>
       <p className="adm-kpi-desc">{desc}</p>
     </div>
   );
@@ -227,7 +228,7 @@ export function AdminDashboardPage() {
               <div className="adm-section-bar">
                 <span className="adm-section-bar-icon"><IconAlertSmall /></span>
                 <span className="adm-section-bar-label">Estoque crítico</span>
-                <span className="adm-alert-count">{data.lowStockItems.length} itens</span>
+                <span className="adm-alert-count">{formatIntegerBR(data.lowStockItems.length)} itens</span>
                 <div className="adm-section-search">
                   <IconSearch />
                   <input
@@ -271,7 +272,7 @@ export function AdminDashboardPage() {
                             </td>
                             <td>
                               <span className={`adm-badge ${item.stock === 0 ? 'adm-badge--cancelled' : 'adm-badge--pending'}`}>
-                                {item.stock === 0 ? 'Sem estoque' : `${item.stock} un.`}
+                                {item.stock === 0 ? 'Sem estoque' : `${formatIntegerBR(item.stock)} un.`}
                               </span>
                             </td>
                           </tr>
@@ -282,7 +283,7 @@ export function AdminDashboardPage() {
 
                   {totalPages > 1 && (
                     <div className="adm-pagination">
-                      <span className="adm-pagination-total">{filtered.length} resultados</span>
+                      <span className="adm-pagination-total">{formatIntegerBR(filtered.length)} resultados</span>
                       <button
                         type="button"
                         className="adm-pagination-btn"
@@ -293,7 +294,7 @@ export function AdminDashboardPage() {
                         <IconChevronLeft />
                       </button>
                       <span className="adm-pagination-info">
-                        {page} <span>de</span> {totalPages}
+                        {formatIntegerBR(page)} <span>de</span> {formatIntegerBR(totalPages)}
                       </span>
                       <button
                         type="button"

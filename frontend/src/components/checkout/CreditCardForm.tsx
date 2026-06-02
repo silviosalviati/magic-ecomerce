@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CreditCardFormData, InstallmentOption } from '../../types';
+import { formatCurrencyBRL } from '../../lib/numberFormat';
 
 interface CreditCardFormProps {
   data: CreditCardFormData;
@@ -50,7 +51,7 @@ function formatCep(value: string): string {
 }
 
 function toCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 export function CreditCardForm({
@@ -185,9 +186,9 @@ export function CreditCardForm({
                 >
                   <span className="installment-count">{option.installments}×</span>
                   <span className="installment-per-month">
-                    de {toCurrency(option.installmentValue)}
+                    {toCurrency(option.installmentValue)}
                     {option.hasInterest && (
-                      <span className="installment-total"> · total {toCurrency(option.total)}</span>
+                      <span className="installment-total">total {toCurrency(option.total)}</span>
                     )}
                   </span>
                   <span className={`installment-tag${isVista ? ' tag-vista' : option.hasInterest ? ' tag-juros' : ' tag-free'}`}>

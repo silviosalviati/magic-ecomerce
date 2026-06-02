@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { checkout, getCheckoutInstallments, validateCoupon } from '../lib/api';
+import { formatCurrencyBRL } from '../lib/numberFormat';
 import { useAuth } from '../contexts/AuthContext';
 import type {
   CartItem,
@@ -28,7 +29,7 @@ interface CheckoutPageProps {
 type Step = 'details' | 'payment' | 'confirmation';
 
 function toCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 function formatCpf(raw: string): string {

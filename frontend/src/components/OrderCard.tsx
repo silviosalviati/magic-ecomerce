@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Order } from '../types';
+import { formatCurrencyBRL } from '../lib/numberFormat';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Aguardando pagamento',
@@ -60,7 +61,7 @@ function formatDate(iso: string): string {
 }
 
 function formatCurrency(value: number | string): string {
-  return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 export function OrderCard({ order }: { order: Order }) {

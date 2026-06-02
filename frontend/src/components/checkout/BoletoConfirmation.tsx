@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatCurrencyBRL } from '../../lib/numberFormat';
 
 interface BoletoConfirmationProps {
   boletoUrl: string;
@@ -8,7 +9,7 @@ interface BoletoConfirmationProps {
 }
 
 function toCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 export function BoletoConfirmation({ boletoUrl, boletoBarcode, boletoDueDate, total }: BoletoConfirmationProps) {

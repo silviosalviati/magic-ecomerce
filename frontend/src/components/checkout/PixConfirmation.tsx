@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatCurrencyBRL } from '../../lib/numberFormat';
 
 interface PixConfirmationProps {
   qrCode: string;
@@ -8,7 +9,7 @@ interface PixConfirmationProps {
 }
 
 function toCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 export function PixConfirmation({ qrCode, copyPaste, expiresAt, total }: PixConfirmationProps) {

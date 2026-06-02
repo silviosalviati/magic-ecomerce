@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { ADMIN_API, useAdmin } from '../contexts/AdminContext';
+import { formatCurrencyBRL, formatIntegerBR } from '../lib/numberFormat';
 
 interface AdminOrder {
   id: string;
@@ -25,7 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
 const ALL_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
 
 function formatCurrency(value: number | string) {
-  return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 function formatDate(iso: string) {
@@ -107,7 +108,7 @@ export function AdminOrdersPage() {
         </select>
 
         <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#6B5F5C', marginLeft: 'auto' }}>
-          {orders.length} pedido(s)
+          {formatIntegerBR(orders.length)} pedido(s)
         </p>
       </div>
 

@@ -1,4 +1,5 @@
 import type { CartItem } from '../../types';
+import { formatCurrencyBRL } from '../../lib/numberFormat';
 
 interface OrderSummaryProps {
   items: CartItem[];
@@ -8,7 +9,7 @@ interface OrderSummaryProps {
 }
 
 function toCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return formatCurrencyBRL(value);
 }
 
 export function OrderSummary({ items, onDecrease, onIncrease, onRemove }: OrderSummaryProps) {

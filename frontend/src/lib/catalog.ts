@@ -1,10 +1,8 @@
 import type { CartItem, CatalogProduct, CatalogVariant } from '../types';
+import { formatCurrencyBRL } from './numberFormat';
 
 export function toCurrency(value: number): string {
-  return value.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
+  return formatCurrencyBRL(value);
 }
 
 export function colorToken(color: string): string {
