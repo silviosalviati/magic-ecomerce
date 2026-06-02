@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { readFile } from 'fs/promises';
+import path from 'path';
 import sharp from 'sharp';
 import { prisma } from '../config/database';
 import {
@@ -18,6 +20,8 @@ type ImageTransformOptions = {
   quality?: number;
   format?: ImageFormat;
 };
+
+let watermarkLogoBufferPromise: Promise<Buffer | null> | null = null;
 
 function parseIntegerQuery(value: unknown): number | null {
   if (typeof value !== 'string' || value.trim().length === 0) {
@@ -61,6 +65,58 @@ function resolveImageTransformOptions(req: Request): ImageTransformOptions | nul
   };
 }
 
+async function getWatermarkLogoBuffer(): Promise<Buffer | null> {
+  if (!watermarkLogoBufferPromise) {
+    watermarkLogoBufferPromise = (async () => {
+      try {
+        const logoPath = path.resolve(process.cwd(), 'frontend/public/logo/logo-transparent.png');
+        return await readFile(logoPath);
+      } catch {
+        return null;
+      }
+    })();
+  }
+
+  return watermarkLogoBufferPromise;
+}
+
+async function applyWatermark(buffer: Buffer): Promise<Buffer> {
+  const logoBuffer = await getWatermarkLogoBuffer();
+  if (!logoBuffer) {
+    return buffer;
+  }
+
+  const base = sharp(buffer, { failOn: 'none' });
+  const baseMeta = await base.metadata();
+  const logoMeta = await sharp(logoBuffer, { failOn: 'none' }).metadata();
+
+  if (!baseMeta.width || !baseMeta.height || !logoMeta.width || !logoMeta.height) {
+    return buffer;
+  }
+
+  const maxLogoWidth = Math.round(baseMeta.width * 0.28);
+  const logoWidth = Math.max(90, Math.min(maxLogoWidth, 420));
+  const logoHeight = Math.max(
+    30,
+    Math.round((logoWidth * logoMeta.height) / logoMeta.width),
+  );
+
+  const margin = Math.max(12, Math.round(Math.min(baseMeta.width, baseMeta.height) * 0.03));
+  const left = Math.max(0, baseMeta.width - logoWidth - margin);
+  const top = Math.max(0, baseMeta.height - logoHeight - margin);
+
+  const encodedLogo = logoBuffer.toString('base64');
+  const overlaySvg = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${logoWidth}" height="${logoHeight}">` +
+      `<image href="data:image/png;base64,${encodedLogo}" width="${logoWidth}" height="${logoHeight}" opacity="0.13" />` +
+    `</svg>`,
+  );
+
+  return await base
+    .composite([{ input: overlaySvg, left, top }])
+    .toBuffer();
+}
+
 async function transformImageBuffer(params: {
   buffer: Buffer;
   contentType: string;
@@ -77,6 +133,9 @@ async function transformImageBuffer(params: {
       withoutEnlargement: true,
     });
   }
+
+  const watermarkedBuffer = await applyWatermark(await pipeline.toBuffer());
+  pipeline = sharp(watermarkedBuffer, { failOn: 'none' });
 
   const normalizedSource = contentType.toLowerCase();
   const targetFormat: ImageFormat =
