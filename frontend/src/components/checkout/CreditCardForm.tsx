@@ -7,6 +7,7 @@ interface CreditCardFormProps {
   onChange: (data: CreditCardFormData) => void;
   total: number;
   installmentOptions: InstallmentOption[];
+  installmentSource?: 'asaas' | 'fallback';
   maxNoInterestInstallments?: number;
 }
 
@@ -59,9 +60,11 @@ export function CreditCardForm({
   onChange,
   total,
   installmentOptions,
+  installmentSource = 'fallback',
   maxNoInterestInstallments,
 }: CreditCardFormProps) {
   const [cvvFlip, setCvvFlip] = useState(false);
+  const noInterestLimit = installmentSource === 'asaas' ? 6 : Number(maxNoInterestInstallments) || 6;
 
   const brand = detectBrand(data.cardNumber);
   const brandLabel = BRAND_LABEL[brand];
@@ -176,29 +179,34 @@ export function CreditCardForm({
             {options.map((option) => {
               const isSelected = data.installments === option.installments;
               const isVista = option.installments === 1;
-              const tag = isVista ? 'À VISTA' : option.hasInterest ? 'COM JUROS' : 'SEM JUROS';
+              const hasInterest = isVista ? false : (installmentSource === 'asaas' ? option.installments > noInterestLimit || option.hasInterest : option.hasInterest);
+              const tag = isVista ? 'À VISTA' : hasInterest ? 'COM JUROS EMBUTIDOS' : 'SEM JUROS';
               return (
                 <button
                   key={option.installments}
                   type="button"
-                  className={`installment-option${isSelected ? ' selected' : ''}${option.hasInterest ? ' has-interest' : ''}`}
+                  className={`installment-option${isSelected ? ' selected' : ''}${hasInterest ? ' has-interest' : ''}`}
                   onClick={() => set('installments', option.installments)}
                 >
                   <span className="installment-count">{option.installments}×</span>
                   <span className="installment-per-month">
                     {toCurrency(option.installmentValue)}
-                    {option.hasInterest && (
+                    {hasInterest && (
                       <span className="installment-total">total {toCurrency(option.total)}</span>
                     )}
                   </span>
-                  <span className={`installment-tag${isVista ? ' tag-vista' : option.hasInterest ? ' tag-juros' : ' tag-free'}`}>
+                  <span className={`installment-tag${isVista ? ' tag-vista' : hasInterest ? ' tag-juros' : ' tag-free'}`}>
                     {tag}
                   </span>
                 </button>
               );
             })}
           </div>
-          {Number(maxNoInterestInstallments) > 0 && (
+          {installmentSource === 'asaas' ? (
+            <small className="field-hint">
+              Sem juros em até 6x. De 7x a 12x, juros já entram no valor total.
+            </small>
+          ) : Number(maxNoInterestInstallments) > 0 && (
             <small className="field-hint">
               Sem juros em até {maxNoInterestInstallments}×.
             </small>

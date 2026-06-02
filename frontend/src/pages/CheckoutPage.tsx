@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
-import { checkout, getCheckoutInstallments, validateCoupon } from '../lib/api';
+import { checkout, getCheckoutInstallments, getShippingRates, validateCoupon } from '../lib/api';
 import { formatCurrencyBRL } from '../lib/numberFormat';
 import { useAuth } from '../contexts/AuthContext';
 import type {
@@ -11,12 +11,14 @@ import type {
   CouponValidationResponse,
   CreditCardFormData,
   PaymentMethod,
+  ShippingRateOption,
 } from '../types';
 import { BoletoConfirmation } from '../components/checkout/BoletoConfirmation';
 import { CreditCardForm } from '../components/checkout/CreditCardForm';
 import { OrderSummary } from '../components/checkout/OrderSummary';
 import { PaymentMethodSelector } from '../components/checkout/PaymentMethodSelector';
 import { PixConfirmation } from '../components/checkout/PixConfirmation';
+import { ShippingSelector } from '../components/checkout/ShippingSelector';
 
 interface CheckoutPageProps {
   cartItems: CartItem[];
@@ -89,6 +91,12 @@ export function CheckoutPage({
   const [error, setError] = useState<string | null>(null);
   const [orderResult, setOrderResult] = useState<CheckoutResponse | null>(null);
 
+  // Shipping
+  const [shippingOption, setShippingOption] = useState<ShippingRateOption | null>(null);
+  const [shippingRates, setShippingRates] = useState<ShippingRateOption[]>([]);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState(false);
+
   // Coupon
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
@@ -97,7 +105,8 @@ export function CheckoutPage({
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discount = couponResult?.valid ? (couponResult.discountAmount ?? 0) : 0;
-  const total = Math.max(0, subtotal - discount);
+  const shippingCost = shippingOption?.price ?? 0;
+  const total = Math.max(0, subtotal - discount + shippingCost);
   const cpfDigits = cpf.replace(/\D/g, '');
   const stepIndex = STEP_ORDER.indexOf(step);
 
@@ -170,6 +179,22 @@ export function CheckoutPage({
   // Render nothing while auth is resolving — prevents flash and wrong redirects
   if (authLoading) return null;
 
+  async function fetchShipping(cep: string) {
+    setShippingLoading(true);
+    setShippingError(false);
+    setShippingOption(null);
+    setShippingRates([]);
+    try {
+      const totalQty = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      const rates = await getShippingRates(cep, totalQty);
+      setShippingRates(rates);
+    } catch {
+      setShippingError(true);
+    } finally {
+      setShippingLoading(false);
+    }
+  }
+
   async function handleCepBlur() {
     const clean = addressZip.replace(/\D/g, '');
     if (clean.length !== 8) return;
@@ -183,7 +208,6 @@ export function CheckoutPage({
         setAddressNeighborhood(data.bairro || '');
         setAddressCity(data.localidade || '');
         setAddressState(data.uf || '');
-        // Pre-fill card CEP too
         setCardData((prev) => ({ ...prev, postalCode: clean }));
       }
     } catch {
@@ -191,6 +215,7 @@ export function CheckoutPage({
     } finally {
       setCepLoading(false);
     }
+    void fetchShipping(clean);
   }
 
   function formatCep(raw: string): string {
@@ -227,7 +252,8 @@ export function CheckoutPage({
     return (
       cpfDigits.length === 11 &&
       addressZip.replace(/\D/g, '').length === 8 &&
-      addressNumber.trim().length > 0
+      addressNumber.trim().length > 0 &&
+      shippingOption !== null
     );
   }
 
@@ -264,6 +290,9 @@ export function CheckoutPage({
         })),
         paymentMethod,
         couponCode: couponResult?.valid ? couponInput.trim() : undefined,
+        shippingMethod: shippingOption?.id,
+        shippingLabel: shippingOption?.name,
+        shippingCost: shippingOption?.price ?? 0,
         addressZip: addressZip.replace(/\D/g, ''),
         addressStreet: addressStreet.trim(),
         addressNumber: addressNumber.trim(),
@@ -416,7 +445,11 @@ export function CheckoutPage({
                       autoComplete="postal-code"
                       placeholder="00000-000"
                       value={addressZip}
-                      onChange={(e) => setAddressZip(formatCep(e.target.value))}
+                      onChange={(e) => {
+                        setAddressZip(formatCep(e.target.value));
+                        setShippingOption(null);
+                        setShippingRates([]);
+                      }}
                       onBlur={handleCepBlur}
                     />
                   </div>
@@ -501,6 +534,17 @@ export function CheckoutPage({
                 </div>
               </div>
 
+              {addressZip.replace(/\D/g, '').length === 8 && (
+                <ShippingSelector
+                  rates={shippingRates}
+                  loading={shippingLoading}
+                  error={shippingError}
+                  selected={shippingOption}
+                  onChange={setShippingOption}
+                  onRetry={() => void fetchShipping(addressZip.replace(/\D/g, ''))}
+                />
+              )}
+
               <button
                 type="button"
                 className="primary-btn checkout-cta"
@@ -552,6 +596,7 @@ export function CheckoutPage({
                   onChange={setCardData}
                   total={total}
                   installmentOptions={installmentsData?.options ?? []}
+                  installmentSource={installmentsData?.source}
                   maxNoInterestInstallments={installmentsData?.maxNoInterestInstallments}
                 />
               )}
@@ -724,6 +769,14 @@ export function CheckoutPage({
                     <span>− {toCurrency(discount)}</span>
                   </div>
                 )}
+                <div className="checkout-price-row">
+                  <span>Frete</span>
+                  <span style={{ color: shippingOption?.price === 0 ? '#6BBF8E' : undefined }}>
+                    {shippingOption
+                      ? shippingOption.price === 0 ? 'Grátis' : toCurrency(shippingOption.price)
+                      : '—'}
+                  </span>
+                </div>
                 <div className="checkout-price-row checkout-price-row--total">
                   <span>Total</span>
                   <strong>{toCurrency(total)}</strong>
