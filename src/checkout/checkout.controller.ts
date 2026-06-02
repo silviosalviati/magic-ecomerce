@@ -506,6 +506,7 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
   const statusMap: Record<string, string> = {
     PAYMENT_RECEIVED: 'PAID',
     PAYMENT_CONFIRMED: 'PAID',
+    PAYMENT_UPDATED: 'PENDING',
     PAYMENT_OVERDUE: 'OVERDUE',
     PAYMENT_DELETED: 'CANCELLED',
     PAYMENT_REFUNDED: 'REFUNDED',
@@ -513,8 +514,29 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
     PAYMENT_DECLINED: 'CANCELLED',
   };
 
-  const newStatus = statusMap[event];
+  const paymentStatusMap: Record<string, string> = {
+    RECEIVED: 'PAID',
+    CONFIRMED: 'PAID',
+    RECEIVED_IN_CASH: 'PAID',
+    OVERDUE: 'OVERDUE',
+    DELETED: 'CANCELLED',
+    REFUNDED: 'REFUNDED',
+    PARTIALLY_REFUNDED: 'REFUNDED',
+    CHARGEBACK_REQUESTED: 'CANCELLED',
+    CHARGEBACK_DISPUTE: 'CANCELLED',
+  };
+
+  const eventMappedStatus = statusMap[event];
+  const paymentMappedStatus = paymentStatusMap[String(payment.status || '').toUpperCase()];
+
+  // Prefer the canonical payment.status when available; fallback to event map.
+  const newStatus = paymentMappedStatus || eventMappedStatus;
   if (!newStatus) {
+    console.log('[webhook] event ignored', {
+      event,
+      paymentId: payment.id,
+      paymentStatus: payment.status,
+    });
     res.sendStatus(200);
     return;
   }
