@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const ASAAS_BASE = (process.env.ASAAS_BASE_URL ?? 'https://api-sandbox.asaas.com/v3').trim();
-const ASAAS_KEY = process.env.ASAAS_API_KEY ?? '';
+const ASAAS_KEY = (process.env.ASAAS_API_KEY ?? '').trim();
 
 const client = axios.create({
   baseURL: ASAAS_BASE,
