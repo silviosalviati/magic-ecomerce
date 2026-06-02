@@ -14,6 +14,7 @@ import type {
 } from '../types';
 
 const TOKEN_KEY = 'magic.auth.token';
+const IMAGE_WATERMARK_VERSION = '20260602';
 
 const api = axios.create({
   baseURL:
@@ -147,7 +148,7 @@ function toOptimizedCatalogImageUrl(
     return imageUrl;
   }
 
-  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}&w=${options.width}&q=${options.quality}&fm=${options.format}`;
+  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}&w=${options.width}&q=${options.quality}&fm=${options.format}&wm=${IMAGE_WATERMARK_VERSION}`;
 }
 
 export function mapProductsToCatalog(products: ApiProduct[], apiBaseUrl: string): CatalogProduct[] {
