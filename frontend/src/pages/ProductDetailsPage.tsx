@@ -452,6 +452,9 @@ export function ProductDetailsPage({
               <Link key={item.productId} className="recommendation-card" to={`/produto/${item.productId}`}>
                 <div className="recommendation-media">
                   <img src={item.imageUrl} alt={item.name} loading="lazy" />
+                  <span className="product-watermark product-watermark--recommendation" aria-hidden="true">
+                    <img src="/logo/logo-transparent.png" alt="" />
+                  </span>
                   <span className="image-disclaimer image-disclaimer--recommendation" aria-hidden="true">
                     Imagem meramente ilustrativa
                   </span>

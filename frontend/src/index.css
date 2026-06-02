@@ -1117,7 +1117,7 @@ textarea:focus-visible {
   transform: translate(-50%, -50%);
   z-index: 2;
   width: clamp(88px, 26%, 170px);
-  opacity: 0.16;
+  opacity: 0.22;
   pointer-events: none;
 }
 
@@ -1125,11 +1125,12 @@ textarea:focus-visible {
   width: 100%;
   height: auto;
   display: block;
+  mix-blend-mode: difference;
 }
 
 .product-watermark--detail {
   width: clamp(98px, 25%, 210px);
-  opacity: 0.18;
+  opacity: 0.24;
 }
 
 .product-media:hover img {
@@ -8443,7 +8444,12 @@ textarea:focus-visible {
 
 .product-watermark--lightbox {
   width: clamp(120px, 18vw, 240px);
-  opacity: 0.2;
+  opacity: 0.24;
+}
+
+.product-watermark--recommendation {
+  width: clamp(78px, 26%, 130px);
+  opacity: 0.22;
 }
 
 .image-disclaimer--lightbox {
