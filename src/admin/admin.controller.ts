@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import {
   buildProductPhotoObjectPath,
+  deleteObjectByPath,
   isAllowedImageMimeType,
   uploadImageBuffer,
 } from '../config/storage';
@@ -61,6 +62,46 @@ function getPublicApiBaseUrl(req?: Request): string {
 function buildImageProxyUrl(objectPath: string, req?: Request): string {
   const base = getPublicApiBaseUrl(req);
   return `${base}/products/images/object?path=${encodeURIComponent(objectPath)}`;
+}
+
+function extractProductObjectPathFromUrl(imageUrl: string): string | null {
+  const raw = String(imageUrl || '').trim();
+  if (!raw) {
+    return null;
+  }
+
+  const sanitizeObjectPath = (value: string): string | null => {
+    const normalized = String(value || '').trim().replace(/^\/+/, '');
+    if (!normalized.startsWith('produtos/') || normalized.includes('..')) {
+      return null;
+    }
+    return normalized;
+  };
+
+  if (raw.startsWith('produtos/')) {
+    return sanitizeObjectPath(raw);
+  }
+
+  try {
+    const parsed = new URL(raw);
+
+    if (parsed.pathname === '/products/images/object') {
+      const objectPath = decodeURIComponent(String(parsed.searchParams.get('path') || ''));
+      return sanitizeObjectPath(objectPath);
+    }
+
+    const decodedPath = decodeURIComponent(parsed.pathname || '');
+    const marker = '/produtos/';
+    const markerIndex = decodedPath.indexOf(marker);
+
+    if (markerIndex >= 0) {
+      return sanitizeObjectPath(decodedPath.slice(markerIndex + 1));
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 export class AdminController {
@@ -223,6 +264,25 @@ export class AdminController {
         side: 'costas',
       });
 
+      const existingImages = Array.isArray(product.images) ? product.images : [];
+      const objectPathsToDelete = new Set<string>([
+        frontObjectPath,
+        backObjectPath,
+      ]);
+
+      for (const imageUrl of existingImages) {
+        const objectPath = extractProductObjectPathFromUrl(String(imageUrl || ''));
+        if (objectPath) {
+          objectPathsToDelete.add(objectPath);
+        }
+      }
+
+      await Promise.all(
+        Array.from(objectPathsToDelete).map((objectPath) =>
+          deleteObjectByPath(objectPath, 'magic-ecommerce-fotos')
+        )
+      );
+
       const [frontUpload, backUpload] = await Promise.all([
         uploadImageBuffer({
           objectPath: frontObjectPath,
@@ -238,13 +298,9 @@ export class AdminController {
         }),
       ]);
 
-      const existingImages = Array.isArray(product.images) ? product.images : [];
-      const cleaned = existingImages.filter(
-        (url: string) => !url.includes(`${product.id}-frente.png`) && !url.includes(`${product.id}-costas.png`)
-      );
       const frontCatalogUrl = buildImageProxyUrl(frontObjectPath, req);
       const backCatalogUrl = buildImageProxyUrl(backObjectPath, req);
-      const nextImages = [frontCatalogUrl, backCatalogUrl, ...cleaned];
+      const nextImages = [frontCatalogUrl, backCatalogUrl];
 
       const updatedProduct = await prisma.product.update({
         where: { id: product.id },
