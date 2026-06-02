@@ -32,6 +32,9 @@ export function ProductCard({ product, onAddToCart, onBuyNow, style }: ProductCa
         >
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
         </Link>
+        <span className="image-disclaimer" aria-hidden="true">
+          Imagem meramente ilustrativa
+        </span>
         <div className="product-hover-overlay" aria-hidden="true">
           <span className="product-hover-cta">Ver produto</span>
         </div>

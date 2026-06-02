@@ -225,6 +225,9 @@ export function ProductDetailsPage({
                 aria-label="Ampliar imagem do produto"
               >
                 <img src={activeImage || product.imageUrl} alt={product.name} />
+                <span className="image-disclaimer image-disclaimer--detail" aria-hidden="true">
+                  Imagem meramente ilustrativa
+                </span>
                 <span className="detail-zoom-hint" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
                     <circle cx="11" cy="11" r="8" />
@@ -395,6 +398,9 @@ export function ProductDetailsPage({
             alt={product.name}
             onClick={(e) => e.stopPropagation()}
           />
+          <span className="image-disclaimer image-disclaimer--lightbox" aria-hidden="true">
+            Imagem meramente ilustrativa
+          </span>
         </div>
       )}
 
@@ -438,7 +444,12 @@ export function ProductDetailsPage({
           <div className="recommendation-grid">
             {pagedRecommendations.map((item) => (
               <Link key={item.productId} className="recommendation-card" to={`/produto/${item.productId}`}>
-                <img src={item.imageUrl} alt={item.name} loading="lazy" />
+                <div className="recommendation-media">
+                  <img src={item.imageUrl} alt={item.name} loading="lazy" />
+                  <span className="image-disclaimer image-disclaimer--recommendation" aria-hidden="true">
+                    Imagem meramente ilustrativa
+                  </span>
+                </div>
                 <div>
                   <p>{item.category}</p>
                   <h3>{item.name}</h3>
