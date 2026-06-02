@@ -290,3 +290,8 @@ export async function getBoletoData(paymentId: string): Promise<BoletoData> {
 
   throw lastError ?? new Error('Não foi possível obter os dados do boleto no Asaas.');
 }
+
+export async function getPaymentById(paymentId: string): Promise<AsaasPayment> {
+  const { data } = await client.get<AsaasPayment>(`/payments/${paymentId}`);
+  return data;
+}

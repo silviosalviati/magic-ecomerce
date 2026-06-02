@@ -65,6 +65,7 @@ export function AdminOrdersPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [updateForm, setUpdateForm] = useState({ status: '', shippingMethod: '', trackingCode: '', trackingUrl: '', note: '' });
   const [updating, setUpdating] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
   const [updateMsg, setUpdateMsg] = useState('');
 
   async function fetchOrders() {
@@ -97,6 +98,34 @@ export function AdminOrdersPage() {
       setUpdateMsg('Não foi possível carregar os itens do pedido.');
     } finally {
       setLoadingDetail(false);
+    }
+  }
+
+  async function reconcilePayment() {
+    if (!selected) return;
+    setReconciling(true);
+    setUpdateMsg('');
+
+    try {
+      const { data } = await axios.post(
+        `${ADMIN_API}/admin/orders/${selected.id}/reconcile-payment`,
+        {},
+        { headers }
+      );
+
+      if (data?.updated) {
+        setUpdateForm((f) => ({ ...f, status: data.status || f.status }));
+        setUpdateMsg('Pagamento reconciliado com sucesso.');
+      } else {
+        setUpdateMsg('Pedido já estava com o status correto.');
+      }
+
+      await fetchOrders();
+      await openOrder({ ...selected, status: data?.status || selected.status });
+    } catch {
+      setUpdateMsg('Erro ao reconciliar pagamento.');
+    } finally {
+      setReconciling(false);
     }
   }
 
@@ -297,6 +326,18 @@ export function AdminOrdersPage() {
                   {updating
                     ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
                     : 'Salvar alterações'}
+                </button>
+
+                <button
+                  type="button"
+                  className="adm-btn"
+                  style={{ marginTop: 8 }}
+                  disabled={reconciling}
+                  onClick={() => void reconcilePayment()}
+                >
+                  {reconciling
+                    ? <span className="adm-spinner" style={{ width: 13, height: 13 }} />
+                    : 'Reconciliar pagamento Asaas'}
                 </button>
               </form>
 

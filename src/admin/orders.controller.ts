@@ -1,8 +1,21 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { getPaymentById } from '../checkout/asaas.service';
 
 const VALID_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
 const VALID_SHIPPING = ['CORREIOS', 'UBER', 'PICKUP'];
+
+const PAYMENT_STATUS_MAP: Record<string, string> = {
+  RECEIVED: 'PAID',
+  CONFIRMED: 'PAID',
+  RECEIVED_IN_CASH: 'PAID',
+  OVERDUE: 'OVERDUE',
+  DELETED: 'CANCELLED',
+  REFUNDED: 'REFUNDED',
+  PARTIALLY_REFUNDED: 'REFUNDED',
+  CHARGEBACK_REQUESTED: 'CANCELLED',
+  CHARGEBACK_DISPUTE: 'CANCELLED',
+};
 
 export async function listOrders(req: Request, res: Response): Promise<void> {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
@@ -130,5 +143,72 @@ export async function updateOrder(req: Request, res: Response): Promise<void> {
     }
     console.error('[admin/orders/:id PATCH]', error);
     res.status(500).json({ message: 'Erro ao atualizar pedido.' });
+  }
+}
+
+export async function reconcileOrderPayment(req: Request, res: Response): Promise<void> {
+  const id = String(req.params.id);
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: { id: true, status: true, paymentId: true },
+    });
+
+    if (!order) {
+      res.status(404).json({ message: 'Pedido não encontrado.' });
+      return;
+    }
+
+    if (!order.paymentId) {
+      res.status(400).json({ message: 'Pedido sem paymentId para reconciliação.' });
+      return;
+    }
+
+    const payment = await getPaymentById(order.paymentId);
+    const providerStatus = String(payment.status || '').toUpperCase();
+    const mappedStatus = PAYMENT_STATUS_MAP[providerStatus];
+
+    if (!mappedStatus) {
+      res.status(422).json({
+        message: `Status do Asaas não mapeado: ${providerStatus || 'DESCONHECIDO'}`,
+        asaasStatus: providerStatus || null,
+      });
+      return;
+    }
+
+    if (mappedStatus === order.status) {
+      res.json({
+        updated: false,
+        orderId: order.id,
+        status: order.status,
+        asaasStatus: providerStatus,
+      });
+      return;
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: order.id },
+      data: { status: mappedStatus },
+      select: { id: true, status: true },
+    });
+
+    await prisma.orderStatusUpdate.create({
+      data: {
+        orderId: order.id,
+        status: mappedStatus,
+        note: `Reconciliação manual Asaas (${providerStatus})`,
+      },
+    });
+
+    res.json({
+      updated: true,
+      orderId: updatedOrder.id,
+      status: updatedOrder.status,
+      asaasStatus: providerStatus,
+    });
+  } catch (error) {
+    console.error('[admin/orders/:id/reconcile-payment]', error);
+    res.status(500).json({ message: 'Erro ao reconciliar pagamento do pedido.' });
   }
 }

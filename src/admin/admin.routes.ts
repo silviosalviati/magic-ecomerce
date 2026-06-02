@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { AdminController } from './admin.controller';
 import { requireAdminAccess } from '../middlewares/auth.middleware';
 import { validateUpdateStock } from '../middlewares/validate.middleware';
-import { listOrders, getOrder, updateOrder } from './orders.controller';
+import { listOrders, getOrder, updateOrder, reconcileOrderPayment } from './orders.controller';
 
 const adminRouter = Router();
 const controller = new AdminController();
@@ -40,6 +40,7 @@ adminRouter.patch(
 adminRouter.get('/orders', (req: Request, res: Response) => listOrders(req, res));
 adminRouter.get('/orders/:id', (req: Request, res: Response) => getOrder(req, res));
 adminRouter.patch('/orders/:id', (req: Request, res: Response) => updateOrder(req, res));
+adminRouter.post('/orders/:id/reconcile-payment', (req: Request, res: Response) => reconcileOrderPayment(req, res));
 
 // ── Users ────────────────────────────────────────────────────────────────────
 adminRouter.get('/users', (req: Request, res: Response) => controller.listUsers(req, res));
