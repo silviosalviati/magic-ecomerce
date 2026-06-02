@@ -64,6 +64,23 @@ function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+function isSandboxAsaas(): boolean {
+  const base = String(process.env.ASAAS_BASE_URL || '').toLowerCase();
+  return base.includes('sandbox');
+}
+
+function shouldUpdateStockOnPaidWebhook(): boolean {
+  const configured = String(process.env.CHECKOUT_UPDATE_STOCK_ON_PAYMENT || '')
+    .trim()
+    .toLowerCase();
+
+  if (configured === 'true') return true;
+  if (configured === 'false') return false;
+
+  // Default behavior: keep stock untouched in sandbox/test checkouts.
+  return !isSandboxAsaas();
+}
+
 function buildFallbackInstallments(total: number): InstallmentOptionDto[] {
   return Array.from({ length: 12 }, (_, index) => {
     const installments = index + 1;
@@ -503,6 +520,8 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
   }
 
   try {
+    const updateStockOnPaid = shouldUpdateStockOnPaidWebhook();
+
     const orders = await prisma.order.findMany({
       where: { paymentId: payment.id },
       include: {
@@ -517,21 +536,31 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
     });
 
     for (const order of orders) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: newStatus },
-      });
+      const statusChanged = order.status !== newStatus;
+      if (statusChanged) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: newStatus },
+        });
 
-      await prisma.orderStatusUpdate.create({
-        data: { orderId: order.id, status: newStatus },
-      });
+        await prisma.orderStatusUpdate.create({
+          data: { orderId: order.id, status: newStatus },
+        });
+      }
 
-      if (newStatus === 'PAID') {
-        // Decrement stock
-        for (const item of order.items) {
-          await prisma.variant.update({
-            where: { id: item.variantId },
-            data: { stock: { decrement: item.quantity } },
+      // Idempotency: only execute post-payment effects once when status transitions to PAID.
+      if (newStatus === 'PAID' && order.status !== 'PAID') {
+        if (updateStockOnPaid) {
+          for (const item of order.items) {
+            await prisma.variant.update({
+              where: { id: item.variantId },
+              data: { stock: { decrement: item.quantity } },
+            });
+          }
+        } else {
+          console.log('[webhook][stock] skipping stock decrement (sandbox mode)', {
+            orderId: order.id,
+            paymentId: payment.id,
           });
         }
 

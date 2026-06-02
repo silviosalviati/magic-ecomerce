@@ -17,6 +17,27 @@ interface AdminOrder {
   itemCount: number;
 }
 
+interface AdminOrderDetail {
+  id: string;
+  items: Array<{
+    id: string;
+    quantity: number;
+    priceAtPurchase: number;
+    variant: {
+      color: string;
+      size: string;
+      barcode: string | null;
+      product: { name: string };
+    };
+  }>;
+  statusUpdates: Array<{
+    id: string;
+    status: string;
+    note: string | null;
+    createdAt: string;
+  }>;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Aguardando', PAID: 'Pago', PREPARING: 'Em preparo',
   SHIPPED: 'Enviado', DELIVERED: 'Entregue', CANCELLED: 'Cancelado',
@@ -40,6 +61,8 @@ export function AdminOrdersPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<AdminOrder | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<AdminOrderDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [updateForm, setUpdateForm] = useState({ status: '', shippingMethod: '', trackingCode: '', trackingUrl: '', note: '' });
   const [updating, setUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState('');
@@ -60,10 +83,21 @@ export function AdminOrdersPage() {
 
   useEffect(() => { void fetchOrders(); }, [filterStatus]);
 
-  function openOrder(order: AdminOrder) {
+  async function openOrder(order: AdminOrder) {
     setSelected(order);
+    setSelectedDetail(null);
+    setLoadingDetail(true);
     setUpdateForm({ status: order.status, shippingMethod: order.shippingMethod || '', trackingCode: order.trackingCode || '', trackingUrl: '', note: '' });
     setUpdateMsg('');
+
+    try {
+      const { data } = await axios.get<AdminOrderDetail>(`${ADMIN_API}/admin/orders/${order.id}`, { headers });
+      setSelectedDetail(data);
+    } catch {
+      setUpdateMsg('Não foi possível carregar os itens do pedido.');
+    } finally {
+      setLoadingDetail(false);
+    }
   }
 
   async function handleUpdate(e: React.FormEvent) {
@@ -151,7 +185,7 @@ export function AdminOrdersPage() {
                   </td>
                   <td>{o.shippingMethod || '—'}</td>
                   <td>
-                    <button type="button" className="adm-table-btn" onClick={() => openOrder(o)}>
+                    <button type="button" className="adm-table-btn" onClick={() => void openOrder(o)}>
                       Editar
                     </button>
                   </td>
@@ -265,6 +299,80 @@ export function AdminOrdersPage() {
                     : 'Salvar alterações'}
                 </button>
               </form>
+
+              <div style={{ marginTop: 22, borderTop: '0.5px solid #1E1E1E', paddingTop: 16 }}>
+                <p className="adm-low-stock-title" style={{ margin: 0, marginBottom: 10 }}>Itens vendidos</p>
+
+                {loadingDetail && (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: 10 }}>
+                    <span className="adm-spinner" />
+                  </div>
+                )}
+
+                {!loadingDetail && selectedDetail && selectedDetail.items.length === 0 && (
+                  <p className="adm-table-sub" style={{ margin: 0 }}>Sem itens vinculados.</p>
+                )}
+
+                {!loadingDetail && selectedDetail && selectedDetail.items.length > 0 && (
+                  <div className="adm-table-wrap" style={{ marginTop: 0 }}>
+                    <table className="adm-table">
+                      <thead>
+                        <tr>
+                          <th>Produto</th>
+                          <th>Variação</th>
+                          <th>Qtd.</th>
+                          <th>Unitário</th>
+                          <th>Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedDetail.items.map((item) => {
+                          const subtotal = Number(item.priceAtPurchase) * Number(item.quantity);
+                          return (
+                            <tr key={item.id}>
+                              <td>
+                                <p className="adm-table-name">{item.variant.product.name}</p>
+                                <p className="adm-table-sub">{item.variant.barcode || 'Sem código'}</p>
+                              </td>
+                              <td>{item.variant.color} · {item.variant.size}</td>
+                              <td>{formatIntegerBR(item.quantity)}</td>
+                              <td>{formatCurrency(item.priceAtPurchase)}</td>
+                              <td>{formatCurrency(subtotal)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <p className="adm-low-stock-title" style={{ marginTop: 16, marginBottom: 10 }}>Histórico de status</p>
+                {!loadingDetail && selectedDetail && selectedDetail.statusUpdates.length === 0 && (
+                  <p className="adm-table-sub" style={{ margin: 0 }}>Sem atualizações registradas.</p>
+                )}
+                {!loadingDetail && selectedDetail && selectedDetail.statusUpdates.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {selectedDetail.statusUpdates.map((entry) => (
+                      <div
+                        key={entry.id}
+                        style={{
+                          border: '0.5px solid #1E1E1E',
+                          padding: '9px 11px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 12 }}>{STATUS_LABELS[entry.status] || entry.status}</span>
+                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87' }}>
+                          {formatDate(entry.createdAt)}{entry.note ? ` · ${entry.note}` : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
