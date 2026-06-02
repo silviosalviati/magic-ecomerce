@@ -1110,6 +1110,29 @@ textarea:focus-visible {
   transition: transform var(--transition-base);
 }
 
+.product-watermark {
+  position: absolute;
+  right: 10px;
+  bottom: 12px;
+  z-index: 2;
+  width: clamp(88px, 26%, 170px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.product-watermark img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.product-watermark--detail {
+  right: 14px;
+  bottom: 16px;
+  width: clamp(98px, 25%, 210px);
+  opacity: 0.2;
+}
+
 .product-media:hover img {
   transform: scale(1.02);
 }
@@ -8417,6 +8440,13 @@ textarea:focus-visible {
   display: block;
   cursor: default;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+}
+
+.product-watermark--lightbox {
+  right: max(24px, calc(50vw - 320px));
+  bottom: max(30px, calc(50vh - 320px));
+  width: clamp(120px, 18vw, 240px);
+  opacity: 0.26;
 }
 
 .image-disclaimer--lightbox {

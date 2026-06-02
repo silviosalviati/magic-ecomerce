@@ -225,6 +225,9 @@ export function ProductDetailsPage({
                 aria-label="Ampliar imagem do produto"
               >
                 <img src={activeImage || product.imageUrl} alt={product.name} />
+                <span className="product-watermark product-watermark--detail" aria-hidden="true">
+                  <img src="/logo/logo-transparent.png" alt="" />
+                </span>
                 <span className="image-disclaimer image-disclaimer--detail" aria-hidden="true">
                   Imagem meramente ilustrativa
                 </span>
@@ -398,6 +401,9 @@ export function ProductDetailsPage({
             alt={product.name}
             onClick={(e) => e.stopPropagation()}
           />
+          <span className="product-watermark product-watermark--lightbox" aria-hidden="true">
+            <img src="/logo/logo-transparent.png" alt="" />
+          </span>
           <span className="image-disclaimer image-disclaimer--lightbox" aria-hidden="true">
             Imagem meramente ilustrativa
           </span>

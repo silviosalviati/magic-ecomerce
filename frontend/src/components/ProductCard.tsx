@@ -31,6 +31,9 @@ export function ProductCard({ product, onAddToCart, onBuyNow, style }: ProductCa
           aria-label={`Ver produto ${product.name}`}
         >
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
+          <span className="product-watermark" aria-hidden="true">
+            <img src="/logo/logo-transparent.png" alt="" />
+          </span>
         </Link>
         <span className="image-disclaimer" aria-hidden="true">
           Imagem meramente ilustrativa
