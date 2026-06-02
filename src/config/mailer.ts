@@ -346,6 +346,75 @@ export async function sendCustomerConfirmation(data: OrderEmailData): Promise<vo
   });
 }
 
+// ─── Pickup contact (retirada na loja) ───────────────────────────────────────
+export async function sendPickupContactEmail(params: {
+  customerName: string;
+  customerEmail: string;
+  orderId: string;
+  total: number;
+}): Promise<void> {
+  if (!process.env.SMTP_USER) return;
+
+  const orderRef = `#${params.orderId.slice(0, 8).toUpperCase()}`;
+  const firstName = escapeHtml(params.customerName.split(' ')[0]);
+
+  const html = emailShell(`
+    ${emailHeader()}
+
+    <!-- Hero -->
+    <tr>
+      <td style="background:linear-gradient(160deg,#1A1210 0%,#1E1614 55%,#1A1210 100%);border:1px solid ${BORDER};border-top:none;border-bottom:none;padding:40px 40px 36px;">
+        <p style="margin:0 0 6px;font-family:${SANS};font-size:11px;letter-spacing:2px;color:${FAINT};text-transform:uppercase;">Pedido confirmado · Retirada</p>
+        <h1 style="margin:0 0 6px;font-family:${SERIF};font-size:30px;font-weight:400;color:${TEXT};line-height:1.3;">Obrigada, <em>${firstName}</em>.<br>Vamos combinar a retirada.</h1>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:18px;">
+          <tr>
+            <td style="background:#1A1A1A;border:1px solid ${BORD2};padding:5px 12px;">
+              <span style="font-family:${MONO};font-size:12px;letter-spacing:1px;color:${MUTED};">${orderRef}</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:32px 40px 36px;">
+        <p style="margin:0 0 24px;font-family:${SANS};font-size:14px;line-height:1.7;color:${MUTED};">
+          Seu pedido no valor de <strong style="color:${TEXT};">${formatCurrency(params.total)}</strong> foi registrado. Entre em contato para combinarmos o horário e local de retirada:
+        </p>
+
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid ${BORDER};margin-bottom:24px;">
+          <tr>
+            <td style="padding:16px 20px;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0 0 4px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">E-mail</p>
+              <a href="mailto:contato@vistamagic.com.br" style="font-family:${SANS};font-size:14px;color:${ACCENT};text-decoration:none;">contato@vistamagic.com.br</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 20px;">
+              <p style="margin:0 0 4px;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">WhatsApp</p>
+              <a href="https://wa.me/5511969707136" style="font-family:${SANS};font-size:14px;color:${ACCENT};text-decoration:none;">(11) 96970-7136</a>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:0;font-family:${SANS};font-size:12px;color:${GHOST};line-height:1.6;">
+          Mencione o pedido <strong style="color:${FAINT};">${orderRef}</strong> ao entrar em contato.
+        </p>
+      </td>
+    </tr>
+
+    ${emailFooter()}
+  `);
+
+  await transporter.sendMail({
+    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    to: params.customerEmail,
+    subject: `Pedido ${orderRef} confirmado — Combinar retirada · Vista Magic`,
+    html,
+  });
+}
+
 // ─── Email verification / account activation ──────────────────────────────────
 export async function sendEmailVerification(params: {
   email: string;

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { prisma } from '../config/database';
-import { sendStoreNotification, sendCustomerConfirmation } from '../config/mailer';
+import { sendStoreNotification, sendCustomerConfirmation, sendPickupContactEmail } from '../config/mailer';
+import { calculateShippingRates } from './melhorenvios.service';
 import { notifyStoreWhatsApp } from '../config/whatsapp';
 import { validateCoupon } from './coupon.service';
 import {
@@ -30,6 +31,10 @@ interface CheckoutBody {
   items: CheckoutItem[];
   paymentMethod?: 'PIX' | 'CREDIT_CARD' | 'BOLETO';
   couponCode?: string;
+  // Shipping
+  shippingMethod?: string;
+  shippingLabel?: string;
+  shippingCost?: number;
   // Credit card fields
   cardHolderName?: string;
   cardNumber?: string;
@@ -166,6 +171,24 @@ export async function getCheckoutInstallments(req: Request, res: Response): Prom
   }
 }
 
+export async function getShippingRates(req: Request, res: Response): Promise<void> {
+  const cep = String(req.query.cep || '').replace(/\D/g, '');
+  const quantity = Math.max(1, Number(req.query.quantity) || 1);
+
+  if (cep.length !== 8) {
+    res.status(400).json({ message: 'CEP inválido.' });
+    return;
+  }
+
+  try {
+    const rates = await calculateShippingRates(cep, quantity);
+    res.json(rates);
+  } catch (error) {
+    console.error('[checkout][shipping-rates]', error);
+    res.status(503).json({ message: 'Não foi possível calcular o frete. Tente novamente.' });
+  }
+}
+
 export async function validateCouponEndpoint(req: Request, res: Response): Promise<void> {
   const { code, subtotal } = req.body as { code?: string; subtotal?: unknown };
   const sub = Number(subtotal);
@@ -194,6 +217,9 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     addressNumber,
     installments = 1,
     couponCode,
+    shippingMethod,
+    shippingLabel,
+    shippingCost: shippingCostRaw,
     addressStreet,
     addressComplement,
     addressNeighborhood,
@@ -201,6 +227,13 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     addressState,
     addressZip,
   } = req.body as CheckoutBody;
+
+  const shippingCostVal = Math.max(0, Number(shippingCostRaw) || 0);
+  const shippingData = {
+    shippingMethod: shippingMethod?.trim() || null,
+    shippingLabel: shippingLabel?.trim() || null,
+    shippingCost: shippingCostVal > 0 ? shippingCostVal : null,
+  };
 
   const addressData = {
     addressStreet: addressStreet?.trim() || null,
@@ -285,7 +318,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         appliedCouponId = couponResult.couponId;
       }
     }
-    const total = Math.max(0, Math.round((subtotal - discountAmount) * 100) / 100);
+    const total = Math.max(0, Math.round((subtotal - discountAmount + shippingCostVal) * 100) / 100);
 
     const customer = await findOrCreateCustomer(name.trim(), email.trim(), cpfClean);
 
@@ -310,6 +343,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           discountAmount: discountAmount > 0 ? discountAmount : null,
           ...(userId ? { userId } : {}),
           ...addressData,
+          ...shippingData,
           items: {
             create: items.map((i) => ({
               variantId: i.variantId,
@@ -322,6 +356,11 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 
       if (appliedCouponId) {
         await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
+      }
+
+      if (shippingMethod === 'RETIRADA') {
+        sendPickupContactEmail({ customerName: name.trim(), customerEmail: email.trim(), orderId: order.id, total })
+          .catch((err) => console.error('[checkout][pickup-email]', err.message));
       }
 
       res.json({
@@ -356,6 +395,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           discountAmount: discountAmount > 0 ? discountAmount : null,
           ...(userId ? { userId } : {}),
           ...addressData,
+          ...shippingData,
           items: {
             create: items.map((i) => ({
               variantId: i.variantId,
@@ -368,6 +408,11 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 
       if (appliedCouponId) {
         await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
+      }
+
+      if (shippingMethod === 'RETIRADA') {
+        sendPickupContactEmail({ customerName: name.trim(), customerEmail: email.trim(), orderId: order.id, total })
+          .catch((err) => console.error('[checkout][pickup-email]', err.message));
       }
 
       res.json({
@@ -424,6 +469,7 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         discountAmount: discountAmount > 0 ? discountAmount : null,
         ...(userId ? { userId } : {}),
         ...addressData,
+        ...shippingData,
         items: {
           create: items.map((i) => ({
             variantId: i.variantId,
@@ -436,6 +482,11 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 
     if (appliedCouponId) {
       await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
+    }
+
+    if (shippingMethod === 'RETIRADA') {
+      sendPickupContactEmail({ customerName: name.trim(), customerEmail: email.trim(), orderId: order.id, total })
+        .catch((err) => console.error('[checkout][pickup-email]', err.message));
     }
 
     res.json({

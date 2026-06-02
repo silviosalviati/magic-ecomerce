@@ -75,6 +75,15 @@ export interface CouponValidationResponse {
   finalTotal?: number;
 }
 
+export interface ShippingRateOption {
+  id: string;
+  name: string;
+  company: string;
+  price: number;
+  deliveryDays: number | null;
+  deliveryRange: { min: number; max: number } | null;
+}
+
 export interface CheckoutPayload {
   name: string;
   email: string;
@@ -82,6 +91,10 @@ export interface CheckoutPayload {
   items: { variantId: string; quantity: number; priceAtPurchase: number }[];
   paymentMethod: PaymentMethod;
   couponCode?: string;
+  // Shipping
+  shippingMethod?: string;
+  shippingLabel?: string;
+  shippingCost?: number;
   // Credit card fields
   cardHolderName?: string;
   cardNumber?: string;

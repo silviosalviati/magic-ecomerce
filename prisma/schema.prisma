@@ -67,6 +67,8 @@ model Order {
   createdAt     DateTime    @default(now())
   // Entrega
   shippingMethod      String?
+  shippingLabel       String?
+  shippingCost        Decimal? @db.Decimal(10, 2)
   trackingCode        String?
   trackingUrl         String?
   // Endereço de entrega

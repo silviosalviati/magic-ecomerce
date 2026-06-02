@@ -236,6 +236,13 @@ export async function validateCoupon(code: string, subtotal: number): Promise<Co
   return data;
 }
 
+export async function getShippingRates(cep: string, quantity: number) {
+  const { data } = await api.get<import('../types').ShippingRateOption[]>('/checkout/shipping-rates', {
+    params: { cep, quantity },
+  });
+  return data;
+}
+
 export async function getCheckoutInstallments(total: number): Promise<CheckoutInstallmentsResponse> {
   const normalizedTotal = Number.isFinite(total) ? total : 0;
   const { data } = await api.get<CheckoutInstallmentsResponse>('/checkout/installments', {
