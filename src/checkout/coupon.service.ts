@@ -48,6 +48,7 @@ export async function validateCoupon(
     const alreadyUsedByIdentity = await prisma.order.findFirst({
       where: {
         couponCode: normalizedCode,
+        status: 'PAID',
         OR: [
           ...(normalizedEmail
             ? [{ guestEmail: { equals: normalizedEmail, mode: 'insensitive' as const } }]

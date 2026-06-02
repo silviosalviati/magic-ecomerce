@@ -449,9 +449,15 @@ export function CheckoutPage({
                       placeholder="00000-000"
                       value={addressZip}
                       onChange={(e) => {
-                        setAddressZip(formatCep(e.target.value));
+                        const nextZip = formatCep(e.target.value);
+                        setAddressZip(nextZip);
                         setShippingOption(null);
                         setShippingRates([]);
+
+                        const cepDigits = nextZip.replace(/\D/g, '');
+                        if (cepDigits.length === 8) {
+                          void fetchShipping(cepDigits);
+                        }
                       }}
                       onBlur={handleCepBlur}
                     />
