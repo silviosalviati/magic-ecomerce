@@ -200,10 +200,20 @@ export function CheckoutPage({
 
       setShippingRates(rates);
       setShippingOption((prev) => {
-        if (!prev) return null;
-        if (prev.id === 'RETIRADA') return prev;
-        const refreshed = rates.find((rate) => rate.id === prev.id);
-        return refreshed ?? null;
+        if (prev && prev.id !== 'RETIRADA') {
+          const refreshed = rates.find((rate) => rate.id === prev.id);
+          if (refreshed) return refreshed;
+        }
+
+        if (rates.length === 0) {
+          return prev?.id === 'RETIRADA' ? prev : null;
+        }
+
+        const cheapest = rates.reduce((best, current) =>
+          current.price < best.price ? current : best
+        , rates[0]);
+
+        return cheapest;
       });
     } catch {
       if (requestId !== shippingRequestSeq.current) {
@@ -486,6 +496,9 @@ export function CheckoutPage({
                         }
 
                         if (cepDigits.length === 8) {
+                          if (cepDigits !== lastShippingCep.current) {
+                            setShippingOption((prev) => (prev?.id === 'RETIRADA' ? prev : null));
+                          }
                           void fetchShipping(cepDigits);
                         }
                       }}

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const ORIGIN_CEP = '06126050';
-const WEIGHT_PER_ITEM_KG = 0.2;
+const WEIGHT_PER_ITEM_KG = 0.25;
 const MELHOR_ENVIOS_API = 'https://www.melhorenvio.com.br/api/v2';
 const SERVICES = '1,2,17'; // PAC, SEDEX, Jadlog .Package
 
