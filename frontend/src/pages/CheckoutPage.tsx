@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { checkout, getCheckoutInstallments, getShippingRates, validateCoupon } from '../lib/api';
@@ -96,6 +96,8 @@ export function CheckoutPage({
   const [shippingRates, setShippingRates] = useState<ShippingRateOption[]>([]);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState(false);
+  const shippingRequestSeq = useRef(0);
+  const lastShippingCep = useRef('');
 
   // Coupon
   const [couponInput, setCouponInput] = useState('');
@@ -180,18 +182,40 @@ export function CheckoutPage({
   if (authLoading) return null;
 
   async function fetchShipping(cep: string) {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+
+    const requestId = ++shippingRequestSeq.current;
+    lastShippingCep.current = cleanCep;
     setShippingLoading(true);
     setShippingError(false);
-    setShippingOption(null);
-    setShippingRates([]);
+
     try {
       const totalQty = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-      const rates = await getShippingRates(cep, totalQty);
+      const rates = await getShippingRates(cleanCep, totalQty);
+
+      if (requestId !== shippingRequestSeq.current) {
+        return;
+      }
+
       setShippingRates(rates);
+      setShippingOption((prev) => {
+        if (!prev) return null;
+        if (prev.id === 'RETIRADA') return prev;
+        const refreshed = rates.find((rate) => rate.id === prev.id);
+        return refreshed ?? null;
+      });
     } catch {
+      if (requestId !== shippingRequestSeq.current) {
+        return;
+      }
       setShippingError(true);
+      setShippingRates([]);
+      setShippingOption((prev) => (prev?.id === 'RETIRADA' ? prev : null));
     } finally {
-      setShippingLoading(false);
+      if (requestId === shippingRequestSeq.current) {
+        setShippingLoading(false);
+      }
     }
   }
 
@@ -215,7 +239,9 @@ export function CheckoutPage({
     } finally {
       setCepLoading(false);
     }
-    void fetchShipping(clean);
+    if (clean !== lastShippingCep.current) {
+      void fetchShipping(clean);
+    }
   }
 
   function formatCep(raw: string): string {
@@ -451,10 +477,14 @@ export function CheckoutPage({
                       onChange={(e) => {
                         const nextZip = formatCep(e.target.value);
                         setAddressZip(nextZip);
-                        setShippingOption(null);
-                        setShippingRates([]);
 
                         const cepDigits = nextZip.replace(/\D/g, '');
+                        if (cepDigits.length !== 8) {
+                          setShippingRates([]);
+                          setShippingError(false);
+                          setShippingOption((prev) => (prev?.id === 'RETIRADA' ? prev : null));
+                        }
+
                         if (cepDigits.length === 8) {
                           void fetchShipping(cepDigits);
                         }
