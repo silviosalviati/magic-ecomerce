@@ -190,13 +190,18 @@ export async function getShippingRates(req: Request, res: Response): Promise<voi
 }
 
 export async function validateCouponEndpoint(req: Request, res: Response): Promise<void> {
-  const { code, subtotal } = req.body as { code?: string; subtotal?: unknown };
+  const { code, subtotal, email, cpf } = req.body as {
+    code?: string;
+    subtotal?: unknown;
+    email?: string;
+    cpf?: string;
+  };
   const sub = Number(subtotal);
   if (!code?.trim() || !Number.isFinite(sub) || sub <= 0) {
     res.status(400).json({ valid: false, message: 'code e subtotal são obrigatórios.' });
     return;
   }
-  const result = await validateCoupon(code, sub);
+  const result = await validateCoupon(code, sub, { email, cpf });
   res.json(result);
 }
 
@@ -311,11 +316,17 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     let appliedCouponCode: string | null = null;
     let appliedCouponId: string | null = null;
     if (couponCode?.trim()) {
-      const couponResult = await validateCoupon(couponCode.trim(), subtotal);
+      const couponResult = await validateCoupon(couponCode.trim(), subtotal, {
+        email: email.trim(),
+        cpf: cpfClean,
+      });
       if (couponResult.valid && couponResult.couponId) {
         discountAmount = couponResult.discountAmount ?? 0;
         appliedCouponCode = couponResult.code ?? null;
         appliedCouponId = couponResult.couponId;
+      } else if (!couponResult.valid) {
+        res.status(400).json({ message: couponResult.message });
+        return;
       }
     }
     const total = Math.max(0, Math.round((subtotal - discountAmount + shippingCostVal) * 100) / 100);

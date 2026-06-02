@@ -229,7 +229,10 @@ export function CheckoutPage({
     setCouponError('');
     setCouponResult(null);
     try {
-      const result = await validateCoupon(couponInput.trim(), subtotal);
+      const result = await validateCoupon(couponInput.trim(), subtotal, {
+        email: user?.email,
+        cpf: cpfDigits,
+      });
       if (result.valid) {
         setCouponResult(result);
       } else {

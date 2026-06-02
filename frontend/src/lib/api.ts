@@ -231,8 +231,17 @@ export async function checkout(payload: CheckoutPayload): Promise<CheckoutRespon
   }
 }
 
-export async function validateCoupon(code: string, subtotal: number): Promise<CouponValidationResponse> {
-  const { data } = await api.post<CouponValidationResponse>('/checkout/validate-coupon', { code, subtotal });
+export async function validateCoupon(
+  code: string,
+  subtotal: number,
+  identity?: { email?: string; cpf?: string },
+): Promise<CouponValidationResponse> {
+  const { data } = await api.post<CouponValidationResponse>('/checkout/validate-coupon', {
+    code,
+    subtotal,
+    email: identity?.email,
+    cpf: identity?.cpf,
+  });
   return data;
 }
 
