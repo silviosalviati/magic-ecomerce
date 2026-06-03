@@ -33,7 +33,7 @@ const STEPS = [
 
 const STATUS_STEP_INDEX: Record<string, number> = {
   PENDING:   0,
-  PAID:      1,
+  PAID:      2,
   PREPARING: 2,
   SHIPPED:   3,
   DELIVERED: 4,
