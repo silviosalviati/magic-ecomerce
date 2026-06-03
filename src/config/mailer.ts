@@ -84,6 +84,12 @@ function buildFrontendUrl(pathname: string): string {
   return `${frontendUrl}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
 }
 
+function getBrandLogoUrl(): string {
+  const explicitLogoUrl = process.env.BRAND_LOGO_URL?.trim();
+  if (explicitLogoUrl) return explicitLogoUrl;
+  return buildFrontendUrl('/logo/logo-transparent.png');
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -110,23 +116,28 @@ const MONO   = "'Courier New',Courier,monospace";
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 function emailHeader(): string {
+  const logoUrl = getBrandLogoUrl();
+
   return `
   <tr>
     <td style="background:${CARD};padding:30px 40px 22px;text-align:center;border:1px solid ${BORDER};border-bottom:none;">
-      <p style="margin:0;font-family:${SERIF};font-size:18px;font-weight:400;letter-spacing:8px;color:${TEXT};text-transform:uppercase;">VISTA MAGIC</p>
+      <img src="${logoUrl}" alt="Magic" width="138" style="display:block;margin:0 auto 12px;max-width:138px;height:auto;border:0;outline:none;text-decoration:none;" />
+      <p style="margin:0;font-family:${SERIF};font-size:18px;font-weight:400;letter-spacing:8px;color:${TEXT};text-transform:uppercase;">MAGIC</p>
       <div style="width:28px;height:1px;background:${ACCENT};margin:10px auto 0;"></div>
     </td>
   </tr>`;
 }
 
 function emailFooter(note?: string): string {
+  const currentYear = new Date().getFullYear();
+
   return `
   <tr>
     <td style="background:${BG};padding:26px 40px 30px;text-align:center;border:1px solid ${BORDER};border-top:1px solid ${BORDER};">
       ${note ? `<p style="margin:0 0 16px;font-family:${SANS};font-size:12px;color:${FAINT};line-height:1.6;">${note}</p><div style="width:24px;height:1px;background:${BORDER};margin:0 auto 16px;"></div>` : ''}
-      <p style="margin:0 0 5px;font-family:${SERIF};font-size:10px;letter-spacing:4px;color:${GHOST};text-transform:uppercase;">Vista Magic</p>
+      <p style="margin:0 0 5px;font-family:${SERIF};font-size:10px;letter-spacing:4px;color:${GHOST};text-transform:uppercase;">Magic</p>
       <p style="margin:0 0 4px;font-family:${SANS};font-size:11px;color:${GHOST};">vistamagic.com.br</p>
-      <p style="margin:0;font-family:${SANS};font-size:10px;color:${GHOST};">&copy; 2024 Vista Magic &middot; Todos os direitos reservados</p>
+      <p style="margin:0;font-family:${SANS};font-size:10px;color:${GHOST};">&copy; ${currentYear} Magic &middot; Todos os direitos reservados</p>
     </td>
   </tr>`;
 }
@@ -139,7 +150,7 @@ function emailShell(rows: string): string {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta name="supported-color-schemes" content="dark">
-  <title>Vista Magic</title>
+  <title>Magic</title>
 </head>
 <body style="margin:0;padding:0;background:${BG};">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${BG}" style="padding:40px 16px;">
@@ -255,7 +266,7 @@ export async function sendStoreNotification(data: OrderEmailData): Promise<void>
   `);
 
   await transporter.sendMail({
-    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    from: `"Magic" <${process.env.SMTP_USER}>`,
     to: storeEmail,
     subject: `Nova venda · ${data.customerName} · ${formatCurrency(data.total)}`,
     html,
@@ -360,9 +371,9 @@ export async function sendCustomerConfirmation(data: OrderEmailData): Promise<vo
   `);
 
   await transporter.sendMail({
-    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    from: `"Magic" <${process.env.SMTP_USER}>`,
     to: data.customerEmail,
-    subject: `Pedido confirmado ${orderRef} — Vista Magic`,
+    subject: `Pedido confirmado ${orderRef} — Magic`,
     html,
   });
 }
@@ -429,9 +440,9 @@ export async function sendPickupContactEmail(params: {
   `);
 
   await transporter.sendMail({
-    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    from: `"Magic" <${process.env.SMTP_USER}>`,
     to: params.customerEmail,
-    subject: `Pedido ${orderRef} confirmado — Combinar retirada · Vista Magic`,
+    subject: `Pedido ${orderRef} confirmado — Combinar retirada · Magic`,
     html,
   });
 }
@@ -462,7 +473,7 @@ export async function sendEmailVerification(params: {
     <tr>
       <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:32px 40px 36px;">
         <p style="margin:0 0 12px;font-family:${SANS};font-size:15px;line-height:1.7;color:${TEXT};">
-          Sua conta na <strong>Vista Magic</strong> foi criada com sucesso.
+          Sua conta na <strong>Magic</strong> foi criada com sucesso.
         </p>
         <p style="margin:0 0 28px;font-family:${SANS};font-size:14px;line-height:1.7;color:${MUTED};">
           Para garantir a segurança da sua conta e começar a explorar nossa coleção exclusiva, confirme seu endereço de e-mail.
@@ -492,10 +503,10 @@ export async function sendEmailVerification(params: {
   `);
 
   await transporter.sendMail({
-    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    from: `"Magic" <${process.env.SMTP_USER}>`,
     to: params.email,
-    subject: 'Confirme seu e-mail — Vista Magic',
-    text: `Olá, ${params.name}.\n\nPara ativar sua conta na Vista Magic, confirme seu e-mail:\n${verifyUrl}\n\nEste link expira em 24 horas.\n\nSe você não criou esta conta, ignore este e-mail.`,
+    subject: 'Confirme seu e-mail — Magic',
+    text: `Olá, ${params.name}.\n\nPara ativar sua conta na Magic, confirme seu e-mail:\n${verifyUrl}\n\nEste link expira em 24 horas.\n\nSe você não criou esta conta, ignore este e-mail.`,
     html,
   });
 }
@@ -556,9 +567,9 @@ export async function sendPasswordResetEmail(params: {
   `);
 
   await transporter.sendMail({
-    from: `"Vista Magic" <${process.env.SMTP_USER}>`,
+    from: `"Magic" <${process.env.SMTP_USER}>`,
     to: params.email,
-    subject: 'Redefinição de senha — Vista Magic',
+    subject: 'Redefinição de senha — Magic',
     html,
   });
 }
