@@ -325,8 +325,9 @@ export class AdminController {
         }),
       ]);
 
-      const frontCatalogUrl = buildImageProxyUrl(frontObjectPath, req);
-      const backCatalogUrl = buildImageProxyUrl(backObjectPath, req);
+      const uploadVersion = Date.now();
+      const frontCatalogUrl = `${buildImageProxyUrl(frontObjectPath, req)}&v=${uploadVersion}`;
+      const backCatalogUrl = `${buildImageProxyUrl(backObjectPath, req)}&v=${uploadVersion}`;
       const preservedImages = existingImages.filter((imageUrl: string) => {
         const objectPath = extractProductObjectPathFromUrl(String(imageUrl || ''));
         return !objectPath || !objectPath.startsWith(targetFolder);

@@ -138,6 +138,18 @@ function extractGcsObjectPath(imageUrl: string): string | null {
   return null;
 }
 
+function extractImageVersionToken(imageUrl: string): string | null {
+  if (!imageUrl) return null;
+
+  try {
+    const parsed = new URL(imageUrl);
+    const value = parsed.searchParams.get('v');
+    return value && value.trim().length > 0 ? value.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 function toOptimizedCatalogImageUrl(
   imageUrl: string,
   apiBaseUrl: string,
@@ -148,7 +160,10 @@ function toOptimizedCatalogImageUrl(
     return imageUrl;
   }
 
-  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}&w=${options.width}&q=${options.quality}&fm=${options.format}&wm=${IMAGE_WATERMARK_VERSION}`;
+  const sourceVersion = extractImageVersionToken(imageUrl);
+  const versionQuery = sourceVersion ? `&iv=${encodeURIComponent(sourceVersion)}` : '';
+
+  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}&w=${options.width}&q=${options.quality}&fm=${options.format}&wm=${IMAGE_WATERMARK_VERSION}${versionQuery}`;
 }
 
 export function mapProductsToCatalog(products: ApiProduct[], apiBaseUrl: string): CatalogProduct[] {

@@ -85,6 +85,21 @@ function withCacheBuster(url: string, nonce: number): string {
   }
 }
 
+function toAdminThumbUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname === '/products/images/object') {
+      parsed.searchParams.set('w', '240');
+      parsed.searchParams.set('q', '62');
+      parsed.searchParams.set('fm', 'webp');
+      return parsed.toString();
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 export function AdminFotoPage() {
   const { headers } = useAdmin();
   const [query, setQuery] = useState('');
@@ -338,7 +353,7 @@ export function AdminFotoPage() {
                           {group.images.map((url, i) => (
                             <img
                               key={`${group.id}-${i}-${imageNonce}`}
-                              src={withCacheBuster(url, imageNonce)}
+                              src={toAdminThumbUrl(withCacheBuster(url, imageNonce))}
                               alt={`Foto ${i + 1}`}
                               className="adm-foto-thumb"
                             />
