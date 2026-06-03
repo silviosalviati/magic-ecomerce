@@ -235,21 +235,8 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
   } = req.body as CheckoutBody;
 
   const shippingCostVal = Math.max(0, Number(shippingCostRaw) || 0);
-  const shippingData = {
-    shippingMethod: shippingMethod?.trim() || null,
-    shippingLabel: shippingLabel?.trim() || null,
-    shippingCost: shippingCostVal > 0 ? shippingCostVal : null,
-  };
-
-  const addressData = {
-    addressStreet: addressStreet?.trim() || null,
-    addressNumber: addressNumber?.trim() || null,
-    addressComplement: addressComplement?.trim() || null,
-    addressNeighborhood: addressNeighborhood?.trim() || null,
-    addressCity: addressCity?.trim() || null,
-    addressState: addressState?.trim() || null,
-    addressZip: addressZip?.replace(/\D/g, '') || null,
-  };
+  // NOTE: Shipping/address fields are intentionally not persisted here to keep
+  // checkout resilient when production schema is partially out-of-sync.
 
   // ── Input validation ──────────────────────────────────────────────────────
   if (!name?.trim() || !email?.trim() || !cpf || !Array.isArray(items) || items.length === 0) {
@@ -371,8 +358,6 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           couponCode: appliedCouponCode,
           discountAmount: discountAmount > 0 ? discountAmount : null,
           ...(userId ? { userId } : {}),
-          ...addressData,
-          ...shippingData,
           items: {
             create: items.map((i) => ({
               variantId: i.variantId,
@@ -423,8 +408,6 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           couponCode: appliedCouponCode,
           discountAmount: discountAmount > 0 ? discountAmount : null,
           ...(userId ? { userId } : {}),
-          ...addressData,
-          ...shippingData,
           items: {
             create: items.map((i) => ({
               variantId: i.variantId,
@@ -497,8 +480,6 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         couponCode: appliedCouponCode,
         discountAmount: discountAmount > 0 ? discountAmount : null,
         ...(userId ? { userId } : {}),
-        ...addressData,
-        ...shippingData,
         items: {
           create: items.map((i) => ({
             variantId: i.variantId,
@@ -646,7 +627,13 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
 
     const orders = await prisma.order.findMany({
       where: { paymentId: payment.id },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        total: true,
+        guestName: true,
+        guestEmail: true,
+        guestCpf: true,
         items: {
           include: {
             variant: {
@@ -665,9 +652,13 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
           data: { status: newStatus },
         });
 
-        await prisma.orderStatusUpdate.create({
-          data: { orderId: order.id, status: newStatus },
-        });
+        try {
+          await prisma.orderStatusUpdate.create({
+            data: { orderId: order.id, status: newStatus },
+          });
+        } catch (statusUpdateError) {
+          console.error('[webhook][status-update]', statusUpdateError);
+        }
       }
 
       // Idempotency: only execute post-payment effects once when status transitions to PAID.
@@ -701,21 +692,12 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
           customerName: order.guestName || 'Cliente',
           customerEmail: order.guestEmail || '',
           customerCpf: order.guestCpf || '',
-          paymentMethod: order.paymentMethod || 'PIX',
+          paymentMethod: 'PIX',
           total: Number(order.total),
           items: emailItems.map((item) => ({
             ...item,
             priceAtPurchase: Number(item.priceAtPurchase),
           })),
-          address: {
-            street: order.addressStreet || undefined,
-            number: order.addressNumber || undefined,
-            complement: order.addressComplement || undefined,
-            neighborhood: order.addressNeighborhood || undefined,
-            city: order.addressCity || undefined,
-            state: order.addressState || undefined,
-            zip: order.addressZip || undefined,
-          },
         };
 
         sendStoreNotification(emailData).catch((err) =>
@@ -731,7 +713,7 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
         notifyStoreWhatsApp({
           orderId: order.id,
           customerName: order.guestName || 'Cliente',
-          paymentMethod: order.paymentMethod || 'PIX',
+          paymentMethod: 'PIX',
           total: Number(order.total),
           itemCount: order.items.length,
         }).catch((err) => console.error('[webhook][whatsapp]', err.message));
