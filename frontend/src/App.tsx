@@ -187,7 +187,7 @@ function App() {
         {!isCheckoutPage && !isAuthPage && (
           <>
             <div className="announcement-bar" role="region" aria-label="Promoções e informações de envio">
-              <strong>Frete grátis</strong> acima de R$&nbsp;299 &nbsp;·&nbsp; Troca fácil em até 7 dias &nbsp;·&nbsp; <strong>Compra 100% segura</strong>
+              <strong>Até R$ 15 de desconto no frete</strong> acima de R$&nbsp;299 &nbsp;·&nbsp; Troca fácil em até 7 dias &nbsp;·&nbsp; <strong>Compra 100% segura</strong>
             </div>
             <Header
               cartCount={cartCount}

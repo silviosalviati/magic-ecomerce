@@ -55,11 +55,11 @@ export function CartSidebar({
         <div className="cart-shipping-bar">
           {shippingRemaining > 0 ? (
             <p className="cart-shipping-label">
-              Falta <strong>{toCurrency(shippingRemaining)}</strong> para frete grátis
+              Falta <strong>{toCurrency(shippingRemaining)}</strong> para ganhar até R$ 15 no frete
             </p>
           ) : (
             <p className="cart-shipping-label cart-shipping-achieved">
-              Você ganhou <strong>frete grátis!</strong>
+              Você ganhou <strong>até R$ 15 de desconto no frete.</strong>
             </p>
           )}
           <div className="cart-shipping-track">
@@ -79,7 +79,7 @@ export function CartSidebar({
             <div className="cart-empty">
               <strong>Sua sacola está vazia.</strong>
               <p>Escolha cor, tamanho e adicione as peças que deseja comprar.</p>
-              <p className="cart-empty-note">Frete grátis acima de R$&nbsp;299</p>
+              <p className="cart-empty-note">Desconto de até R$ 15 no frete acima de R$&nbsp;299</p>
             </div>
           )}
           {items.map((item) => (

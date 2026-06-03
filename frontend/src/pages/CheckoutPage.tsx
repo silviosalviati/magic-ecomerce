@@ -60,6 +60,8 @@ const STEP_LABELS: Record<Step, string> = {
 };
 
 const STEP_ORDER: Step[] = ['details', 'payment', 'confirmation'];
+const SHIPPING_SUBSIDY_THRESHOLD = 299;
+const SHIPPING_SUBSIDY_CAP = 15;
 
 export function CheckoutPage({
   cartItems,
@@ -108,7 +110,15 @@ export function CheckoutPage({
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const discount = couponResult?.valid ? (couponResult.discountAmount ?? 0) : 0;
-  const shippingCost = shippingOption?.price ?? 0;
+  const shippingBaseCost = shippingOption?.price ?? 0;
+  const hasShippingSubsidy =
+    subtotal >= SHIPPING_SUBSIDY_THRESHOLD &&
+    shippingOption !== null &&
+    shippingOption.id !== 'RETIRADA';
+  const shippingSubsidy = hasShippingSubsidy
+    ? Math.min(SHIPPING_SUBSIDY_CAP, shippingBaseCost)
+    : 0;
+  const shippingCost = Math.max(0, shippingBaseCost - shippingSubsidy);
   const total = Math.max(0, subtotal - discount + shippingCost);
   const cpfDigits = cpf.replace(/\D/g, '');
   const stepIndex = STEP_ORDER.indexOf(step);
@@ -339,7 +349,7 @@ export function CheckoutPage({
         couponCode: couponResult?.valid ? couponInput.trim() : undefined,
         shippingMethod: shippingOption?.id,
         shippingLabel: shippingOption?.name,
-        shippingCost: shippingOption?.price ?? 0,
+        shippingCost,
         addressZip: addressZip.replace(/\D/g, ''),
         addressStreet: addressStreet.trim(),
         addressNumber: addressNumber.trim(),
@@ -830,10 +840,24 @@ export function CheckoutPage({
                   </div>
                 )}
                 <div className="checkout-price-row">
-                  <span>Frete</span>
-                  <span style={{ color: shippingOption?.price === 0 ? '#6BBF8E' : undefined }}>
+                  <span>Frete base</span>
+                  <span>
                     {shippingOption
                       ? shippingOption.price === 0 ? 'Grátis' : toCurrency(shippingOption.price)
+                      : '—'}
+                  </span>
+                </div>
+                {shippingSubsidy > 0 && (
+                  <div className="checkout-price-row checkout-price-row--discount">
+                    <span>Desconto no frete</span>
+                    <span>− {toCurrency(shippingSubsidy)}</span>
+                  </div>
+                )}
+                <div className="checkout-price-row">
+                  <span>Frete a pagar</span>
+                  <span style={{ color: shippingCost === 0 ? '#6BBF8E' : undefined }}>
+                    {shippingOption
+                      ? shippingCost === 0 ? 'Grátis' : toCurrency(shippingCost)
                       : '—'}
                   </span>
                 </div>
