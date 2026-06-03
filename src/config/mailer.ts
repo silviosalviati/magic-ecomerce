@@ -121,9 +121,8 @@ function emailHeader(): string {
   return `
   <tr>
     <td style="background:${CARD};padding:30px 40px 22px;text-align:center;border:1px solid ${BORDER};border-bottom:none;">
-      <img src="${logoUrl}" alt="Magic" width="138" style="display:block;margin:0 auto 12px;max-width:138px;height:auto;border:0;outline:none;text-decoration:none;" />
-      <p style="margin:0;font-family:${SERIF};font-size:18px;font-weight:400;letter-spacing:8px;color:${TEXT};text-transform:uppercase;">MAGIC</p>
-      <div style="width:28px;height:1px;background:${ACCENT};margin:10px auto 0;"></div>
+      <img src="${logoUrl}" alt="Magic" width="138" style="display:block;margin:0 auto 10px;max-width:138px;height:auto;border:0;outline:none;text-decoration:none;" />
+      <div style="width:28px;height:1px;background:${ACCENT};margin:0 auto;"></div>
     </td>
   </tr>`;
 }
