@@ -23,25 +23,7 @@ const STATUS_ACCENT: Record<string, string> = {
   CANCELLED: '#ef8ba0',
   REFUNDED:  '#ef8ba0',
 };
-
-const STEPS = [
-  { key: 'RECEIVED',  label: 'Pedido recebido' },
-  { key: 'PAID',      label: 'Pagamento' },
-  { key: 'PREPARING', label: 'Preparação' },
-  { key: 'DELIVERED', label: 'Entrega' },
-];
-
-const STATUS_STEP_INDEX: Record<string, number> = {
-  PENDING:   0,
-  PAID:      2,
-  PREPARING: 2,
-  SHIPPED:   3,
-  DELIVERED: 4,
-  CANCELLED: -1,
-  OVERDUE:   -1,
-  REFUNDED:  -1,
-};
-
+  
 const SHIPPING_LABELS: Record<string, string> = {
   CORREIOS: 'Correios',
   UBER:     'Uber Flash',
@@ -54,6 +36,29 @@ const PAYMENT_LABELS: Record<string, string> = {
   CREDIT_CARD: 'Cartão de crédito',
 };
 
+// step index: how many steps are "done" (i < stepIdx = done, i === stepIdx = current)
+const STATUS_STEP_INDEX: Record<string, number> = {
+  PENDING:   1,
+  PAID:      2,
+  PREPARING: 2,
+  SHIPPED:   3,
+  DELIVERED: 5,
+  CANCELLED: -1,
+  OVERDUE:   -1,
+  REFUNDED:  -1,
+};
+
+function getSteps(shippingMethod: string | null | undefined) {
+  const isPickup = shippingMethod === 'PICKUP';
+  return [
+    { key: 'ORDER',     label: 'Pedido' },
+    { key: 'PAID',      label: 'Pagamento' },
+    { key: 'PREPARING', label: 'Preparação' },
+    { key: 'SHIPPED',   label: isPickup ? 'Pronto p/ retirada' : 'Enviado' },
+    { key: 'DELIVERED', label: isPickup ? 'Retirado' : 'Entregue' },
+  ];
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -62,11 +67,8 @@ function formatDate(iso: string): string {
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   });
 }
 
@@ -79,8 +81,9 @@ export function OrderCard({ order }: { order: Order }) {
 
   const label  = STATUS_LABELS[order.status] || order.status;
   const accent = STATUS_ACCENT[order.status] || 'rgba(232,180,176,0.4)';
-  const stepIndex = STATUS_STEP_INDEX[order.status] ?? 0;
+  const stepIndex  = STATUS_STEP_INDEX[order.status] ?? 0;
   const isTerminal = order.status === 'CANCELLED' || order.status === 'OVERDUE' || order.status === 'REFUNDED';
+  const STEPS = getSteps(order.shippingMethod);
 
   return (
     <article className="oc-card">
@@ -107,7 +110,7 @@ export function OrderCard({ order }: { order: Order }) {
           </div>
         </div>
 
-        {/* ── STATUS STEPPER (only for normal flow) ── */}
+        {/* ── STATUS STEPPER ── */}
         {!isTerminal && (
           <div className="oc-stepper" aria-label="Progresso do pedido">
             {STEPS.map((step, i) => {
@@ -172,7 +175,6 @@ export function OrderCard({ order }: { order: Order }) {
             )}
           </div>
 
-          {/* Tracking actions */}
           {order.shippingMethod === 'CORREIOS' && order.trackingCode && (
             <div className="oc-tracking">
               <code className="oc-tracking-code">{order.trackingCode}</code>
@@ -203,7 +205,7 @@ export function OrderCard({ order }: { order: Order }) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13" aria-hidden="true">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              Pronto para retirada na loja
+              Seu pedido está pronto para retirada na loja
             </div>
           )}
         </div>
