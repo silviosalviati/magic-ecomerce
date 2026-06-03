@@ -7989,11 +7989,48 @@ textarea:focus-visible {
   gap: 8px;
   flex-wrap: wrap;
 }
+.adm-foto-current-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+.adm-foto-current-group {
+  border: 0.5px solid var(--adm-border-sub);
+  background: rgba(10, 10, 10, 0.35);
+  padding: 10px;
+}
+.adm-foto-current-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.adm-foto-current-group-head strong {
+  font-family: var(--adm-font-ui);
+  font-size: 11px;
+  color: var(--adm-text-2);
+  letter-spacing: 0.02em;
+}
+.adm-foto-current-group-head span {
+  font-family: var(--adm-font-ui);
+  font-size: 9px;
+  color: var(--adm-text-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 .adm-foto-thumb {
   width: 72px;
   height: 72px;
   object-fit: cover;
   border: 0.5px solid var(--adm-border);
+}
+.adm-foto-current-empty {
+  margin: 0;
+  font-family: var(--adm-font-ui);
+  font-size: 10px;
+  color: var(--adm-text-3);
+  letter-spacing: 0.02em;
 }
 .adm-foto-upload-grid {
   display: grid;

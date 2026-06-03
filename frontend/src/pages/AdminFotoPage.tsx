@@ -21,6 +21,50 @@ interface UploadSlot {
   side: 'front' | 'back';
 }
 
+function normalizeBarcodeKey(value: string): string {
+  return value.trim().replace(/[^a-zA-Z0-9\-_]/g, '_');
+}
+
+function extractVariantBarcodeFromImageUrl(imageUrl: string): string | null {
+  const sanitizePath = (value: string): string => decodeURIComponent(value).replace(/^\/+/, '').trim();
+
+  const fromObjectPath = (value: string): string | null => {
+    const objectPath = sanitizePath(value);
+    if (!objectPath.startsWith('produtos/')) return null;
+
+    const segments = objectPath.split('/').filter(Boolean);
+    if (segments.length < 3) return null;
+
+    return segments[1] || null;
+  };
+
+  if (!imageUrl) return null;
+
+  if (imageUrl.startsWith('produtos/')) {
+    return fromObjectPath(imageUrl);
+  }
+
+  try {
+    const parsed = new URL(imageUrl);
+
+    if (parsed.pathname === '/products/images/object') {
+      const objectPath = String(parsed.searchParams.get('path') || '');
+      return fromObjectPath(objectPath);
+    }
+
+    const pathname = decodeURIComponent(parsed.pathname || '');
+    const marker = '/produtos/';
+    const markerIndex = pathname.indexOf(marker);
+    if (markerIndex >= 0) {
+      return fromObjectPath(pathname.slice(markerIndex + 1));
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -52,6 +96,52 @@ export function AdminFotoPage() {
   const selectedVariant = result?.product?.variants.find(
     (variant) => (variant.barcode || '') === selectedBarcode
   );
+
+  const variantImageGroups = (() => {
+    if (!result?.product) return [] as Array<{
+      id: string;
+      color: string;
+      size: string;
+      barcode: string | null;
+      images: string[];
+    }>;
+
+    const imagesByBarcode = new Map<string, string[]>();
+    const fallbackImages: string[] = [];
+
+    for (const imageUrl of result.product.images) {
+      const imageBarcode = extractVariantBarcodeFromImageUrl(imageUrl);
+      if (!imageBarcode) {
+        fallbackImages.push(imageUrl);
+        continue;
+      }
+
+      const key = normalizeBarcodeKey(imageBarcode);
+      const current = imagesByBarcode.get(key) || [];
+      current.push(imageUrl);
+      imagesByBarcode.set(key, current);
+    }
+
+    const groups = result.product.variants.map((variant) => {
+      const key = normalizeBarcodeKey(String(variant.barcode || ''));
+      return {
+        ...variant,
+        images: key ? (imagesByBarcode.get(key) || []) : [],
+      };
+    });
+
+    if (fallbackImages.length > 0) {
+      groups.push({
+        id: '__fallback__',
+        color: 'Sem variante',
+        size: '-',
+        barcode: null,
+        images: fallbackImages,
+      });
+    }
+
+    return groups;
+  })();
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -214,9 +304,24 @@ export function AdminFotoPage() {
                 <p className="adm-foto-section-label" style={{ marginTop: 18 }}>
                   Fotos atuais
                 </p>
-                <div className="adm-foto-current">
-                  {result.product.images.slice(0, 6).map((url, i) => (
-                    <img key={i} src={url} alt={`Foto ${i + 1}`} className="adm-foto-thumb" />
+                <div className="adm-foto-current-groups">
+                  {variantImageGroups.map((group) => (
+                    <article key={group.id} className="adm-foto-current-group">
+                      <div className="adm-foto-current-group-head">
+                        <strong>{group.color} / {group.size}</strong>
+                        <span>{group.barcode || 'sem código de barras'}</span>
+                      </div>
+
+                      {group.images.length > 0 ? (
+                        <div className="adm-foto-current">
+                          {group.images.map((url, i) => (
+                            <img key={`${group.id}-${i}`} src={url} alt={`Foto ${i + 1}`} className="adm-foto-thumb" />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="adm-foto-current-empty">Sem fotos vinculadas para esta variante.</p>
+                      )}
+                    </article>
                   ))}
                 </div>
               </div>
