@@ -118,8 +118,18 @@ export function AdminFotoPage() {
       ]);
       if (frontRef.current) frontRef.current.value = '';
       if (backRef.current) backRef.current.value = '';
-    } catch {
-      setUploadError('Falha ao enviar fotos. Tente novamente.');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const apiError = error.response?.data as { error?: string; message?: string } | undefined;
+        const message = apiError?.error || apiError?.message;
+        setUploadError(typeof message === 'string' && message.trim().length > 0
+          ? message
+          : 'Falha ao enviar fotos. Tente novamente.');
+      } else if (error instanceof Error && error.message.trim().length > 0) {
+        setUploadError(error.message);
+      } else {
+        setUploadError('Falha ao enviar fotos. Tente novamente.');
+      }
     } finally {
       setUploading(false);
     }

@@ -9,6 +9,7 @@ import { prisma } from './config/database';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
+const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT?.trim() || '30mb';
 const localApiOrigins = [
   `http://localhost:${PORT}`,
   `http://127.0.0.1:${PORT}`,
@@ -63,7 +64,7 @@ app.use(
 );
 
 // ─── Body parser com limite ───────────────────────────────────────────────────
-app.use(express.json({ limit: '25mb' }));
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
 // ─── Rotas ───────────────────────────────────────────────────────────────────
 app.use('/products', productsRouter);
@@ -99,8 +100,26 @@ app.use((_req: Request, res: Response) => {
 
 // ─── Handler global de erros ──────────────────────────────────────────────────
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  const knownError = err as Error & {
+    status?: number;
+    statusCode?: number;
+    type?: string;
+  };
+
+  const status =
+    knownError.statusCode ||
+    knownError.status ||
+    (knownError.type === 'entity.too.large' ? 413 : 500);
+
+  if (status === 413) {
+    res.status(413).json({
+      error: 'As fotos sao muito grandes. Envie imagens menores e tente novamente.',
+    });
+    return;
+  }
+
   console.error('[ERROR]', err.message);
-  res.status(500).json({
+  res.status(status).json({
     error:
       process.env.NODE_ENV === 'production'
         ? 'Erro interno do servidor.'

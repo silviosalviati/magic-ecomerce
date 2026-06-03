@@ -197,6 +197,7 @@ export class AdminController {
         product: resolved.product,
       });
     } catch (error) {
+      console.error('[admin][upload-photos]', error);
       res.status(500).json({ error: clientError(error) });
     }
   }
