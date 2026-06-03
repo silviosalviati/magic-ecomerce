@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import { buildProductGroupKey } from './product-grouping';
 
 type ProductWithVariants = {
   id: string;
@@ -20,17 +21,8 @@ export type ProductMergeCleanupResult = {
   groupsWithPriceMismatch: number;
 };
 
-function normalizeGroupKey(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
-}
-
 function groupKey(product: Pick<ProductWithVariants, 'name' | 'category'>): string {
-  return `${normalizeGroupKey(product.name)}::${normalizeGroupKey(product.category)}`;
+  return buildProductGroupKey(product);
 }
 
 function pickCanonicalProduct(products: ProductWithVariants[]): ProductWithVariants {

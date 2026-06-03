@@ -9,6 +9,7 @@ import {
   getObjectBufferByPath,
   getObjectStreamByPath,
 } from '../config/storage';
+import { buildProductGroupKey } from './product-grouping';
 const { generateMannequinPreview } = require('../config/vertexai');
 
 type ImageFormat = 'jpeg' | 'png' | 'webp';
@@ -125,19 +126,6 @@ function logServerError(scope: string, error: unknown): void {
     return;
   }
   console.error(`[${scope}]`, error);
-}
-
-function normalizeGroupKey(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
-}
-
-function buildProductGroupKey(product: { name: string; category: string }): string {
-  return `${normalizeGroupKey(product.name)}::${normalizeGroupKey(product.category)}`;
 }
 
 function mergeDuplicateProductsByNameAndCategory(products: any[]): any[] {
