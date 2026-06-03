@@ -9,7 +9,9 @@ export function colorToken(color: string): string {
   const normalized = color.trim().toLowerCase();
   const palette: Record<string, string> = {
     preto: '#1f2127',
+    preta: '#1f2127',
     branco: '#f6f1f2',
+    branca: '#f6f1f2',
     bege: '#ceb7a1',
     azul: '#5972b8',
     cinza: '#9095a1',
@@ -17,6 +19,8 @@ export function colorToken(color: string): string {
     vermelho: '#b44e67',
     verde: '#648c6c',
     marrom: '#7e6050',
+    offwhite: '#f6f1f2',
+    off_white: '#f6f1f2',
   };
 
   return palette[normalized] || '#d5bac2';

@@ -74,6 +74,17 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+function withCacheBuster(url: string, nonce: number): string {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set('v', String(nonce));
+    return parsed.toString();
+  } catch {
+    const divider = url.includes('?') ? '&' : '?';
+    return `${url}${divider}v=${nonce}`;
+  }
+}
+
 export function AdminFotoPage() {
   const { headers } = useAdmin();
   const [query, setQuery] = useState('');
@@ -89,6 +100,7 @@ export function AdminFotoPage() {
   const [uploadMsg, setUploadMsg] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [selectedBarcode, setSelectedBarcode] = useState('');
+  const [imageNonce, setImageNonce] = useState(() => Date.now());
 
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
@@ -157,6 +169,7 @@ export function AdminFotoPage() {
         { headers }
       );
       setResult(data);
+      setImageNonce(Date.now());
       const defaultBarcode = data.product?.variants.find((variant) => Boolean(variant.barcode))?.barcode || '';
       setSelectedBarcode(defaultBarcode);
       if (!data.found) setSearchError('Produto não encontrado para essa referência.');
@@ -205,9 +218,17 @@ export function AdminFotoPage() {
       );
 
       setUploadMsg('Fotos enviadas com sucesso!');
+      const refreshNonce = Date.now();
+      setImageNonce(refreshNonce);
       setResult((prev) =>
         prev?.product
-          ? { ...prev, product: { ...prev.product, images: data.product?.images || prev.product.images } }
+          ? {
+              ...prev,
+              product: {
+                ...prev.product,
+                images: (data.product?.images || prev.product.images).map((url: string) => withCacheBuster(url, refreshNonce)),
+              },
+            }
           : prev
       );
       setSlots([
@@ -315,7 +336,12 @@ export function AdminFotoPage() {
                       {group.images.length > 0 ? (
                         <div className="adm-foto-current">
                           {group.images.map((url, i) => (
-                            <img key={`${group.id}-${i}`} src={url} alt={`Foto ${i + 1}`} className="adm-foto-thumb" />
+                            <img
+                              key={`${group.id}-${i}-${imageNonce}`}
+                              src={withCacheBuster(url, imageNonce)}
+                              alt={`Foto ${i + 1}`}
+                              className="adm-foto-thumb"
+                            />
                           ))}
                         </div>
                       ) : (
