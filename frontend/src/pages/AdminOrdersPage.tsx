@@ -67,9 +67,6 @@ const SHIPPING_LABELS: Record<string, string> = {
 
 const ALL_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
 
-// Ordered lifecycle steps (excludes terminal statuses)
-const LIFECYCLE = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] as const;
-
 function formatCurrency(value: number | string) { return formatCurrencyBRL(value); }
 
 function formatDate(iso: string) {
