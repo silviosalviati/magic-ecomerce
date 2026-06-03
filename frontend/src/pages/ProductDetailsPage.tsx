@@ -13,6 +13,10 @@ type ProductDetailsPageProps = {
   onBuyNow: (item: CartItem) => void;
 };
 
+function normalizeBarcodeKey(value: string): string {
+  return value.trim().replace(/[^a-zA-Z0-9\-_]/g, '_');
+}
+
 function extractVariantBarcodeFromImageUrl(imageUrl: string): string | null {
   const sanitizePath = (value: string): string => decodeURIComponent(value).replace(/^\/+/, '').trim();
 
@@ -191,7 +195,7 @@ export function ProductDetailsPage({
     const barcodesForColor = new Set(
       product.variants
         .filter((variant) => variant.color === resolvedColor)
-        .map((variant) => variant.barcode)
+        .map((variant) => normalizeBarcodeKey(variant.barcode))
         .filter((barcode): barcode is string => Boolean(barcode && barcode.trim().length > 0))
     );
 
@@ -201,7 +205,7 @@ export function ProductDetailsPage({
 
     const matchingImages = product.images.filter((imageUrl) => {
       const imageBarcode = extractVariantBarcodeFromImageUrl(imageUrl);
-      return imageBarcode ? barcodesForColor.has(imageBarcode) : false;
+      return imageBarcode ? barcodesForColor.has(normalizeBarcodeKey(imageBarcode)) : false;
     });
 
     return matchingImages.length > 0 ? matchingImages : product.images;

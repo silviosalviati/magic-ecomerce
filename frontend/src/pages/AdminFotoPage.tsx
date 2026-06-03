@@ -44,6 +44,7 @@ export function AdminFotoPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
   const [uploadError, setUploadError] = useState('');
+  const [selectedBarcode, setSelectedBarcode] = useState('');
 
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
@@ -62,6 +63,8 @@ export function AdminFotoPage() {
         { headers }
       );
       setResult(data);
+      const defaultBarcode = data.product?.variants.find((variant) => Boolean(variant.barcode))?.barcode || '';
+      setSelectedBarcode(defaultBarcode);
       if (!data.found) setSearchError('Produto não encontrado para essa referência.');
     } catch {
       setSearchError('Erro ao buscar produto. Verifique a referência.');
@@ -84,7 +87,7 @@ export function AdminFotoPage() {
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
-    if (!result?.product || !slots[0].file || !slots[1].file) return;
+    if (!result?.product || !slots[0].file || !slots[1].file || !selectedBarcode.trim()) return;
     setUploading(true);
     setUploadMsg('');
     setUploadError('');
@@ -102,6 +105,7 @@ export function AdminFotoPage() {
           backBase64,
           contentTypeFront: slots[0].file.type || 'image/jpeg',
           contentTypeBack: slots[1].file.type || 'image/jpeg',
+          targetBarcode: selectedBarcode.trim(),
         },
         { headers }
       );
@@ -161,6 +165,28 @@ export function AdminFotoPage() {
             <p className="adm-foto-product-name">{result.product.name}</p>
             <p className="adm-foto-product-meta">{result.product.category} · {result.product.variants.length} variante(s)</p>
 
+            <div style={{ marginTop: 12, maxWidth: 420 }}>
+              <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, letterSpacing: '0.1em', color: '#6B5F5C', textTransform: 'uppercase', margin: '0 0 8px' }}>
+                Variante para vincular fotos
+              </p>
+              <select
+                className="adm-foto-search-input"
+                value={selectedBarcode}
+                onChange={(e) => setSelectedBarcode(e.target.value)}
+              >
+                <option value="">Selecione uma variante</option>
+                {result.product.variants.map((variant) => (
+                  <option
+                    key={variant.id}
+                    value={variant.barcode || ''}
+                    disabled={!variant.barcode}
+                  >
+                    {variant.color} / {variant.size} {variant.barcode ? `· ${variant.barcode}` : '· sem código de barras'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {result.product.images.length > 0 && (
               <div>
                 <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, letterSpacing: '0.1em', color: '#6B5F5C', textTransform: 'uppercase', margin: '16px 0 8px' }}>
@@ -217,7 +243,7 @@ export function AdminFotoPage() {
             <button
               type="submit"
               className="adm-btn adm-btn--primary"
-              disabled={uploading || !slots[0].file || !slots[1].file}
+              disabled={uploading || !slots[0].file || !slots[1].file || !selectedBarcode.trim()}
             >
               {uploading
                 ? <><span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 14, height: 14 }} /> Enviando…</>

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import {
-  buildProductPhotoObjectPath,
+  buildPhotoObjectPath,
   deleteObjectByPath,
   isAllowedImageMimeType,
   uploadImageBuffer,
@@ -14,6 +14,10 @@ function clientError(error: unknown): string {
 
 function normalizeReferenceToken(value: string): string {
   return value.trim().replace(/[\s.]+$/g, '');
+}
+
+function normalizeStorageToken(value: string): string {
+  return value.trim().replace(/[^a-zA-Z0-9\-_]/g, '_');
 }
 
 function buildReferenceCandidates(reference: string): string[] {
@@ -216,11 +220,13 @@ export class AdminController {
         backBase64,
         contentTypeFront,
         contentTypeBack,
+        targetBarcode,
       } = req.body as {
         frontBase64?: string;
         backBase64?: string;
         contentTypeFront?: string;
         contentTypeBack?: string;
+        targetBarcode?: string;
       };
 
       if (!frontBase64 || !backBase64) {
@@ -244,6 +250,26 @@ export class AdminController {
         return;
       }
 
+      const selectedBarcode = String(targetBarcode || '').trim();
+      const productVariants = Array.isArray(product.variants) ? product.variants : [];
+      const resolvedBarcode = selectedBarcode || (
+        productVariants.length === 1 ? String(productVariants[0]?.barcode || '').trim() : ''
+      );
+
+      if (!resolvedBarcode) {
+        res.status(400).json({ error: 'Selecione uma variante com código de barras para enviar as fotos.' });
+        return;
+      }
+
+      const selectedVariant = productVariants.find(
+        (variant: { barcode?: string | null }) => String(variant.barcode || '').trim() === resolvedBarcode
+      );
+
+      if (!selectedVariant) {
+        res.status(400).json({ error: 'Variante selecionada não pertence ao produto informado.' });
+        return;
+      }
+
       const normalizeBase64Payload = (raw: string): string =>
         raw.includes(',') ? String(raw.split(',').pop() || '') : raw;
 
@@ -255,25 +281,25 @@ export class AdminController {
         return;
       }
 
-      const frontObjectPath = buildProductPhotoObjectPath({
-        productId: product.id,
-        side: 'frente',
+      const frontObjectPath = buildPhotoObjectPath({
+        barcode: resolvedBarcode,
+        fileName: `${resolvedBarcode}_Frente.jpg`,
+        contentType: 'image/jpeg',
       });
 
-      const backObjectPath = buildProductPhotoObjectPath({
-        productId: product.id,
-        side: 'costas',
+      const backObjectPath = buildPhotoObjectPath({
+        barcode: resolvedBarcode,
+        fileName: `${resolvedBarcode}_Costas.jpg`,
+        contentType: 'image/jpeg',
       });
 
       const existingImages = Array.isArray(product.images) ? product.images : [];
-      const objectPathsToDelete = new Set<string>([
-        frontObjectPath,
-        backObjectPath,
-      ]);
+      const targetFolder = `produtos/${normalizeStorageToken(resolvedBarcode)}/`;
+      const objectPathsToDelete = new Set<string>([frontObjectPath, backObjectPath]);
 
       for (const imageUrl of existingImages) {
         const objectPath = extractProductObjectPathFromUrl(String(imageUrl || ''));
-        if (objectPath) {
+        if (objectPath && objectPath.startsWith(targetFolder)) {
           objectPathsToDelete.add(objectPath);
         }
       }
@@ -301,7 +327,12 @@ export class AdminController {
 
       const frontCatalogUrl = buildImageProxyUrl(frontObjectPath, req);
       const backCatalogUrl = buildImageProxyUrl(backObjectPath, req);
-      const nextImages = [frontCatalogUrl, backCatalogUrl];
+      const preservedImages = existingImages.filter((imageUrl: string) => {
+        const objectPath = extractProductObjectPathFromUrl(String(imageUrl || ''));
+        return !objectPath || !objectPath.startsWith(targetFolder);
+      });
+
+      const nextImages = [...preservedImages, frontCatalogUrl, backCatalogUrl];
 
       const updatedProduct = await prisma.product.update({
         where: { id: product.id },
