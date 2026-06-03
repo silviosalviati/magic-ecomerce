@@ -6,6 +6,7 @@ import { checkoutRouter } from './checkout/checkout.routes';
 import { ordersRouter } from './orders/orders.routes';
 import { authRouter } from './auth/auth.routes';
 import { prisma } from './config/database';
+import { cleanupNonVariantPhotos } from './admin/photo-cleanup.service';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -133,6 +134,19 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 MAGI.C API rodando na porta ${PORT}`);
   console.log(`🌍 Env: ${process.env.NODE_ENV ?? 'development'}`);
   console.log(`=========================================`);
+
+  const shouldCleanupNonVariantPhotos =
+    String(process.env.CLEANUP_NON_VARIANT_IMAGES || '').trim().toLowerCase() === 'true';
+
+  if (shouldCleanupNonVariantPhotos) {
+    cleanupNonVariantPhotos()
+      .then((result) => {
+        console.log('[cleanup][non-variant-photos] concluído', result);
+      })
+      .catch((error) => {
+        console.error('[cleanup][non-variant-photos] falhou', error);
+      });
+  }
 });
 
 // ─── Graceful shutdown ────────────────────────────────────────────────────────
