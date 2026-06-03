@@ -19,6 +19,23 @@ interface AdminOrder {
 
 interface AdminOrderDetail {
   id: string;
+  shippingMethod: string | null;
+  shippingLabel: string | null;
+  shippingCost: number | null;
+  trackingCode: string | null;
+  trackingUrl: string | null;
+  paymentMethod: string | null;
+  total: number;
+  guestName: string | null;
+  guestEmail: string | null;
+  guestCpf: string | null;
+  addressStreet: string | null;
+  addressNumber: string | null;
+  addressComplement: string | null;
+  addressNeighborhood: string | null;
+  addressCity: string | null;
+  addressState: string | null;
+  addressZip: string | null;
   items: Array<{
     id: string;
     quantity: number;
@@ -44,6 +61,10 @@ const STATUS_LABELS: Record<string, string> = {
   OVERDUE: 'Vencido', REFUNDED: 'Reembolsado',
 };
 
+const SHIPPING_LABELS: Record<string, string> = {
+  CORREIOS: 'Correios', UBER: 'Uber Flash', PICKUP: 'Retirada na loja',
+};
+
 const ALL_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
 
 function formatCurrency(value: number | string) {
@@ -52,6 +73,62 @@ function formatCurrency(value: number | string) {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function formatZip(zip: string | null | undefined) {
+  if (!zip) return '';
+  const d = zip.replace(/\D/g, '');
+  return d.length === 8 ? `${d.slice(0, 5)}-${d.slice(5)}` : zip;
+}
+
+function IconSave() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+  );
+}
+
+function IconSync() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10"/>
+      <polyline points="1 20 1 14 7 14"/>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+    </svg>
+  );
+}
+
+function IconPin() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  );
+}
+
+function IconTruck() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13"/>
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+      <circle cx="5.5" cy="18.5" r="2.5"/>
+      <circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+  );
+}
+
+/* Extracts "PAC" or "SEDEX" from shippingLabel, e.g. "Correios PAC" → "PAC" */
+function correiosServiceTag(label: string | null | undefined): string | null {
+  if (!label) return null;
+  const up = label.toUpperCase();
+  if (up.includes('SEDEX')) return 'SEDEX';
+  if (up.includes('PAC')) return 'PAC';
+  if (up.includes('MINI')) return 'Mini Envios';
+  return null;
 }
 
 export function AdminOrdersPage() {
@@ -94,6 +171,12 @@ export function AdminOrdersPage() {
     try {
       const { data } = await axios.get<AdminOrderDetail>(`${ADMIN_API}/admin/orders/${order.id}`, { headers });
       setSelectedDetail(data);
+      setUpdateForm((f) => ({
+        ...f,
+        shippingMethod: data.shippingMethod || f.shippingMethod,
+        trackingCode: data.trackingCode || f.trackingCode,
+        trackingUrl: data.trackingUrl || '',
+      }));
     } catch {
       setUpdateMsg('Não foi possível carregar os itens do pedido.');
     } finally {
@@ -193,13 +276,26 @@ export function AdminOrdersPage() {
                 <th>Total</th>
                 <th>Status</th>
                 <th>Envio</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
               {orders.map((o) => (
-                <tr key={o.id}>
-                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>#{o.id.slice(0, 8).toUpperCase()}</td>
+                <tr
+                  key={o.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => void openOrder(o)}
+                >
+                  <td>
+                    <span style={{
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: '#C8C0BC',
+                      borderBottom: '0.5px solid rgba(200,192,188,0.3)',
+                      paddingBottom: 1,
+                    }}>
+                      #{o.id.slice(0, 8).toUpperCase()}
+                    </span>
+                  </td>
                   <td>{formatDate(o.createdAt)}</td>
                   <td>
                     <p className="adm-table-name">{o.guestName || '—'}</p>
@@ -212,12 +308,7 @@ export function AdminOrdersPage() {
                       {STATUS_LABELS[o.status] || o.status}
                     </span>
                   </td>
-                  <td>{o.shippingMethod || '—'}</td>
-                  <td>
-                    <button type="button" className="adm-table-btn" onClick={() => void openOrder(o)}>
-                      Editar
-                    </button>
-                  </td>
+                  <td>{SHIPPING_LABELS[o.shippingMethod || ''] || o.shippingMethod || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -245,10 +336,12 @@ export function AdminOrdersPage() {
             </div>
 
             <div className="adm-panel-body">
+              {/* Customer summary */}
               <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 13, color: '#9A8D87', margin: '0 0 20px' }}>
                 {selected.guestName} · {formatCurrency(selected.total)}
               </p>
 
+              {/* Edit form */}
               <form onSubmit={handleUpdate}>
                 <div className="adm-field">
                   <label className="adm-label">Status</label>
@@ -265,7 +358,26 @@ export function AdminOrdersPage() {
                 </div>
 
                 <div className="adm-field">
-                  <label className="adm-label">Método de envio</label>
+                  <label className="adm-label">
+                    Método de envio
+                    {selectedDetail?.shippingLabel && (
+                      <span style={{
+                        marginLeft: 8,
+                        fontFamily: 'Arial,sans-serif',
+                        fontSize: 10,
+                        fontWeight: 400,
+                        textTransform: 'none',
+                        letterSpacing: 0,
+                        color: '#7A9E8A',
+                        background: 'rgba(91,168,130,0.08)',
+                        border: '0.5px solid rgba(91,168,130,0.2)',
+                        padding: '2px 7px',
+                        borderRadius: 3,
+                      }}>
+                        Cliente: {selectedDetail.shippingLabel}
+                      </span>
+                    )}
+                  </label>
                   <select
                     className="adm-select"
                     style={{ width: '100%', padding: '11px 14px' }}
@@ -322,30 +434,38 @@ export function AdminOrdersPage() {
                   </p>
                 )}
 
-                <button type="submit" className="adm-btn adm-btn--primary" disabled={updating}>
-                  {updating
-                    ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
-                    : 'Salvar alterações'}
-                </button>
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <button
+                    type="submit"
+                    className="adm-btn adm-btn--primary"
+                    style={{ flex: 1 }}
+                    disabled={updating}
+                  >
+                    {updating
+                      ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
+                      : <><IconSave />&nbsp;Salvar alterações</>}
+                  </button>
 
-                <button
-                  type="button"
-                  className="adm-btn"
-                  style={{ marginTop: 8 }}
-                  disabled={reconciling}
-                  onClick={() => void reconcilePayment()}
-                >
-                  {reconciling
-                    ? <span className="adm-spinner" style={{ width: 13, height: 13 }} />
-                    : 'Reconciliar pagamento Asaas'}
-                </button>
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn--ghost"
+                    style={{ flex: 1 }}
+                    disabled={reconciling}
+                    onClick={() => void reconcilePayment()}
+                  >
+                    {reconciling
+                      ? <span className="adm-spinner" style={{ width: 13, height: 13 }} />
+                      : <><IconSync />&nbsp;Reconciliar Asaas</>}
+                  </button>
+                </div>
               </form>
 
-              <div style={{ marginTop: 22, borderTop: '0.5px solid #1E1E1E', paddingTop: 16 }}>
-                <p className="adm-low-stock-title" style={{ margin: 0, marginBottom: 10 }}>Itens vendidos</p>
+              {/* ── Itens vendidos ─────────────────────────────── */}
+              <div style={{ marginTop: 24, borderTop: '0.5px solid #1E1E1E', paddingTop: 18 }}>
+                <p className="adm-low-stock-title" style={{ margin: '0 0 12px' }}>Itens vendidos</p>
 
                 {loadingDetail && (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: 16 }}>
                     <span className="adm-spinner" />
                   </div>
                 )}
@@ -355,39 +475,238 @@ export function AdminOrdersPage() {
                 )}
 
                 {!loadingDetail && selectedDetail && selectedDetail.items.length > 0 && (
-                  <div className="adm-table-wrap" style={{ marginTop: 0 }}>
-                    <table className="adm-table">
-                      <thead>
-                        <tr>
-                          <th>Produto</th>
-                          <th>Variação</th>
-                          <th>Qtd.</th>
-                          <th>Unitário</th>
-                          <th>Subtotal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedDetail.items.map((item) => {
-                          const subtotal = Number(item.priceAtPurchase) * Number(item.quantity);
-                          return (
-                            <tr key={item.id}>
-                              <td>
-                                <p className="adm-table-name">{item.variant.product.name}</p>
-                                <p className="adm-table-sub">{item.variant.barcode || 'Sem código'}</p>
-                              </td>
-                              <td>{item.variant.color} · {item.variant.size}</td>
-                              <td>{formatIntegerBR(item.quantity)}</td>
-                              <td>{formatCurrency(item.priceAtPurchase)}</td>
-                              <td>{formatCurrency(subtotal)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {selectedDetail.items.map((item) => {
+                      const subtotal = Number(item.priceAtPurchase) * Number(item.quantity);
+                      return (
+                        <div
+                          key={item.id}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: '4px 12px',
+                            padding: '11px 13px',
+                            background: 'rgba(255,255,255,0.022)',
+                            border: '0.5px solid #1E1E1E',
+                          }}
+                        >
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{
+                              fontFamily: 'Arial,sans-serif',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: '#C8C0BC',
+                              margin: '0 0 4px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {item.variant.product.name}
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                              <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, color: '#9A8D87', background: 'rgba(255,255,255,0.05)', border: '0.5px solid #2A2A2A', padding: '2px 6px' }}>
+                                {item.variant.color}
+                              </span>
+                              <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, color: '#9A8D87', background: 'rgba(255,255,255,0.05)', border: '0.5px solid #2A2A2A', padding: '2px 6px' }}>
+                                {item.variant.size}
+                              </span>
+                              {item.variant.barcode && (
+                                <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#4A4040' }}>
+                                  {item.variant.barcode}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 13, fontWeight: 600, color: '#C8C0BC', margin: '0 0 3px' }}>
+                              {formatCurrency(subtotal)}
+                            </p>
+                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, color: '#6B5F5C', margin: 0 }}>
+                              {formatIntegerBR(item.quantity)} × {formatCurrency(item.priceAtPurchase)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {selectedDetail.items.length > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 13px', borderTop: '0.5px solid #1E1E1E', marginTop: 2 }}>
+                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C' }}>
+                          {formatIntegerBR(selectedDetail.items.reduce((s, i) => s + Number(i.quantity), 0))} itens
+                        </span>
+                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC' }}>
+                          {formatCurrency(selectedDetail.items.reduce((s, i) => s + Number(i.priceAtPurchase) * Number(i.quantity), 0))}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
+              </div>
 
-                <p className="adm-low-stock-title" style={{ marginTop: 16, marginBottom: 10 }}>Histórico de status</p>
+              {/* ── Endereço de entrega ────────────────────────── */}
+              {!loadingDetail && selectedDetail && (selectedDetail.addressStreet || selectedDetail.addressCity) && (
+                <div style={{ marginTop: 20, borderTop: '0.5px solid #1E1E1E', paddingTop: 18 }}>
+                  <p className="adm-low-stock-title" style={{ margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <IconPin />
+                    Endereço de entrega
+                  </p>
+
+                  <div style={{ padding: '11px 13px', background: 'rgba(255,255,255,0.022)', border: '0.5px solid #1E1E1E', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {/* Recipient */}
+                    {selectedDetail.guestName && (
+                      <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>
+                        {selectedDetail.guestName}
+                        {selectedDetail.guestCpf && (
+                          <span style={{ fontWeight: 400, color: '#6B5F5C', marginLeft: 8 }}>CPF {selectedDetail.guestCpf}</span>
+                        )}
+                      </p>
+                    )}
+
+                    {/* Street */}
+                    {selectedDetail.addressStreet && (
+                      <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#9A8D87', margin: 0 }}>
+                        {selectedDetail.addressStreet}, {selectedDetail.addressNumber || 'S/N'}
+                        {selectedDetail.addressComplement ? ` — ${selectedDetail.addressComplement}` : ''}
+                      </p>
+                    )}
+
+                    {/* City / state / zip */}
+                    <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#9A8D87', margin: 0 }}>
+                      {[
+                        selectedDetail.addressNeighborhood,
+                        selectedDetail.addressCity,
+                        selectedDetail.addressState,
+                      ].filter(Boolean).join(', ')}
+                      {selectedDetail.addressZip ? ` · CEP ${formatZip(selectedDetail.addressZip)}` : ''}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Informações de envio ───────────────────────── */}
+              {!loadingDetail && selectedDetail && selectedDetail.shippingMethod && (
+                <div style={{ marginTop: 20, borderTop: '0.5px solid #1E1E1E', paddingTop: 18 }}>
+                  <p className="adm-low-stock-title" style={{ margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <IconTruck />
+                    Informações de envio
+                  </p>
+
+                  <div style={{ padding: '11px 13px', background: 'rgba(255,255,255,0.022)', border: '0.5px solid #1E1E1E', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+                    {/* CORREIOS */}
+                    {selectedDetail.shippingMethod === 'CORREIOS' && (() => {
+                      const service = correiosServiceTag(selectedDetail.shippingLabel);
+                      return (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC' }}>
+                              Correios
+                            </span>
+                            {service && (
+                              <span style={{
+                                fontFamily: 'Arial,sans-serif',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                letterSpacing: '0.08em',
+                                color: '#7A9E8A',
+                                background: 'rgba(91,168,130,0.08)',
+                                border: '0.5px solid rgba(91,168,130,0.25)',
+                                padding: '2px 8px',
+                              }}>
+                                {service}
+                              </span>
+                            )}
+                            {selectedDetail.shippingLabel && !service && (
+                              <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87' }}>
+                                {selectedDetail.shippingLabel}
+                              </span>
+                            )}
+                          </div>
+
+                          {selectedDetail.shippingCost !== null && (
+                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C', margin: 0 }}>
+                              Frete: <span style={{ color: '#9A8D87' }}>{Number(selectedDetail.shippingCost) === 0 ? 'Grátis' : formatCurrency(selectedDetail.shippingCost)}</span>
+                            </p>
+                          )}
+
+                          {selectedDetail.trackingCode ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C' }}>Rastreio:</span>
+                              <span style={{
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                                color: '#C8C0BC',
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '0.5px solid #2A2A2A',
+                                padding: '3px 8px',
+                                letterSpacing: '0.05em',
+                              }}>
+                                {selectedDetail.trackingCode}
+                              </span>
+                            </div>
+                          ) : (
+                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#4A4040', margin: 0, fontStyle: 'italic' }}>
+                              Código de rastreio ainda não informado
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    {/* UBER */}
+                    {selectedDetail.shippingMethod === 'UBER' && (
+                      <>
+                        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>
+                          Uber Flash
+                        </p>
+
+                        {selectedDetail.shippingCost !== null && (
+                          <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C', margin: 0 }}>
+                            Frete: <span style={{ color: '#9A8D87' }}>{Number(selectedDetail.shippingCost) === 0 ? 'Grátis' : formatCurrency(selectedDetail.shippingCost)}</span>
+                          </p>
+                        )}
+
+                        {selectedDetail.trackingUrl ? (
+                          <a
+                            href={selectedDetail.trackingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontFamily: 'Arial,sans-serif',
+                              fontSize: 11,
+                              color: '#7A9E8A',
+                              wordBreak: 'break-all',
+                            }}
+                          >
+                            {selectedDetail.trackingUrl}
+                          </a>
+                        ) : (
+                          <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#4A4040', margin: 0, fontStyle: 'italic' }}>
+                            Link de rastreio ainda não informado
+                          </p>
+                        )}
+                      </>
+                    )}
+
+                    {/* PICKUP */}
+                    {selectedDetail.shippingMethod === 'PICKUP' && (
+                      <>
+                        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>
+                          Retirada na loja
+                        </p>
+                        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87', margin: 0 }}>
+                          Cliente optou por retirar pessoalmente. Nenhum frete aplicado.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Histórico de status ────────────────────────── */}
+              <div style={{ marginTop: 20, borderTop: '0.5px solid #1E1E1E', paddingTop: 16 }}>
+                <p className="adm-low-stock-title" style={{ margin: '0 0 10px' }}>Histórico de status</p>
                 {!loadingDetail && selectedDetail && selectedDetail.statusUpdates.length === 0 && (
                   <p className="adm-table-sub" style={{ margin: 0 }}>Sem atualizações registradas.</p>
                 )}

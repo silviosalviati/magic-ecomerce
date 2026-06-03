@@ -20,9 +20,9 @@ export function ProductCard({ product, onAddToCart, onBuyNow, style }: ProductCa
   return (
     <article className="product-card" style={style}>
       <div className="product-media">
-        {selectedVariant.stock > 0 && selectedVariant.stock <= 5 && (
+        {selectedVariant.stock > 0 && (
           <div className="product-badge-row" aria-hidden="true">
-            <span className="product-badge">Restam {selectedVariant.stock}</span>
+            <span className="product-badge">Pronta entrega</span>
           </div>
         )}
         <Link
