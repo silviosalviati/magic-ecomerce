@@ -1,5 +1,12 @@
 import nodemailer from 'nodemailer';
 
+class MailerUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MailerUnavailableError';
+  }
+}
+
 function toBoolean(value: string | undefined): boolean | undefined {
   if (!value) return undefined;
   const normalized = value.trim().toLowerCase();
@@ -20,6 +27,19 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
+
+function assertMailerAvailable(): void {
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+
+  if (!user || !pass) {
+    throw new MailerUnavailableError('Envio de e-mail indisponível: SMTP_USER/SMTP_PASS não configurados.');
+  }
+}
+
+export function isMailerConfigured(): boolean {
+  return Boolean(process.env.SMTP_USER?.trim() && process.env.SMTP_PASS?.trim());
+}
 
 function formatCurrency(value: number | string): string {
   return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -138,7 +158,8 @@ function emailShell(rows: string): string {
 // ─── Store notification (internal) ───────────────────────────────────────────
 export async function sendStoreNotification(data: OrderEmailData): Promise<void> {
   const storeEmail = process.env.STORE_EMAIL;
-  if (!storeEmail || !process.env.SMTP_USER) return;
+  if (!storeEmail) return;
+  assertMailerAvailable();
 
   const orderRef = `#${data.orderId.slice(0, 8).toUpperCase()}`;
 
@@ -243,7 +264,7 @@ export async function sendStoreNotification(data: OrderEmailData): Promise<void>
 
 // ─── Customer order confirmation ──────────────────────────────────────────────
 export async function sendCustomerConfirmation(data: OrderEmailData): Promise<void> {
-  if (!process.env.SMTP_USER) return;
+  assertMailerAvailable();
 
   const trackUrl = buildFrontendUrl('/rastrear-pedido');
   const orderRef = `#${data.orderId.slice(0, 8).toUpperCase()}`;
@@ -353,7 +374,7 @@ export async function sendPickupContactEmail(params: {
   orderId: string;
   total: number;
 }): Promise<void> {
-  if (!process.env.SMTP_USER) return;
+  assertMailerAvailable();
 
   const orderRef = `#${params.orderId.slice(0, 8).toUpperCase()}`;
   const firstName = escapeHtml(params.customerName.split(' ')[0]);
@@ -421,7 +442,7 @@ export async function sendEmailVerification(params: {
   name: string;
   token: string;
 }): Promise<void> {
-  if (!process.env.SMTP_USER) return;
+  assertMailerAvailable();
 
   const verifyUrl = buildFrontendUrl(`/verificar-email?token=${encodeURIComponent(params.token)}`);
   const firstName = escapeHtml(params.name.split(' ')[0]);
@@ -485,7 +506,7 @@ export async function sendPasswordResetEmail(params: {
   name: string;
   token: string;
 }): Promise<void> {
-  if (!process.env.SMTP_USER) return;
+  assertMailerAvailable();
 
   const resetUrl = buildFrontendUrl(`/redefinir-senha?token=${encodeURIComponent(params.token)}`);
   const firstName = escapeHtml(params.name.split(' ')[0]);

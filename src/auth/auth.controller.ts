@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
-import { sendEmailVerification, sendPasswordResetEmail } from '../config/mailer';
+import { sendEmailVerification, sendPasswordResetEmail, isMailerConfigured } from '../config/mailer';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SALT_ROUNDS = 10;
@@ -54,16 +54,11 @@ async function createVerificationToken(userId: string): Promise<string> {
 
 async function sendVerificationEmailForUser(user: { id: string; email: string; name: string }): Promise<void> {
   const verificationToken = await createVerificationToken(user.id);
-
-  try {
-    await sendEmailVerification({
-      email: user.email,
-      name: user.name,
-      token: verificationToken,
-    });
-  } catch (mailError) {
-    console.error('[auth/register][verify-email]', mailError);
-  }
+  await sendEmailVerification({
+    email: user.email,
+    name: user.name,
+    token: verificationToken,
+  });
 }
 
 async function createPasswordResetToken(userId: string): Promise<string> {
@@ -100,16 +95,31 @@ export async function register(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  if (!isMailerConfigured()) {
+    res.status(503).json({
+      message: 'Cadastro temporariamente indisponível. Não foi possível enviar e-mail de verificação no momento.',
+    });
+    return;
+  }
+
   try {
     const normalizedEmail = normalizeEmail(email);
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       if (!existing.emailVerifiedAt) {
-        await sendVerificationEmailForUser(existing);
-        res.status(200).json({
-          message: 'Já existe uma conta pendente para este e-mail. Enviamos um novo link de verificação.',
-          requiresVerification: true,
-        });
+        try {
+          await sendVerificationEmailForUser(existing);
+          res.status(200).json({
+            message: 'Já existe uma conta pendente para este e-mail. Enviamos um novo link de verificação.',
+            requiresVerification: true,
+          });
+        } catch (mailError) {
+          console.error('[auth/register][verify-email]', mailError);
+          res.status(503).json({
+            message: 'Conta pendente encontrada, mas não foi possível reenviar o link de verificação agora. Tente novamente em instantes.',
+            requiresVerification: true,
+          });
+        }
         return;
       }
 
@@ -128,7 +138,16 @@ export async function register(req: Request, res: Response): Promise<void> {
       },
     });
 
-    await sendVerificationEmailForUser(user);
+    try {
+      await sendVerificationEmailForUser(user);
+    } catch (mailError) {
+      console.error('[auth/register][verify-email]', mailError);
+      res.status(503).json({
+        message: 'Conta criada, mas falhamos ao enviar o e-mail de verificação. Tente reenviar em alguns instantes.',
+        requiresVerification: true,
+      });
+      return;
+    }
 
     res.status(201).json({
       message: 'Conta criada. Verifique seu e-mail para ativar o acesso.',
@@ -219,16 +238,17 @@ export async function requestVerificationEmail(req: Request, res: Response): Pro
     return;
   }
 
+  if (!isMailerConfigured()) {
+    res.status(503).json({ message: 'Não foi possível enviar e-mails de verificação no momento. Tente novamente mais tarde.' });
+    return;
+  }
+
   try {
     const user = await prisma.user.findUnique({ where: { email: normalizeEmail(email) } });
 
     if (user && !user.emailVerifiedAt) {
       const token = await createVerificationToken(user.id);
-      try {
-        await sendEmailVerification({ email: user.email, name: user.name, token });
-      } catch (mailError) {
-        console.error('[auth/request-verification]', mailError);
-      }
+      await sendEmailVerification({ email: user.email, name: user.name, token });
     }
 
     res.json({ message: 'Se houver uma conta pendente, enviaremos o link de verificação.' });
