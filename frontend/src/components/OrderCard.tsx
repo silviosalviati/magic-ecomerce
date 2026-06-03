@@ -60,6 +60,16 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function formatCurrency(value: number | string): string {
   return formatCurrencyBRL(value);
 }
@@ -219,14 +229,14 @@ export function OrderCard({ order }: { order: Order }) {
             </button>
 
             {expanded && (
-              <ol className="oc-timeline">
+              <ol className="oc-timeline oc-timeline--steps">
                 {order.statusHistory.map((entry, i) => (
-                  <li key={i} className="oc-timeline-item">
-                    <span className="oc-tl-dot" aria-hidden="true" />
+                  <li key={i} className="oc-timeline-item oc-timeline-item--step">
+                    <span className="oc-tl-dot oc-tl-dot--step" aria-hidden="true" />
                     <div className="oc-tl-content">
                       <span className="oc-tl-status">{STATUS_LABELS[entry.status] || entry.status}</span>
                       {entry.note && <span className="oc-tl-note">{entry.note}</span>}
-                      <span className="oc-tl-date">{formatDate(entry.createdAt)}</span>
+                      <span className="oc-tl-date">{formatDateTime(entry.createdAt)}</span>
                     </div>
                   </li>
                 ))}

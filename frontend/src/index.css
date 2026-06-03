@@ -5720,12 +5720,32 @@ textarea:focus-visible {
   flex-direction: column;
 }
 
+.oc-timeline--steps {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+}
+
 .oc-timeline-item {
   display: flex;
   gap: 16px;
   align-items: flex-start;
   padding: 6px 0;
   position: relative;
+}
+
+.oc-timeline-item--step {
+  flex: 1 0 180px;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0.5px solid rgba(231, 196, 190, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  scroll-snap-align: start;
 }
 
 .oc-timeline-item:not(:last-child)::after {
@@ -5749,11 +5769,19 @@ textarea:focus-visible {
   z-index: 1;
 }
 
+.oc-tl-dot--step {
+  margin-top: 6px;
+}
+
 .oc-tl-content {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding-bottom: 8px;
+}
+
+.oc-timeline-item--step .oc-tl-content {
+  padding-bottom: 0;
 }
 
 .oc-tl-status {
@@ -5762,6 +5790,10 @@ textarea:focus-visible {
   font-weight: 500;
   color: var(--color-text-primary);
   letter-spacing: 0.02em;
+}
+
+.oc-timeline-item--step .oc-tl-status {
+  font-size: 13px;
 }
 
 .oc-tl-note {
