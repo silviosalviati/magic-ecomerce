@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { sendStoreNotification, sendCustomerConfirmation, sendPickupContactEmail } from '../config/mailer';
 import { calculateShippingRates } from './melhorenvios.service';
@@ -206,7 +207,7 @@ export async function validateCouponEndpoint(req: Request, res: Response): Promi
 }
 
 export async function createCheckout(req: Request, res: Response): Promise<void> {
-  const userId = (req as AuthRequest).userId ?? null;
+  const authUserId = (req as AuthRequest).userId ?? null;
   const {
     name,
     email,
@@ -291,6 +292,23 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
   }
 
   try {
+    let userId: string | null = null;
+    if (authUserId) {
+      const userExists = await prisma.user.findUnique({
+        where: { id: authUserId },
+        select: { id: true },
+      });
+
+      if (!userExists) {
+        res.status(401).json({
+          message: 'Sua sessão não é mais válida. Faça login novamente para concluir o pagamento.',
+        });
+        return;
+      }
+
+      userId = authUserId;
+    }
+
     // ── Verify stock ──────────────────────────────────────────────────────
     const variantIds = items.map((i) => i.variantId);
     const variants = await prisma.variant.findMany({ where: { id: { in: variantIds } } });
@@ -537,6 +555,26 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           res.status(400).json({ message: msg });
           return;
         }
+      }
+    } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('[checkout][prisma]', {
+        code: error.code,
+        meta: error.meta,
+        message: error.message,
+      });
+
+      if (error.code === 'P2003') {
+        res.status(409).json({
+          message: 'Não foi possível confirmar o pedido com os dados atuais. Atualize a página e tente novamente.',
+        });
+        return;
+      }
+
+      if (error.code === 'P2025') {
+        res.status(409).json({
+          message: 'Um recurso usado no checkout não está mais disponível. Revise a sacola e tente novamente.',
+        });
+        return;
       }
     } else {
       console.error('[checkout]', error);
