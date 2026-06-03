@@ -127,6 +127,54 @@ function logServerError(scope: string, error: unknown): void {
   console.error(`[${scope}]`, error);
 }
 
+function normalizeGroupKey(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function buildProductGroupKey(product: { name: string; category: string }): string {
+  return `${normalizeGroupKey(product.name)}::${normalizeGroupKey(product.category)}`;
+}
+
+function mergeDuplicateProductsByNameAndCategory(products: any[]): any[] {
+  const grouped = new Map<string, any>();
+
+  for (const product of products) {
+    const key = buildProductGroupKey(product);
+    const current = grouped.get(key);
+
+    if (!current) {
+      grouped.set(key, {
+        ...product,
+        variants: [...(product.variants || [])],
+      });
+      continue;
+    }
+
+    const seenVariantIds = new Set((current.variants || []).map((variant: any) => variant.id));
+    for (const variant of product.variants || []) {
+      if (!seenVariantIds.has(variant.id)) {
+        current.variants.push(variant);
+        seenVariantIds.add(variant.id);
+      }
+    }
+
+    if ((!current.images || current.images.length === 0) && product.images?.length) {
+      current.images = product.images;
+    }
+
+    if ((!current.description || current.description.trim().length === 0) && product.description) {
+      current.description = product.description;
+    }
+  }
+
+  return Array.from(grouped.values());
+}
+
 export class ProductsController {
   // GET /products/images/object?path=produtos/...
   async getImageObject(req: Request, res: Response): Promise<void> {
@@ -238,6 +286,11 @@ export class ProductsController {
         return;
       }
 
+      if (!Number.isFinite(normalizedStock) || normalizedStock < 0) {
+        res.status(400).json({ error: 'Estoque inválido.' });
+        return;
+      }
+
       const { product, variant } = await prisma.$transaction(async (tx: any) => {
         const existingVariant = await tx.variant.findUnique({
           where: { barcode: normalizedBarcode },
@@ -247,16 +300,55 @@ export class ProductsController {
           throw new Error('BARCODE_CONFLICT');
         }
 
-        const product = await tx.product.create({
-          data: {
-            name: normalizedName,
-            description: normalizedDescription,
-            category: normalizedCategory,
-            costPrice: costPriceNumber,
-            markup: markupNumber,
-            basePrice: calculatedPriceNumber,
+        const existingProduct = await tx.product.findFirst({
+          where: {
+            name: {
+              equals: normalizedName,
+              mode: 'insensitive',
+            },
+            category: {
+              equals: normalizedCategory,
+              mode: 'insensitive',
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
           },
         });
+
+        const product = existingProduct
+          ? existingProduct
+          : await tx.product.create({
+              data: {
+                name: normalizedName,
+                description: normalizedDescription,
+                category: normalizedCategory,
+                costPrice: costPriceNumber,
+                markup: markupNumber,
+                basePrice: calculatedPriceNumber,
+              },
+            });
+
+        if (existingProduct) {
+          const existingCost = Number(existingProduct.costPrice);
+          const existingMarkup = Number(existingProduct.markup);
+          const costDiff = Math.abs(existingCost - costPriceNumber);
+          const markupDiff = Math.abs(existingMarkup - markupNumber);
+
+          if (costDiff > 0.0001 || markupDiff > 0.0001) {
+            throw new Error('PRODUCT_PRICE_MISMATCH');
+          }
+
+          if (
+            (!existingProduct.description || String(existingProduct.description).trim().length === 0) &&
+            normalizedDescription
+          ) {
+            await tx.product.update({
+              where: { id: existingProduct.id },
+              data: { description: normalizedDescription },
+            });
+          }
+        }
 
         const variant = await tx.variant.create({
           data: {
@@ -282,6 +374,11 @@ export class ProductsController {
         return;
       }
 
+      if (error instanceof Error && error.message === 'PRODUCT_PRICE_MISMATCH') {
+        res.status(409).json({ error: 'Já existe produto com este nome/categoria e custo ou markup diferente.' });
+        return;
+      }
+
       if (isUniqueBarcodeError(error)) {
         res.status(409).json({ error: 'Barcode já cadastrado para outra variante.' });
         return;
@@ -298,7 +395,8 @@ export class ProductsController {
         include: { variants: true },
         orderBy: { createdAt: 'desc' },
       });
-      res.json(products);
+      const groupedProducts = mergeDuplicateProductsByNameAndCategory(products);
+      res.json(groupedProducts);
     } catch (error) {
       logServerError('products.listAll', error);
       res.status(500).json({ error: clientError(error) });
