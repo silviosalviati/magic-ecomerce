@@ -106,6 +106,7 @@ export function CheckoutPage({
   const [couponError, setCouponError] = useState('');
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const discount = couponResult?.valid ? (couponResult.discountAmount ?? 0) : 0;
   const shippingCost = shippingOption?.price ?? 0;
   const total = Math.max(0, subtotal - discount + shippingCost);
@@ -178,6 +179,14 @@ export function CheckoutPage({
     };
   }, [subtotal]);
 
+  useEffect(() => {
+    const cleanCep = addressZip.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+    if (totalQuantity < 1) return;
+
+    void fetchShipping(cleanCep);
+  }, [totalQuantity, addressZip]);
+
   // Render nothing while auth is resolving — prevents flash and wrong redirects
   if (authLoading) return null;
 
@@ -191,8 +200,7 @@ export function CheckoutPage({
     setShippingError(false);
 
     try {
-      const totalQty = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-      const rates = await getShippingRates(cleanCep, totalQty);
+      const rates = await getShippingRates(cleanCep, totalQuantity);
 
       if (requestId !== shippingRequestSeq.current) {
         return;
