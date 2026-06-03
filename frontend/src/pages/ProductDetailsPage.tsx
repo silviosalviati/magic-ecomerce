@@ -388,7 +388,7 @@ export function ProductDetailsPage({
 
             <div className="detail-highlights">
               <div>
-                <span>Curadoria</span>
+                <span>Destaque</span>
                 <strong>Seleção premium MAGI.C</strong>
               </div>
               <div>

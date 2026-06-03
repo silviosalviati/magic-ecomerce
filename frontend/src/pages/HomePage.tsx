@@ -146,7 +146,7 @@ export function HomePage({
   return (
     <>
       <SEO
-        title="Moda Feminina e Masculina com Curadoria Premium"
+        title="Moda Feminina e Masculina Premium"
         description="Compre online roupas femininas e masculinas MAGI.C — tecidos nobres, caimento impecável e entrega rápida para todo o Brasil. Troca grátis em 7 dias, pagamento por PIX ou cartão."
         canonical="/"
         jsonLd={faqJsonLd}

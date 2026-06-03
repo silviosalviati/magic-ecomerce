@@ -15,7 +15,7 @@ const VALUES = [
   {
     number: '02',
     title: 'Estilo Único',
-    body: 'Curadoria de peças que transcendem tendências. Apostamos em designs atemporais que revelam a personalidade de quem os veste, coleção após coleção.',
+    body: 'Peças que transcendem tendências. Apostamos em designs atemporais que revelam a personalidade de quem os veste, coleção após coleção.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="10" />
@@ -47,7 +47,7 @@ export function AboutPage() {
     <main className="about-page">
       <SEO
         title="Sobre a MAGI.C — Nossa História e Valores"
-        description="Conheça a Vista Magic, a marca brasileira de moda com curadoria premium. Qualidade impecável, estilo único e compromisso com quem veste."
+        description="Conheça a Vista Magic, a marca brasileira de moda premium. Qualidade impecável, estilo único e compromisso com quem veste."
         canonical="/sobre"
       />
 
@@ -112,7 +112,7 @@ export function AboutPage() {
             algo verdadeiramente especial.
           </p>
           <p className="about-body">
-            Nossa curadoria é rigorosa. Cada peça que entra em nosso catálogo
+            Nossa seleção é rigorosa. Cada peça que entra em nosso catálogo
             passa por um processo criterioso de seleção — avaliamos tecido,
             caimento, acabamento e, acima de tudo, se ela tem aquela <em>magia</em>{' '}
             capaz de transformar quem a veste.
