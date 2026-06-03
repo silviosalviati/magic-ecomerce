@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
-import { checkout, getCheckoutInstallments, getShippingRates, validateCoupon } from '../lib/api';
+import { checkout, getCheckoutInstallments, getMyOrders, getShippingRates, validateCoupon } from '../lib/api';
 import { formatCurrencyBRL } from '../lib/numberFormat';
 import { useAuth } from '../contexts/AuthContext';
 import type {
@@ -71,7 +71,7 @@ export function CheckoutPage({
   onClearCart,
 }: CheckoutPageProps) {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const [step, setStep] = useState<Step>('details');
   const [cpf, setCpf] = useState(() => {
     try { return formatCpf(localStorage.getItem('magic.checkout.cpf') || ''); } catch { return ''; }
@@ -92,6 +92,7 @@ export function CheckoutPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderResult, setOrderResult] = useState<CheckoutResponse | null>(null);
+  const [liveOrderStatus, setLiveOrderStatus] = useState<string | null>(null);
 
   // Shipping
   const [shippingOption, setShippingOption] = useState<ShippingRateOption | null>(null);
@@ -196,6 +197,62 @@ export function CheckoutPage({
 
     void fetchShipping(cleanCep);
   }, [totalQuantity, addressZip]);
+
+  useEffect(() => {
+    if (step !== 'confirmation' || !orderResult || !orderResult.orderId || !token) {
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+    const maxAttempts = 90; // ~12min @ 8s interval
+
+    const pollOrderStatus = async (): Promise<void> => {
+      attempts += 1;
+      try {
+        const orders = await getMyOrders(token);
+        if (cancelled) return;
+
+        const current = orders.find((o) => o.id === orderResult.orderId);
+        if (!current) return;
+
+        setLiveOrderStatus(current.status);
+
+        if (current.status === 'PAID') {
+          if (timer) {
+            clearInterval(timer);
+            timer = null;
+          }
+
+          redirectTimer = setTimeout(() => {
+            navigate('/conta', {
+              state: { message: `Pagamento confirmado para o pedido #${orderResult.orderId.slice(0, 8).toUpperCase()}.` },
+            });
+          }, 2200);
+        }
+      } catch {
+        // Keep polling quietly; webhook processing can be slightly delayed.
+      }
+
+      if (attempts >= maxAttempts && timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+
+    void pollOrderStatus();
+    timer = setInterval(() => {
+      void pollOrderStatus();
+    }, 8000);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+      if (redirectTimer) clearTimeout(redirectTimer);
+    };
+  }, [step, orderResult, token, navigate]);
 
   // Render nothing while auth is resolving — prevents flash and wrong redirects
   if (authLoading) return null;
@@ -715,6 +772,25 @@ export function CheckoutPage({
           {/* ── STEP 3: CONFIRMAÇÃO ────────────────────────────── */}
           {step === 'confirmation' && orderResult && (
             <section className="checkout-section">
+              {liveOrderStatus === 'PAID' ? (
+                <div className="payment-confirmation card-confirmation">
+                  <div className="confirm-header">
+                    <div className="confirm-icon confirm-icon--success">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="confirmation-title">Pagamento confirmado</h3>
+                      <p className="confirmation-subtitle">
+                        Pedido #{orderResult.orderId.slice(0, 8).toUpperCase()} pago com sucesso.
+                      </p>
+                    </div>
+                  </div>
+                  <p className="confirmation-note">Redirecionando para sua conta...</p>
+                </div>
+              ) : (
+                <>
               {orderResult.paymentMethod === 'PIX' && (
                 <PixConfirmation
                   qrCode={orderResult.pixQrCode!}
@@ -770,6 +846,8 @@ export function CheckoutPage({
                     Pedido #{orderResult.orderId.slice(0, 8).toUpperCase()} registrado com sucesso.
                   </p>
                 </div>
+              )}
+                </>
               )}
 
               <button
