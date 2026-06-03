@@ -13,6 +13,47 @@ type ProductDetailsPageProps = {
   onBuyNow: (item: CartItem) => void;
 };
 
+function extractVariantBarcodeFromImageUrl(imageUrl: string): string | null {
+  const sanitizePath = (value: string): string => decodeURIComponent(value).replace(/^\/+/, '').trim();
+
+  const fromObjectPath = (value: string): string | null => {
+    const objectPath = sanitizePath(value);
+    if (!objectPath.startsWith('produtos/')) return null;
+
+    const segments = objectPath.split('/').filter(Boolean);
+    if (segments.length < 3) return null;
+
+    const barcode = segments[1]?.trim();
+    return barcode || null;
+  };
+
+  if (!imageUrl) return null;
+
+  if (imageUrl.startsWith('produtos/')) {
+    return fromObjectPath(imageUrl);
+  }
+
+  try {
+    const parsed = new URL(imageUrl);
+
+    if (parsed.pathname === '/products/images/object') {
+      const objectPath = String(parsed.searchParams.get('path') || '');
+      return fromObjectPath(objectPath);
+    }
+
+    const pathname = decodeURIComponent(parsed.pathname || '');
+    const marker = '/produtos/';
+    const markerIndex = pathname.indexOf(marker);
+    if (markerIndex >= 0) {
+      return fromObjectPath(pathname.slice(markerIndex + 1));
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function resolveBreadcrumbCategory(category: string): string {
   const normalized = category.toLowerCase();
   if (normalized.includes('femin')) return 'Feminino';
@@ -146,10 +187,40 @@ export function ProductDetailsPage({
   );
   const resolvedSize = hasResolvedSize ? selectedSize : initialVariant.size;
   const variantsForColor = product.variants.filter((variant) => variant.color === resolvedColor);
+  const galleryImages = useMemo(() => {
+    const barcodesForColor = new Set(
+      product.variants
+        .filter((variant) => variant.color === resolvedColor)
+        .map((variant) => variant.barcode)
+        .filter((barcode): barcode is string => Boolean(barcode && barcode.trim().length > 0))
+    );
+
+    if (barcodesForColor.size === 0) {
+      return product.images;
+    }
+
+    const matchingImages = product.images.filter((imageUrl) => {
+      const imageBarcode = extractVariantBarcodeFromImageUrl(imageUrl);
+      return imageBarcode ? barcodesForColor.has(imageBarcode) : false;
+    });
+
+    return matchingImages.length > 0 ? matchingImages : product.images;
+  }, [product.images, product.variants, resolvedColor]);
   const selectedVariant =
     variantsForColor.find((variant) => variant.size === resolvedSize) ||
     pickInitialVariant(variantsForColor) ||
     initialVariant;
+
+  useEffect(() => {
+    if (galleryImages.length === 0) {
+      setActiveImage(product.imageUrl);
+      return;
+    }
+
+    if (!galleryImages.includes(activeImage)) {
+      setActiveImage(galleryImages[0]);
+    }
+  }, [activeImage, galleryImages, product.imageUrl]);
 
   const stockLabel =
     selectedVariant.stock <= 0
@@ -224,7 +295,7 @@ export function ProductDetailsPage({
                 onClick={() => setZoomedOpen(true)}
                 aria-label="Ampliar imagem do produto"
               >
-                <img src={activeImage || product.imageUrl} alt={product.name} />
+                <img src={activeImage || galleryImages[0] || product.imageUrl} alt={product.name} />
                 <span className="product-watermark product-watermark--detail" aria-hidden="true">
                   <img src="/logo/logo-transparent.png" alt="" />
                 </span>
@@ -242,7 +313,7 @@ export function ProductDetailsPage({
               </button>
             </div>
             <div className="detail-thumbs">
-              {product.images.map((image, index) => (
+              {galleryImages.map((image, index) => (
                 <button
                   key={`${image}-${index}`}
                   type="button"
