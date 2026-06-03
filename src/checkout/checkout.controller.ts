@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import axios from 'axios';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
-import { sendStoreNotification, sendCustomerConfirmation, sendPickupContactEmail } from '../config/mailer';
+import { sendStoreNotification, sendCustomerConfirmation } from '../config/mailer';
 import { calculateShippingRates } from './melhorenvios.service';
 import { notifyStoreWhatsApp } from '../config/whatsapp';
 import { validateCoupon } from './coupon.service';
@@ -372,11 +372,6 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
       }
 
-      if (shippingMethod === 'RETIRADA') {
-        sendPickupContactEmail({ customerName: name.trim(), customerEmail: email.trim(), orderId: order.id, total })
-          .catch((err) => console.error('[checkout][pickup-email]', err.message));
-      }
-
       res.json({
         orderId: order.id,
         paymentMethod: 'PIX',
@@ -420,11 +415,6 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 
       if (appliedCouponId) {
         await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
-      }
-
-      if (shippingMethod === 'RETIRADA') {
-        sendPickupContactEmail({ customerName: name.trim(), customerEmail: email.trim(), orderId: order.id, total })
-          .catch((err) => console.error('[checkout][pickup-email]', err.message));
       }
 
       res.json({
@@ -492,11 +482,6 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
 
     if (appliedCouponId) {
       await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
-    }
-
-    if (shippingMethod === 'RETIRADA') {
-      sendPickupContactEmail({ customerName: name.trim(), customerEmail: email.trim(), orderId: order.id, total })
-        .catch((err) => console.error('[checkout][pickup-email]', err.message));
     }
 
     res.json({
