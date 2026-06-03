@@ -7912,6 +7912,78 @@ textarea:focus-visible {
   color: var(--adm-text-2);
   margin: 0;
 }
+.adm-foto-section-label {
+  font-family: var(--adm-font-ui);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #6B5F5C;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.adm-foto-variant-panel {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 0.5px solid var(--adm-border-sub);
+  background: rgba(12, 12, 12, 0.48);
+}
+.adm-foto-variant-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.adm-foto-variant-help {
+  margin: 0;
+  font-family: var(--adm-font-ui);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--adm-text-3);
+}
+.adm-foto-variant-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 520px;
+}
+.adm-foto-variant-select-label {
+  font-family: var(--adm-font-ui);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--adm-text-3);
+}
+.adm-foto-variant-select {
+  width: 100%;
+  background: var(--adm-bg-raised);
+  border: 0.5px solid var(--adm-border);
+  color: var(--adm-text);
+  font-family: var(--adm-font-ui);
+  font-size: 13px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.adm-foto-variant-select:focus {
+  border-color: rgba(232,180,176,0.35);
+}
+.adm-foto-variant-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.adm-foto-variant-selected span {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 0.5px solid var(--adm-border);
+  background: rgba(232,180,176,0.06);
+  font-family: var(--adm-font-ui);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--adm-text-2);
+}
 .adm-foto-current {
   display: flex;
   gap: 8px;
@@ -7979,6 +8051,15 @@ textarea:focus-visible {
   position: relative;
   z-index: 1;
   text-align: center;
+}
+@media (max-width: 640px) {
+  .adm-foto-variant-panel {
+    padding: 12px;
+  }
+  .adm-foto-variant-select {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
 }
 
 /* Leitor page */

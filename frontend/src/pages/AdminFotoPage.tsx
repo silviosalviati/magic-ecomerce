@@ -49,6 +49,10 @@ export function AdminFotoPage() {
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
 
+  const selectedVariant = result?.product?.variants.find(
+    (variant) => (variant.barcode || '') === selectedBarcode
+  );
+
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim()) return;
@@ -165,31 +169,49 @@ export function AdminFotoPage() {
             <p className="adm-foto-product-name">{result.product.name}</p>
             <p className="adm-foto-product-meta">{result.product.category} · {result.product.variants.length} variante(s)</p>
 
-            <div style={{ marginTop: 12, maxWidth: 420 }}>
-              <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, letterSpacing: '0.1em', color: '#6B5F5C', textTransform: 'uppercase', margin: '0 0 8px' }}>
-                Variante para vincular fotos
-              </p>
-              <select
-                className="adm-foto-search-input"
-                value={selectedBarcode}
-                onChange={(e) => setSelectedBarcode(e.target.value)}
-              >
-                <option value="">Selecione uma variante</option>
-                {result.product.variants.map((variant) => (
-                  <option
-                    key={variant.id}
-                    value={variant.barcode || ''}
-                    disabled={!variant.barcode}
-                  >
-                    {variant.color} / {variant.size} {variant.barcode ? `· ${variant.barcode}` : '· sem código de barras'}
-                  </option>
-                ))}
-              </select>
+            <div className="adm-foto-variant-panel">
+              <div className="adm-foto-variant-head">
+                <p className="adm-foto-section-label">Variante para vincular fotos</p>
+                <p className="adm-foto-variant-help">
+                  As fotos enviadas serão exibidas na vitrine quando a cor desta variante for selecionada.
+                </p>
+              </div>
+
+              <div className="adm-foto-variant-control">
+                <label htmlFor="adm-foto-variant-select" className="adm-foto-variant-select-label">
+                  Cor / Tamanho / Código de barras
+                </label>
+                <select
+                  id="adm-foto-variant-select"
+                  className="adm-foto-variant-select"
+                  value={selectedBarcode}
+                  onChange={(e) => setSelectedBarcode(e.target.value)}
+                >
+                  <option value="">Selecione uma variante</option>
+                  {result.product.variants.map((variant) => (
+                    <option
+                      key={variant.id}
+                      value={variant.barcode || ''}
+                      disabled={!variant.barcode}
+                    >
+                      {variant.color} / {variant.size} {variant.barcode ? `· ${variant.barcode}` : '· sem código de barras'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedVariant && (
+                <div className="adm-foto-variant-selected">
+                  <span>{selectedVariant.color}</span>
+                  <span>{selectedVariant.size}</span>
+                  <span>{selectedVariant.barcode}</span>
+                </div>
+              )}
             </div>
 
             {result.product.images.length > 0 && (
               <div>
-                <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, letterSpacing: '0.1em', color: '#6B5F5C', textTransform: 'uppercase', margin: '16px 0 8px' }}>
+                <p className="adm-foto-section-label" style={{ marginTop: 18 }}>
                   Fotos atuais
                 </p>
                 <div className="adm-foto-current">
@@ -203,7 +225,7 @@ export function AdminFotoPage() {
 
           {/* Upload form */}
           <form onSubmit={handleUpload}>
-            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, letterSpacing: '0.1em', color: '#6B5F5C', textTransform: 'uppercase', margin: '0 0 12px' }}>
+            <p className="adm-foto-section-label" style={{ marginBottom: 12 }}>
               Enviar novas fotos
             </p>
 
