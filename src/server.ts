@@ -7,6 +7,7 @@ import { ordersRouter } from './orders/orders.routes';
 import { authRouter } from './auth/auth.routes';
 import { prisma } from './config/database';
 import { cleanupNonVariantPhotos } from './admin/photo-cleanup.service';
+import { cleanupDuplicateProducts } from './products/product-merge-cleanup.service';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -145,6 +146,19 @@ const server = app.listen(PORT, () => {
       })
       .catch((error) => {
         console.error('[cleanup][non-variant-photos] falhou', error);
+      });
+  }
+
+  const shouldCleanupDuplicateProducts =
+    String(process.env.CLEANUP_DUPLICATE_PRODUCTS || '').trim().toLowerCase() === 'true';
+
+  if (shouldCleanupDuplicateProducts) {
+    cleanupDuplicateProducts()
+      .then((result) => {
+        console.log('[cleanup][duplicate-products] concluído', result);
+      })
+      .catch((error) => {
+        console.error('[cleanup][duplicate-products] falhou', error);
       });
   }
 });
