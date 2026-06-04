@@ -2,10 +2,9 @@ import { Request, Response } from 'express';
 import axios from 'axios';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
-import { sendStoreNotification, sendCustomerConfirmation } from '../config/mailer';
 import { calculateShippingRates } from './melhorenvios.service';
-import { notifyStoreWhatsApp } from '../config/whatsapp';
 import { syncOrderStockForStatusTransition } from '../orders/order-stock.service';
+import { sendCustomerStatusEmail, sendPaidOrderNotifications } from '../orders/order-notification.service';
 import { validateCoupon } from './coupon.service';
 import {
   findOrCreateCustomer,
@@ -637,6 +636,10 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
       await prisma.coupon.update({ where: { id: appliedCouponId }, data: { usedCount: { increment: 1 } } });
     }
 
+    if (order.status === 'PAID') {
+      await sendPaidOrderNotifications(order.id);
+    }
+
     res.json({
       orderId: order.id,
       paymentMethod: 'CREDIT_CARD',
@@ -803,46 +806,9 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
       }
 
       if (newStatus === 'PAID' && order.status !== 'PAID') {
-        // Send notifications (non-blocking)
-        const emailItems = order.items.map((item) => ({
-          variantId: item.variantId,
-          quantity: item.quantity,
-          priceAtPurchase: item.priceAtPurchase,
-          productName: item.variant.product.name,
-          color: item.variant.color,
-          size: item.variant.size,
-        }));
-
-        const emailData = {
-          orderId: order.id,
-          customerName: order.guestName || 'Cliente',
-          customerEmail: order.guestEmail || '',
-          customerCpf: order.guestCpf || '',
-          paymentMethod: 'PIX',
-          total: Number(order.total),
-          items: emailItems.map((item) => ({
-            ...item,
-            priceAtPurchase: Number(item.priceAtPurchase),
-          })),
-        };
-
-        sendStoreNotification(emailData).catch((err) =>
-          console.error('[webhook][email-store]', err.message)
-        );
-
-        if (order.guestEmail) {
-          sendCustomerConfirmation(emailData).catch((err) =>
-            console.error('[webhook][email-customer]', err.message)
-          );
-        }
-
-        notifyStoreWhatsApp({
-          orderId: order.id,
-          customerName: order.guestName || 'Cliente',
-          paymentMethod: 'PIX',
-          total: Number(order.total),
-          itemCount: order.items.length,
-        }).catch((err) => console.error('[webhook][whatsapp]', err.message));
+        await sendPaidOrderNotifications(order.id);
+      } else if (statusChanged) {
+        await sendCustomerStatusEmail(order.id, newStatus);
       }
     }
 

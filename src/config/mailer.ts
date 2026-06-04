@@ -73,6 +73,13 @@ interface OrderEmailData {
   };
 }
 
+interface OrderStatusEmailData extends OrderEmailData {
+  status: string;
+  shippingMethod?: string | null;
+  trackingCode?: string | null;
+  trackingUrl?: string | null;
+}
+
 const PAYMENT_LABELS: Record<string, string> = {
   PIX: 'PIX',
   BOLETO: 'Boleto Bancário',
@@ -373,6 +380,161 @@ export async function sendCustomerConfirmation(data: OrderEmailData): Promise<vo
     from: `"Magic" <${process.env.SMTP_USER}>`,
     to: data.customerEmail,
     subject: `Pedido confirmado ${orderRef} — Magic`,
+    html,
+  });
+}
+
+function getOrderStatusEmailCopy(data: OrderStatusEmailData): {
+  eyebrow: string;
+  title: string;
+  intro: string;
+  detail: string;
+  statusLabel: string;
+} | null {
+  const isPickup = data.shippingMethod === 'PICKUP';
+
+  switch (data.status) {
+    case 'PREPARING':
+      return {
+        eyebrow: 'Pedido em separação',
+        title: 'Seu pedido já está sendo preparado com muito carinho.',
+        intro: 'Ficamos muito felizes com a sua compra e já começamos a separar cada detalhe com atenção.',
+        detail: 'Sua mercadoria está na etapa de preparação e em breve seguirá para a próxima fase.',
+        statusLabel: 'Em separação',
+      };
+    case 'SHIPPED':
+      return isPickup
+        ? {
+            eyebrow: 'Pedido pronto para retirada',
+            title: 'Seu pedido já está prontinho para te encontrar.',
+            intro: 'Que alegria avisar: sua compra já está separada e disponível para retirada.',
+            detail: 'Sua mercadoria está aguardando você para retirada na loja.',
+            statusLabel: 'Pronto para retirada',
+          }
+        : {
+            eyebrow: 'Pedido enviado',
+            title: 'Sua encomenda já saiu daqui com destino a você.',
+            intro: 'É uma alegria acompanhar esse momento com você: seu pedido já foi despachado.',
+            detail: 'Sua mercadoria está em trânsito e seguindo o caminho até o endereço informado.',
+            statusLabel: 'Enviado',
+          };
+    case 'DELIVERED':
+      return isPickup
+        ? {
+            eyebrow: 'Pedido retirado',
+            title: 'Sua retirada foi concluída com sucesso.',
+            intro: 'Obrigada por comprar com a Magic. Esperamos que essa nova peça faça parte de muitos momentos especiais.',
+            detail: 'Sua mercadoria já foi retirada e o ciclo do pedido foi concluído.',
+            statusLabel: 'Retirado',
+          }
+        : {
+            eyebrow: 'Pedido entregue',
+            title: 'Seu pedido foi entregue.',
+            intro: 'Que alegria chegar até aqui com você. Sua compra já está em suas mãos.',
+            detail: 'Sua mercadoria foi entregue e o pedido foi concluído com sucesso.',
+            statusLabel: 'Entregue',
+          };
+    case 'REFUNDED':
+      return {
+        eyebrow: 'Pedido reembolsado',
+        title: 'Seu reembolso foi processado.',
+        intro: 'Cuidamos para que tudo siga com clareza e tranquilidade para você.',
+        detail: 'O pagamento do seu pedido foi estornado e o pedido foi encerrado.',
+        statusLabel: 'Reembolsado',
+      };
+    case 'CANCELLED':
+      return {
+        eyebrow: 'Pedido cancelado',
+        title: 'Seu pedido foi cancelado.',
+        intro: 'Sentimos que este pedido não tenha seguido adiante, mas seguimos por aqui para o que precisar.',
+        detail: 'O ciclo deste pedido foi encerrado com status de cancelamento.',
+        statusLabel: 'Cancelado',
+      };
+    case 'OVERDUE':
+      return {
+        eyebrow: 'Pagamento pendente',
+        title: 'Ainda não identificamos a confirmação do pagamento.',
+        intro: 'Seu pedido continua registrado com a gente e você pode tentar novamente quando quiser.',
+        detail: 'Neste momento, sua mercadoria ainda não avançou no ciclo porque o pagamento ficou vencido.',
+        statusLabel: 'Pagamento vencido',
+      };
+    default:
+      return null;
+  }
+}
+
+export async function sendCustomerOrderStatusUpdate(data: OrderStatusEmailData): Promise<void> {
+  assertMailerAvailable();
+
+  const copy = getOrderStatusEmailCopy(data);
+  if (!copy) return;
+
+  const firstName = escapeHtml(data.customerName.split(' ')[0]);
+  const orderRef = `#${data.orderId.slice(0, 8).toUpperCase()}`;
+  const trackUrl = buildFrontendUrl('/rastrear-pedido');
+  const trackingInfo = data.trackingCode
+    ? `<p style="margin:18px 0 0;padding:13px 16px;background:${BG};border:1px solid ${BORDER};font-family:${MONO};font-size:11px;color:${MUTED};line-height:1.7;">Código de rastreio: ${escapeHtml(data.trackingCode)}</p>`
+    : '';
+  const trackingLink = data.trackingUrl
+    ? `<p style="margin:14px 0 0;font-family:${SANS};font-size:13px;line-height:1.7;color:${MUTED};">Acompanhe por este link: <a href="${escapeHtml(data.trackingUrl)}" style="color:${ACCENT};text-decoration:none;">ver andamento da entrega</a></p>`
+    : '';
+
+  const html = emailShell(`
+    ${emailHeader()}
+    <tr>
+      <td style="background:linear-gradient(160deg,#1A1210 0%,#1E1614 55%,#1A1210 100%);border:1px solid ${BORDER};border-top:none;border-bottom:none;padding:40px 40px 36px;">
+        <p style="margin:0 0 6px;font-family:${SANS};font-size:11px;letter-spacing:2px;color:${FAINT};text-transform:uppercase;">${copy.eyebrow}</p>
+        <h1 style="margin:0 0 8px;font-family:${SERIF};font-size:30px;font-weight:400;color:${TEXT};line-height:1.3;">${copy.title}</h1>
+        <p style="margin:0;font-family:${SANS};font-size:14px;line-height:1.7;color:${MUTED};">${firstName}, ${copy.intro}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:${CARD};border:1px solid ${BORDER};border-top:none;padding:28px 40px 36px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:22px;">
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid ${BORDER};width:38%;">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Pedido</p>
+            </td>
+            <td style="padding:10px 0 10px 16px;border-bottom:1px solid ${BORDER};">
+              <p style="margin:0;font-family:${MONO};font-size:13px;color:${TEXT};">${orderRef}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;">
+              <p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:1px;color:${FAINT};text-transform:uppercase;">Etapa atual</p>
+            </td>
+            <td style="padding:10px 0 10px 16px;">
+              <p style="margin:0;font-family:${SANS};font-size:14px;color:${ACCENT};">${copy.statusLabel}</p>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:0;font-family:${SANS};font-size:14px;line-height:1.8;color:${TEXT};">${copy.detail}</p>
+        ${trackingInfo}
+        ${trackingLink}
+
+        <div style="margin-top:28px;border-top:1px solid ${BORDER};padding-top:28px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td bgcolor="${ACCENT}">
+                <a href="${trackUrl}" style="display:inline-block;padding:15px 36px;font-family:${SANS};font-size:12px;font-weight:700;letter-spacing:2px;color:#0A0A0A;text-decoration:none;text-transform:uppercase;">ACOMPANHAR PEDIDO</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:22px 0 0;font-family:${SANS};font-size:12px;color:${FAINT};line-height:1.6;">
+            Se precisar, estamos por aqui no WhatsApp:
+            <a href="https://wa.me/5511969707136" style="color:${MUTED};text-decoration:none;">(11)&nbsp;96970&#8209;7136</a>
+          </p>
+        </div>
+      </td>
+    </tr>
+    ${emailFooter('Seguimos acompanhando seu pedido com carinho e avisaremos cada novo avanço por aqui.')}
+  `);
+
+  await transporter.sendMail({
+    from: `"Magic" <${process.env.SMTP_USER}>`,
+    to: data.customerEmail,
+    subject: `${copy.statusLabel} ${orderRef} — Magic`,
     html,
   });
 }

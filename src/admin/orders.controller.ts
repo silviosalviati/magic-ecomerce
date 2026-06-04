@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { getPaymentById } from '../checkout/asaas.service';
+import { sendCustomerStatusEmail, sendPaidOrderNotifications } from '../orders/order-notification.service';
 import { syncOrderStockForStatusTransition } from '../orders/order-stock.service';
 
 const VALID_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
@@ -167,6 +168,12 @@ export async function updateOrder(req: Request, res: Response): Promise<void> {
       return updatedOrder;
     });
 
+    if (status === 'PAID') {
+      await sendPaidOrderNotifications(order.id);
+    } else if (status) {
+      await sendCustomerStatusEmail(order.id, status);
+    }
+
     res.json(order);
   } catch (error: unknown) {
     if ((error as { code?: string }).code === 'P2025') {
@@ -261,6 +268,12 @@ export async function reconcileOrderPayment(req: Request, res: Response): Promis
 
       return reconciledOrder;
     });
+
+    if (mappedStatus === 'PAID') {
+      await sendPaidOrderNotifications(updatedOrder.id);
+    } else {
+      await sendCustomerStatusEmail(updatedOrder.id, mappedStatus);
+    }
 
     res.json({
       updated: true,
