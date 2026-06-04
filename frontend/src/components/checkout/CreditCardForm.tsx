@@ -204,7 +204,7 @@ export function CreditCardForm({
           </div>
           {installmentSource === 'asaas' ? (
             <small className="field-hint">
-              Sem juros em até {noInterestLimit}x. A partir da próxima parcela, juros de 2,99% ao mes entram no valor total.
+              Sem juros em até {noInterestLimit}x. A partir da próxima parcela, juros de 2,99% ao mês entram no valor total.
             </small>
           ) : Number(maxNoInterestInstallments) > 0 && (
             <small className="field-hint">
