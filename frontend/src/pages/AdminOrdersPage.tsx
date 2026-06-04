@@ -387,7 +387,6 @@ export function AdminOrdersPage() {
                 const isTerminal = ['CANCELLED', 'OVERDUE', 'REFUNDED'].includes(st);
                 const wfSteps    = getWorkflowSteps(sm);
                 const currentIdx = WORKFLOW_IDX[st] ?? -1;
-                const isWorkflowCompleted = st === 'DELIVERED';
 
                 return (
                   <div style={{ marginBottom: 22, paddingBottom: 22, borderBottom: '0.5px solid #1E1E1E' }}>
@@ -400,8 +399,9 @@ export function AdminOrdersPage() {
                     {!isTerminal && (
                       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18 }}>
                         {wfSteps.map((step, i) => {
-                          const done    = i < currentIdx || (isWorkflowCompleted && i === currentIdx);
-                          const current = i === currentIdx && !isWorkflowCompleted;
+                          const done    = i <= currentIdx;
+                          const current = false;
+                          const lineDone = i < currentIdx;
                           return (
                             <div key={step.status} style={{ display: 'flex', alignItems: 'flex-start', flex: i < wfSteps.length - 1 ? 1 : 0 }}>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
@@ -420,7 +420,7 @@ export function AdminOrdersPage() {
                                 </span>
                               </div>
                               {i < wfSteps.length - 1 && (
-                                <div style={{ flex: 1, height: 1, background: done ? '#5BA882' : '#1E1E1E', marginTop: 10, marginLeft: 3, marginRight: 3, flexShrink: 0, minWidth: 10 }} />
+                                <div style={{ flex: 1, height: 1, background: lineDone ? '#5BA882' : '#1E1E1E', marginTop: 10, marginLeft: 3, marginRight: 3, flexShrink: 0, minWidth: 10 }} />
                               )}
                             </div>
                           );
