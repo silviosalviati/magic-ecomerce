@@ -58,6 +58,25 @@ function extractVariantBarcodeFromImageUrl(imageUrl: string): string | null {
   return null;
 }
 
+function resolveApiBaseFromImageUrl(imageUrl: string): string | null {
+  if (!imageUrl) return null;
+  try {
+    const parsed = new URL(imageUrl);
+    if (parsed.pathname === '/products/images/object') {
+      return `${parsed.protocol}//${parsed.host}`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function buildVariantImageProxyUrl(apiBaseUrl: string, barcode: string, side: 'Frente' | 'Costas'): string {
+  const normalizedBarcode = normalizeBarcodeKey(barcode);
+  const objectPath = `produtos/${normalizedBarcode}/${barcode}_${side}.jpg`;
+  return `${apiBaseUrl}/products/images/object?path=${encodeURIComponent(objectPath)}`;
+}
+
 function resolveBreadcrumbCategory(category: string): string {
   const normalized = category.toLowerCase();
   if (normalized.includes('femin')) return 'Feminino';
@@ -208,7 +227,28 @@ export function ProductDetailsPage({
       return imageBarcode ? barcodesForColor.has(normalizeBarcodeKey(imageBarcode)) : false;
     });
 
-    return matchingImages.length > 0 ? matchingImages : product.images;
+    if (matchingImages.length > 0) {
+      return matchingImages;
+    }
+
+    const apiBaseUrl =
+      product.images.map((imageUrl) => resolveApiBaseFromImageUrl(imageUrl)).find(Boolean) ||
+      resolveApiBaseFromImageUrl(product.imageUrl);
+
+    if (!apiBaseUrl) {
+      return product.images;
+    }
+
+    const fallbackImages: string[] = [];
+    for (const variant of product.variants) {
+      if (variant.color !== resolvedColor) continue;
+      const barcode = String(variant.barcode || '').trim();
+      if (!barcode) continue;
+      fallbackImages.push(buildVariantImageProxyUrl(apiBaseUrl, barcode, 'Frente'));
+      fallbackImages.push(buildVariantImageProxyUrl(apiBaseUrl, barcode, 'Costas'));
+    }
+
+    return fallbackImages.length > 0 ? fallbackImages : product.images;
   }, [product.images, product.variants, resolvedColor]);
   const selectedVariant =
     variantsForColor.find((variant) => variant.size === resolvedSize) ||
