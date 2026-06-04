@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { getPaymentById } from '../checkout/asaas.service';
+import { syncOrderStockForStatusTransition } from '../orders/order-stock.service';
 
 const VALID_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
 const VALID_SHIPPING = ['CORREIOS', 'PAC', 'SEDEX', 'UBER', 'PICKUP'];
@@ -118,22 +119,53 @@ export async function updateOrder(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const updateData: Record<string, unknown> = {};
-    if (status) updateData.status = status;
-    if (shippingMethod !== undefined) updateData.shippingMethod = shippingMethod;
-    if (trackingCode !== undefined) updateData.trackingCode = trackingCode || null;
-    if (trackingUrl !== undefined) updateData.trackingUrl = trackingUrl || null;
-
-    const order = await prisma.order.update({
-      where: { id },
-      data: updateData,
-    });
-
-    if (status) {
-      await prisma.orderStatusUpdate.create({
-        data: { orderId: id, status, note: note?.trim() || null },
+    const order = await prisma.$transaction(async (tx) => {
+      const existingOrder = await tx.order.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          status: true,
+          items: {
+            select: {
+              variantId: true,
+              quantity: true,
+            },
+          },
+        },
       });
-    }
+
+      if (!existingOrder) {
+        throw Object.assign(new Error('Pedido não encontrado.'), { code: 'P2025' });
+      }
+
+      const updateData: Record<string, unknown> = {};
+      if (status) updateData.status = status;
+      if (shippingMethod !== undefined) updateData.shippingMethod = shippingMethod;
+      if (trackingCode !== undefined) updateData.trackingCode = trackingCode || null;
+      if (trackingUrl !== undefined) updateData.trackingUrl = trackingUrl || null;
+
+      if (status) {
+        await syncOrderStockForStatusTransition(tx, {
+          orderId: existingOrder.id,
+          previousStatus: existingOrder.status,
+          nextStatus: status,
+          items: existingOrder.items,
+        });
+      }
+
+      const updatedOrder = await tx.order.update({
+        where: { id },
+        data: updateData,
+      });
+
+      if (status) {
+        await tx.orderStatusUpdate.create({
+          data: { orderId: id, status, note: note?.trim() || null },
+        });
+      }
+
+      return updatedOrder;
+    });
 
     res.json(order);
   } catch (error: unknown) {
@@ -187,18 +219,47 @@ export async function reconcileOrderPayment(req: Request, res: Response): Promis
       return;
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: order.id },
-      data: { status: mappedStatus },
-      select: { id: true, status: true },
-    });
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const existingOrder = await tx.order.findUnique({
+        where: { id: order.id },
+        select: {
+          id: true,
+          status: true,
+          items: {
+            select: {
+              variantId: true,
+              quantity: true,
+            },
+          },
+        },
+      });
 
-    await prisma.orderStatusUpdate.create({
-      data: {
-        orderId: order.id,
-        status: mappedStatus,
-        note: `Reconciliação manual Asaas (${providerStatus})`,
-      },
+      if (!existingOrder) {
+        throw Object.assign(new Error('Pedido não encontrado.'), { code: 'P2025' });
+      }
+
+      await syncOrderStockForStatusTransition(tx, {
+        orderId: existingOrder.id,
+        previousStatus: existingOrder.status,
+        nextStatus: mappedStatus,
+        items: existingOrder.items,
+      });
+
+      const reconciledOrder = await tx.order.update({
+        where: { id: order.id },
+        data: { status: mappedStatus },
+        select: { id: true, status: true },
+      });
+
+      await tx.orderStatusUpdate.create({
+        data: {
+          orderId: order.id,
+          status: mappedStatus,
+          note: `Reconciliação manual Asaas (${providerStatus})`,
+        },
+      });
+
+      return reconciledOrder;
     });
 
     res.json({

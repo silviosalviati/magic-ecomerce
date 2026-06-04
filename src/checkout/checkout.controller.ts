@@ -5,6 +5,7 @@ import { prisma } from '../config/database';
 import { sendStoreNotification, sendCustomerConfirmation } from '../config/mailer';
 import { calculateShippingRates } from './melhorenvios.service';
 import { notifyStoreWhatsApp } from '../config/whatsapp';
+import { syncOrderStockForStatusTransition } from '../orders/order-stock.service';
 import { validateCoupon } from './coupon.service';
 import {
   findOrCreateCustomer,
@@ -144,23 +145,6 @@ const MARKET_FIXED_FEE = 0.49;
 
 function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
-}
-
-function isSandboxAsaas(): boolean {
-  const base = String(process.env.ASAAS_BASE_URL || '').toLowerCase();
-  return base.includes('sandbox');
-}
-
-function shouldUpdateStockOnPaidWebhook(): boolean {
-  const configured = String(process.env.CHECKOUT_UPDATE_STOCK_ON_PAYMENT || '')
-    .trim()
-    .toLowerCase();
-
-  if (configured === 'true') return true;
-  if (configured === 'false') return false;
-
-  // Default behavior: keep stock untouched in sandbox/test checkouts.
-  return !isSandboxAsaas();
 }
 
 function buildFallbackInstallments(total: number): InstallmentOptionDto[] {
@@ -598,36 +582,55 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
       safeInstallments,
     );
 
-    const order = await prisma.order.create({
-      data: {
-        total,
-        status: payment.status === 'CONFIRMED' || payment.status === 'RECEIVED' ? 'PAID' : 'PENDING',
-        paymentId: payment.id,
-        paymentMethod: 'CREDIT_CARD',
-        guestName: name.trim(),
-        guestEmail: email.trim(),
-        guestCpf: cpfClean,
-        shippingMethod: normalizedShipping.shippingMethod,
-        shippingLabel: normalizedShipping.shippingLabel,
-        shippingCost: normalizedShipping.shippingCost,
-        addressStreet: addressStreet?.trim() || null,
-        addressNumber: addressNumber?.trim() || null,
-        addressComplement: addressComplement?.trim() || null,
-        addressNeighborhood: addressNeighborhood?.trim() || null,
-        addressCity: addressCity?.trim() || null,
-        addressState: addressState?.trim() || null,
-        addressZip: addressZip?.replace(/\D/g, '') || null,
-        couponCode: appliedCouponCode,
-        discountAmount: discountAmount > 0 ? discountAmount : null,
-        ...(userId ? { userId } : {}),
-        items: {
-          create: items.map((i) => ({
-            variantId: i.variantId,
-            quantity: i.quantity,
-            priceAtPurchase: i.priceAtPurchase,
-          })),
+    const order = await prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          total,
+          status: payment.status === 'CONFIRMED' || payment.status === 'RECEIVED' ? 'PAID' : 'PENDING',
+          paymentId: payment.id,
+          paymentMethod: 'CREDIT_CARD',
+          guestName: name.trim(),
+          guestEmail: email.trim(),
+          guestCpf: cpfClean,
+          shippingMethod: normalizedShipping.shippingMethod,
+          shippingLabel: normalizedShipping.shippingLabel,
+          shippingCost: normalizedShipping.shippingCost,
+          addressStreet: addressStreet?.trim() || null,
+          addressNumber: addressNumber?.trim() || null,
+          addressComplement: addressComplement?.trim() || null,
+          addressNeighborhood: addressNeighborhood?.trim() || null,
+          addressCity: addressCity?.trim() || null,
+          addressState: addressState?.trim() || null,
+          addressZip: addressZip?.replace(/\D/g, '') || null,
+          couponCode: appliedCouponCode,
+          discountAmount: discountAmount > 0 ? discountAmount : null,
+          ...(userId ? { userId } : {}),
+          items: {
+            create: items.map((i) => ({
+              variantId: i.variantId,
+              quantity: i.quantity,
+              priceAtPurchase: i.priceAtPurchase,
+            })),
+          },
         },
-      },
+        include: {
+          items: {
+            select: {
+              variantId: true,
+              quantity: true,
+            },
+          },
+        },
+      });
+
+      await syncOrderStockForStatusTransition(tx, {
+        orderId: createdOrder.id,
+        previousStatus: 'PENDING',
+        nextStatus: createdOrder.status,
+        items: createdOrder.items,
+      });
+
+      return createdOrder;
     });
 
     if (appliedCouponId) {
@@ -758,8 +761,6 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const updateStockOnPaid = shouldUpdateStockOnPaidWebhook();
-
     const orders = await prisma.order.findMany({
       where: { paymentId: payment.id },
       select: {
@@ -782,36 +783,26 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
     for (const order of orders) {
       const statusChanged = order.status !== newStatus;
       if (statusChanged) {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: newStatus },
-        });
+        await prisma.$transaction(async (tx) => {
+          await syncOrderStockForStatusTransition(tx, {
+            orderId: order.id,
+            previousStatus: order.status,
+            nextStatus: newStatus,
+            items: order.items,
+          });
 
-        try {
-          await prisma.orderStatusUpdate.create({
+          await tx.order.update({
+            where: { id: order.id },
+            data: { status: newStatus },
+          });
+
+          await tx.orderStatusUpdate.create({
             data: { orderId: order.id, status: newStatus },
           });
-        } catch (statusUpdateError) {
-          console.error('[webhook][status-update]', statusUpdateError);
-        }
+        });
       }
 
-      // Idempotency: only execute post-payment effects once when status transitions to PAID.
       if (newStatus === 'PAID' && order.status !== 'PAID') {
-        if (updateStockOnPaid) {
-          for (const item of order.items) {
-            await prisma.variant.update({
-              where: { id: item.variantId },
-              data: { stock: { decrement: item.quantity } },
-            });
-          }
-        } else {
-          console.log('[webhook][stock] skipping stock decrement (sandbox mode)', {
-            orderId: order.id,
-            paymentId: payment.id,
-          });
-        }
-
         // Send notifications (non-blocking)
         const emailItems = order.items.map((item) => ({
           variantId: item.variantId,
