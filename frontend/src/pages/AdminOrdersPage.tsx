@@ -312,7 +312,7 @@ export function AdminOrdersPage() {
           <option value="">Todos os status</option>
           {ALL_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>)}
         </select>
-        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#6B5F5C', marginLeft: 'auto' }}>
+        <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, color: '#6B5F5C', marginLeft: 'auto' }}>
           {formatIntegerBR(orders.length)} pedido(s)
         </p>
       </div>
@@ -373,7 +373,7 @@ export function AdminOrdersPage() {
             </div>
 
             <div className="adm-panel-body">
-              <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 13, color: '#9A8D87', margin: '0 0 20px' }}>
+              <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 13, color: '#9A8D87', margin: '0 0 20px' }}>
                 {selected.guestName} · {formatCurrency(selected.total)}
               </p>
 
@@ -391,7 +391,7 @@ export function AdminOrdersPage() {
                 return (
                   <div style={{ marginBottom: 22, paddingBottom: 22, borderBottom: '0.5px solid #1E1E1E' }}>
                     {/* Section label */}
-                    <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4A4040', margin: '0 0 14px' }}>
+                    <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4A4040', margin: '0 0 14px' }}>
                       Ciclo do pedido
                     </p>
 
@@ -415,7 +415,7 @@ export function AdminOrdersPage() {
                                   {done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                                   {current && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0A0A0A' }} />}
                                 </div>
-                                <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 9, color: done ? '#5BA882' : current ? '#C8C0BC' : '#3A3A3A', marginTop: 5, textAlign: 'center', lineHeight: 1.3, maxWidth: 52 }}>
+                                <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 9, color: done ? '#5BA882' : current ? '#C8C0BC' : '#3A3A3A', marginTop: 5, textAlign: 'center', lineHeight: 1.3, maxWidth: 52 }}>
                                   {step.label}
                                 </span>
                               </div>
@@ -430,7 +430,7 @@ export function AdminOrdersPage() {
 
                     {/* Terminal state */}
                     {isTerminal && (
-                      <div style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#EF8BA0', marginBottom: 12 }}>
+                      <div style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, color: '#EF8BA0', marginBottom: 12 }}>
                         {STATUS_LABELS[st] || st}
                       </div>
                     )}
@@ -442,7 +442,7 @@ export function AdminOrdersPage() {
                         {/* PAID → PREPARING */}
                         {st === 'PAID' && (
                           <>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Iniciar separação do pedido
                             </p>
                             <div className="adm-field" style={{ marginBottom: 12 }}>
@@ -451,7 +451,7 @@ export function AdminOrdersPage() {
                                 value={actionForm.note}
                                 onChange={(e) => setActionForm((f) => ({ ...f, note: e.target.value }))} />
                             </div>
-                            {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
+                            {actionError && <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
                               onClick={() => void advanceOrder('PREPARING')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
@@ -463,7 +463,7 @@ export function AdminOrdersPage() {
                         {/* PREPARING + CORREIOS → SHIPPED */}
                         {st === 'PREPARING' && isCorreios && (
                           <>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Enviar pelos Correios
                             </p>
                             <div className="adm-field" style={{ marginBottom: 10 }}>
@@ -481,7 +481,7 @@ export function AdminOrdersPage() {
                                 value={actionForm.note}
                                 onChange={(e) => setActionForm((f) => ({ ...f, note: e.target.value }))} />
                             </div>
-                            {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
+                            {actionError && <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
                               onClick={() => void advanceOrder('SHIPPED', { requireTracking: true })}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
@@ -493,7 +493,7 @@ export function AdminOrdersPage() {
                         {/* PREPARING + UBER → SHIPPED */}
                         {st === 'PREPARING' && isUber && (
                           <>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Enviar via Uber Flash
                             </p>
                             <div className="adm-field" style={{ marginBottom: 10 }}>
@@ -508,7 +508,7 @@ export function AdminOrdersPage() {
                                 value={actionForm.note}
                                 onChange={(e) => setActionForm((f) => ({ ...f, note: e.target.value }))} />
                             </div>
-                            {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
+                            {actionError && <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
                               onClick={() => void advanceOrder('SHIPPED')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
@@ -520,7 +520,7 @@ export function AdminOrdersPage() {
                         {/* PREPARING + PICKUP → SHIPPED */}
                         {st === 'PREPARING' && isPickup && (
                           <>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Disponibilizar para retirada
                             </p>
                             <div className="adm-field" style={{ marginBottom: 12 }}>
@@ -529,7 +529,7 @@ export function AdminOrdersPage() {
                                 value={actionForm.note}
                                 onChange={(e) => setActionForm((f) => ({ ...f, note: e.target.value }))} />
                             </div>
-                            {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
+                            {actionError && <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
                               onClick={() => void advanceOrder('SHIPPED')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
@@ -541,7 +541,7 @@ export function AdminOrdersPage() {
                         {/* PREPARING (no shipping method set) → SHIPPED */}
                         {st === 'PREPARING' && !isCorreios && !isUber && !isPickup && (
                           <>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87', margin: '0 0 10px' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#9A8D87', margin: '0 0 10px' }}>
                               Configure o método de envio abaixo antes de avançar.
                             </p>
                           </>
@@ -550,7 +550,7 @@ export function AdminOrdersPage() {
                         {/* SHIPPED + CORREIOS/UBER → DELIVERED */}
                         {st === 'SHIPPED' && !isPickup && (
                           <>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Confirmar entrega ao cliente
                             </p>
                             <div className="adm-field" style={{ marginBottom: 12 }}>
@@ -559,7 +559,7 @@ export function AdminOrdersPage() {
                                 value={actionForm.note}
                                 onChange={(e) => setActionForm((f) => ({ ...f, note: e.target.value }))} />
                             </div>
-                            {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
+                            {actionError && <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
                               onClick={() => void advanceOrder('DELIVERED')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
@@ -571,7 +571,7 @@ export function AdminOrdersPage() {
                         {/* SHIPPED + PICKUP → DELIVERED */}
                         {st === 'SHIPPED' && isPickup && (
                           <>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Confirmar retirada na loja
                             </p>
                             <div className="adm-field" style={{ marginBottom: 12 }}>
@@ -580,7 +580,7 @@ export function AdminOrdersPage() {
                                 value={actionForm.note}
                                 onChange={(e) => setActionForm((f) => ({ ...f, note: e.target.value }))} />
                             </div>
-                            {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
+                            {actionError && <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
                               onClick={() => void advanceOrder('DELIVERED')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
@@ -595,7 +595,7 @@ export function AdminOrdersPage() {
                             <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5BA882', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             </div>
-                            <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#5BA882' }}>
+                            <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, color: '#5BA882' }}>
                               {isPickup ? 'Pedido retirado pelo cliente' : 'Pedido entregue ao cliente'}
                             </span>
                           </div>
@@ -603,7 +603,7 @@ export function AdminOrdersPage() {
 
                         {/* PENDING */}
                         {st === 'PENDING' && (
-                          <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87', margin: 0 }}>
+                          <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#9A8D87', margin: 0 }}>
                             Aguardando confirmação de pagamento. Use "Reconciliar Asaas" para verificar o status no gateway.
                           </p>
                         )}
@@ -615,7 +615,7 @@ export function AdminOrdersPage() {
 
               {/* ── EDIÇÕES MANUAIS ──────────────────────────── */}
               <details style={{ marginBottom: 20 }}>
-                <summary style={{ fontFamily: 'Arial,sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4A4040', cursor: 'pointer', userSelect: 'none', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <summary style={{ fontFamily: "var(--adm-font-ui)", fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4A4040', cursor: 'pointer', userSelect: 'none', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
@@ -637,7 +637,7 @@ export function AdminOrdersPage() {
                       <label className="adm-label">
                         Método de envio
                         {selectedDetail?.shippingLabel && (
-                          <span style={{ marginLeft: 8, fontFamily: 'Arial,sans-serif', fontSize: 10, fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#7A9E8A', background: 'rgba(91,168,130,0.08)', border: '0.5px solid rgba(91,168,130,0.2)', padding: '2px 7px', borderRadius: 3 }}>
+                          <span style={{ marginLeft: 8, fontFamily: "var(--adm-font-ui)", fontSize: 10, fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#7A9E8A', background: 'rgba(91,168,130,0.08)', border: '0.5px solid rgba(91,168,130,0.2)', padding: '2px 7px', borderRadius: 3 }}>
                             Cliente: {selectedDetail.shippingLabel}
                           </span>
                         )}
@@ -715,28 +715,28 @@ export function AdminOrdersPage() {
                       return (
                         <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '4px 12px', padding: '11px 13px', background: 'rgba(255,255,255,0.022)', border: '0.5px solid #1E1E1E' }}>
                           <div style={{ minWidth: 0 }}>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {item.variant.product.name}
                             </p>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                              <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, color: '#9A8D87', background: 'rgba(255,255,255,0.05)', border: '0.5px solid #2A2A2A', padding: '2px 6px' }}>{item.variant.color}</span>
-                              <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, color: '#9A8D87', background: 'rgba(255,255,255,0.05)', border: '0.5px solid #2A2A2A', padding: '2px 6px' }}>{item.variant.size}</span>
+                              <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 10, color: '#9A8D87', background: 'rgba(255,255,255,0.05)', border: '0.5px solid #2A2A2A', padding: '2px 6px' }}>{item.variant.color}</span>
+                              <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 10, color: '#9A8D87', background: 'rgba(255,255,255,0.05)', border: '0.5px solid #2A2A2A', padding: '2px 6px' }}>{item.variant.size}</span>
                               {item.variant.barcode && <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#4A4040' }}>{item.variant.barcode}</span>}
                             </div>
                           </div>
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 13, fontWeight: 600, color: '#C8C0BC', margin: '0 0 3px' }}>{formatCurrency(subtotal)}</p>
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, color: '#6B5F5C', margin: 0 }}>{formatIntegerBR(item.quantity)} × {formatCurrency(item.priceAtPurchase)}</p>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 13, fontWeight: 600, color: '#C8C0BC', margin: '0 0 3px' }}>{formatCurrency(subtotal)}</p>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 10, color: '#6B5F5C', margin: 0 }}>{formatIntegerBR(item.quantity)} × {formatCurrency(item.priceAtPurchase)}</p>
                           </div>
                         </div>
                       );
                     })}
                     {selectedDetail.items.length > 1 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 13px', borderTop: '0.5px solid #1E1E1E', marginTop: 2 }}>
-                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C' }}>
+                        <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#6B5F5C' }}>
                           {formatIntegerBR(selectedDetail.items.reduce((s, i) => s + Number(i.quantity), 0))} itens
                         </span>
-                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC' }}>
+                        <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, fontWeight: 600, color: '#C8C0BC' }}>
                           {formatCurrency(selectedDetail.items.reduce((s, i) => s + Number(i.priceAtPurchase) * Number(i.quantity), 0))}
                         </span>
                       </div>
@@ -753,18 +753,18 @@ export function AdminOrdersPage() {
                   </p>
                   <div style={{ padding: '11px 13px', background: 'rgba(255,255,255,0.022)', border: '0.5px solid #1E1E1E', display: 'flex', flexDirection: 'column', gap: 5 }}>
                     {selectedDetail.guestName && (
-                      <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>
+                      <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>
                         {selectedDetail.guestName}
                         {selectedDetail.guestCpf && <span style={{ fontWeight: 400, color: '#6B5F5C', marginLeft: 8 }}>CPF {selectedDetail.guestCpf}</span>}
                       </p>
                     )}
                     {selectedDetail.addressStreet && (
-                      <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#9A8D87', margin: 0 }}>
+                      <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, color: '#9A8D87', margin: 0 }}>
                         {selectedDetail.addressStreet}, {selectedDetail.addressNumber || 'S/N'}
                         {selectedDetail.addressComplement ? ` — ${selectedDetail.addressComplement}` : ''}
                       </p>
                     )}
-                    <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#9A8D87', margin: 0 }}>
+                    <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, color: '#9A8D87', margin: 0 }}>
                       {[selectedDetail.addressNeighborhood, selectedDetail.addressCity, selectedDetail.addressState].filter(Boolean).join(', ')}
                       {selectedDetail.addressZip ? ` · CEP ${formatZip(selectedDetail.addressZip)}` : ''}
                     </p>
@@ -784,43 +784,43 @@ export function AdminOrdersPage() {
                       return (
                         <>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC' }}>Correios</span>
-                            {service && <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#7A9E8A', background: 'rgba(91,168,130,0.08)', border: '0.5px solid rgba(91,168,130,0.25)', padding: '2px 8px' }}>{service}</span>}
-                            {selectedDetail.shippingLabel && !service && <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87' }}>{selectedDetail.shippingLabel}</span>}
+                            <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, fontWeight: 600, color: '#C8C0BC' }}>Correios</span>
+                            {service && <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#7A9E8A', background: 'rgba(91,168,130,0.08)', border: '0.5px solid rgba(91,168,130,0.25)', padding: '2px 8px' }}>{service}</span>}
+                            {selectedDetail.shippingLabel && !service && <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#9A8D87' }}>{selectedDetail.shippingLabel}</span>}
                           </div>
                           {selectedDetail.shippingCost !== null && (
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C', margin: 0 }}>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#6B5F5C', margin: 0 }}>
                               Frete: <span style={{ color: '#9A8D87' }}>{Number(selectedDetail.shippingCost) === 0 ? 'Grátis' : formatCurrency(selectedDetail.shippingCost)}</span>
                             </p>
                           )}
                           {selectedDetail.trackingCode ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C' }}>Rastreio:</span>
+                              <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#6B5F5C' }}>Rastreio:</span>
                               <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#C8C0BC', background: 'rgba(255,255,255,0.04)', border: '0.5px solid #2A2A2A', padding: '3px 8px', letterSpacing: '0.05em' }}>{selectedDetail.trackingCode}</span>
                             </div>
                           ) : (
-                            <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#4A4040', margin: 0, fontStyle: 'italic' }}>Código de rastreio ainda não informado</p>
+                            <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#4A4040', margin: 0, fontStyle: 'italic' }}>Código de rastreio ainda não informado</p>
                           )}
                         </>
                       );
                     })()}
                     {selectedDetail.shippingMethod === 'UBER' && (
                       <>
-                        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>Uber Flash</p>
+                        <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>Uber Flash</p>
                         {selectedDetail.shippingCost !== null && (
-                          <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C', margin: 0 }}>
+                          <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#6B5F5C', margin: 0 }}>
                             Frete: <span style={{ color: '#9A8D87' }}>{Number(selectedDetail.shippingCost) === 0 ? 'Grátis' : formatCurrency(selectedDetail.shippingCost)}</span>
                           </p>
                         )}
                         {selectedDetail.trackingUrl
-                          ? <a href={selectedDetail.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#7A9E8A', wordBreak: 'break-all' }}>{selectedDetail.trackingUrl}</a>
-                          : <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#4A4040', margin: 0, fontStyle: 'italic' }}>Link de rastreio ainda não informado</p>}
+                          ? <a href={selectedDetail.trackingUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#7A9E8A', wordBreak: 'break-all' }}>{selectedDetail.trackingUrl}</a>
+                          : <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#4A4040', margin: 0, fontStyle: 'italic' }}>Link de rastreio ainda não informado</p>}
                       </>
                     )}
                     {selectedDetail.shippingMethod === 'PICKUP' && (
                       <>
-                        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>Retirada na loja</p>
-                        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87', margin: 0 }}>Cliente optou por retirar pessoalmente. Nenhum frete aplicado.</p>
+                        <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, fontWeight: 600, color: '#C8C0BC', margin: 0 }}>Retirada na loja</p>
+                        <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#9A8D87', margin: 0 }}>Cliente optou por retirar pessoalmente. Nenhum frete aplicado.</p>
                       </>
                     )}
                   </div>
@@ -837,8 +837,8 @@ export function AdminOrdersPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {selectedDetail.statusUpdates.map((entry) => (
                       <div key={entry.id} style={{ border: '0.5px solid #1E1E1E', padding: '9px 11px', display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 12 }}>{STATUS_LABELS[entry.status] || entry.status}</span>
-                        <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#9A8D87' }}>
+                        <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12 }}>{STATUS_LABELS[entry.status] || entry.status}</span>
+                        <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#9A8D87' }}>
                           {formatDate(entry.createdAt)}{entry.note ? ` · ${entry.note}` : ''}
                         </span>
                       </div>

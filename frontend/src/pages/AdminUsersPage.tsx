@@ -178,7 +178,7 @@ export function AdminUsersPage() {
           />
           <button type="submit" className="adm-btn adm-btn--ghost">Buscar</button>
         </form>
-        <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 12, color: '#6B5F5C', flexShrink: 0 }}>
+        <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 12, color: '#6B5F5C', flexShrink: 0 }}>
           {formatIntegerBR(total)} usuário(s)
         </p>
       </div>
@@ -296,7 +296,7 @@ export function AdminUsersPage() {
                   {isLocked(selected) && <span className="adm-badge adm-badge--locked">Conta bloqueada</span>}
                 </div>
 
-                <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#6B5F5C', margin: '0 0 16px' }}>
+                <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 11, color: '#6B5F5C', margin: '0 0 16px' }}>
                   Cadastrado em {formatDate(selected.createdAt)}
                 </p>
 
@@ -402,7 +402,7 @@ export function AdminUsersPage() {
                   </button>
                 ) : (
                   <div style={{ background: 'rgba(239,139,160,0.06)', border: '0.5px solid rgba(239,139,160,0.2)', padding: 16 }}>
-                    <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 13, color: '#EF8BA0', margin: '0 0 12px', lineHeight: 1.5 }}>
+                    <p style={{ fontFamily: "var(--adm-font-ui)", fontSize: 13, color: '#EF8BA0', margin: '0 0 12px', lineHeight: 1.5 }}>
                       Confirmar exclusão de <strong>{selected.name}</strong>? Esta ação não pode ser desfeita.
                     </p>
                     <div style={{ display: 'flex', gap: 8 }}>

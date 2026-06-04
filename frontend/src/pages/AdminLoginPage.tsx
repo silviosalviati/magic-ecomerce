@@ -34,8 +34,7 @@ export function AdminLoginPage() {
       <div className="adm-login-wrap">
         {/* Brand */}
         <div className="adm-login-brand">
-          <p className="adm-login-wordmark">Vista Magic</p>
-          <div className="adm-login-rule" />
+          <img src="/logo/logo-transparent.png" alt="Vista Magic" className="adm-login-logo" />
           <p className="adm-login-tagline">Painel Administrativo</p>
         </div>
 

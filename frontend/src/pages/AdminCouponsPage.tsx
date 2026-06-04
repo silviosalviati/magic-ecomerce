@@ -232,7 +232,7 @@ export function AdminCouponsPage() {
                   <td>{formatDiscount(c.type, c.discount)}</td>
                   <td style={{ color: isExpired(c) ? '#EF8BA0' : '#9A8D87' }}>
                     {formatDate(c.expiresAt)}
-                    {isExpired(c) && <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 9, marginLeft: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>expirado</span>}
+                    {isExpired(c) && <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 9, marginLeft: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>expirado</span>}
                   </td>
                   <td>
                     {c.usedCount}

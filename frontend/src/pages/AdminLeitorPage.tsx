@@ -516,7 +516,7 @@ export function AdminLeitorPage() {
               >
                 <span className="adm-leitor-history-barcode">{h.barcode}</span>
                 <span className="adm-leitor-history-name">{h.productName}</span>
-                <span style={{ fontFamily: 'Arial,sans-serif', fontSize: 10, color: '#3D3330', flexShrink: 0 }}>{formatTime(h.timestamp)}</span>
+                <span style={{ fontFamily: "var(--adm-font-ui)", fontSize: 10, color: '#3D3330', flexShrink: 0 }}>{formatTime(h.timestamp)}</span>
               </button>
             ))}
           </div>

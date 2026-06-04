@@ -117,7 +117,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
 
       <aside className={`adm-sidebar${sidebarOpen ? ' is-open' : ''}`}>
         <div className="adm-sidebar-logo">
-          <p className="adm-sidebar-wordmark">Vista Magic</p>
+          <img src="/logo/logo-transparent.png" alt="Vista Magic" className="adm-sidebar-logo-img" />
           <p className="adm-sidebar-tag">Painel Admin</p>
         </div>
 
@@ -138,8 +138,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
         <div className="adm-sidebar-footer">
           <button
             type="button"
-            className="adm-btn adm-btn--ghost"
-            style={{ width: '100%', justifyContent: 'flex-start', gap: 10, padding: '10px 0', border: 'none', color: '#6B5F5C', fontSize: 11, letterSpacing: '0.12em' }}
+            className="adm-btn adm-btn--logout"
             onClick={handleLogout}
           >
             <IconLogout /> Sair
@@ -157,7 +156,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
           >
             <IconMenu />
           </button>
-          <span className="adm-topbar-wordmark">Vista Magic</span>
+          <img src="/logo/logo-transparent.png" alt="Vista Magic" className="adm-topbar-logo" />
         </header>
 
         <div className="adm-content-inner">
