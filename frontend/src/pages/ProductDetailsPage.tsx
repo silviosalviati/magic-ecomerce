@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { buildCartItem, colorToken, pickInitialVariant, toCurrency, toInstallmentLabel } from '../lib/catalog';
+import { trackProductView, trackVariantSelect } from '../lib/analytics';
 import { SEO } from '../components/SEO';
 import type { CartItem, CatalogProduct, CatalogVariant } from '../types';
 
@@ -139,6 +140,10 @@ export function ProductDetailsPage({
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [productId]);
+
+  useEffect(() => {
+    if (product) trackProductView(product.productId, window.location.pathname);
+  }, [product?.productId]);
 
   // Escape key closes lightbox
   useEffect(() => {
@@ -401,8 +406,10 @@ export function ProductDetailsPage({
                     style={{ backgroundColor: colorToken(color) }}
                     onClick={() => {
                       const nextVariants = product.variants.filter((variant) => variant.color === color);
+                      const nextVariant = pickInitialVariant(nextVariants);
                       setSelectedColor(color);
-                      setSelectedSize(pickInitialVariant(nextVariants).size);
+                      setSelectedSize(nextVariant.size);
+                      trackVariantSelect(product.productId, nextVariant.variantId, nextVariant.size, color);
                     }}
                     aria-label={`Selecionar cor ${color}`}
                   />
@@ -421,7 +428,10 @@ export function ProductDetailsPage({
                     key={variant.variantId}
                     type="button"
                     className={variant.size === selectedVariant.size ? 'size-chip active' : 'size-chip'}
-                    onClick={() => setSelectedSize(variant.size)}
+                    onClick={() => {
+                      setSelectedSize(variant.size);
+                      trackVariantSelect(product.productId, variant.variantId, variant.size, resolvedColor);
+                    }}
                     disabled={variant.stock <= 0}
                   >
                     {variant.size}

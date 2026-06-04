@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 import { checkout, getCheckoutInstallments, getMyOrders, getShippingRates, validateCoupon } from '../lib/api';
+import { trackCheckoutComplete, trackCheckoutStart } from '../lib/analytics';
 import { formatCurrencyBRL } from '../lib/numberFormat';
 import { useAuth } from '../contexts/AuthContext';
 import type {
@@ -435,6 +436,7 @@ export function CheckoutPage({
       }
 
       setOrderResult(result);
+      trackCheckoutComplete(result.orderId, total, { cpf: cpfDigits, email: user?.email });
       onClearCart();
       setStep('confirmation');
     } catch (err) {
@@ -676,7 +678,10 @@ export function CheckoutPage({
                 type="button"
                 className="primary-btn checkout-cta"
                 disabled={!canProceedFromDetails()}
-                onClick={() => setStep('payment')}
+                onClick={() => {
+                  trackCheckoutStart(totalQuantity, total, { cpf: cpfDigits, email: user?.email });
+                  setStep('payment');
+                }}
               >
                 Continuar para pagamento →
               </button>

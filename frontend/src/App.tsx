@@ -9,6 +9,7 @@ import { Header } from './components/Header';
 import { AdminProvider } from './contexts/AdminContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { fetchCatalog } from './lib/api';
+import { trackAddToCart, trackPageView } from './lib/analytics';
 import { AboutPage } from './pages/AboutPage';
 import { AccountPage } from './pages/AccountPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
@@ -129,6 +130,7 @@ function App() {
           : entry
       );
     });
+    trackAddToCart(item.productId, item.variantId, item.quantity);
     setToastKey((k) => k + 1);
     setToastOpen(true);
   }
@@ -161,6 +163,12 @@ function App() {
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const location = useLocation();
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/admin')) {
+      trackPageView(location.pathname);
+    }
+  }, [location.pathname]);
   const isCheckoutPage = location.pathname === '/checkout';
   const isAuthPage = ['/entrar', '/cadastrar', '/verificar-email', '/recuperar-senha', '/redefinir-senha'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
