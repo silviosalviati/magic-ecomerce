@@ -109,8 +109,13 @@ export function AdminLeitorPage() {
       } else {
         setError('Produto não encontrado para esse código.');
       }
-    } catch {
-      setError('Erro ao buscar produto.');
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
+        setResult({ found: false });
+        setError('Produto não encontrado para esse código.');
+      } else {
+        setError('Erro ao buscar produto.');
+      }
     } finally {
       setLoading(false);
     }
@@ -360,7 +365,7 @@ export function AdminLeitorPage() {
         </div>
       )}
 
-      {!result?.product && query.trim() && error.includes('não encontrado') && (
+      {!result?.product && query.trim() && (result?.found === false || error.includes('não encontrado')) && (
         <div className="adm-leitor-create-card">
           <div className="adm-leitor-create-head">
             <div>
