@@ -27,6 +27,30 @@ interface ScanRecord {
   timestamp: Date;
 }
 
+interface CreateProductForm {
+  name: string;
+  description: string;
+  category: string;
+  costPrice: string;
+  markup: string;
+  size: string;
+  color: string;
+  barcode: string;
+  stock: string;
+}
+
+const DEFAULT_TEST_PRODUCT_FORM = (barcode: string): CreateProductForm => ({
+  name: barcode ? `Produto teste ${barcode}` : 'Produto teste',
+  description: 'Produto de teste criado pelo leitor administrativo.',
+  category: 'TESTE',
+  costPrice: '10',
+  markup: '2',
+  size: 'U',
+  color: 'Teste',
+  barcode,
+  stock: '1',
+});
+
 export function AdminLeitorPage() {
   const { headers } = useAdmin();
   const [query, setQuery] = useState('');
@@ -37,6 +61,14 @@ export function AdminLeitorPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [history, setHistory] = useState<ScanRecord[]>([]);
+  const [createForm, setCreateForm] = useState<CreateProductForm>(DEFAULT_TEST_PRODUCT_FORM(''));
+  const [creating, setCreating] = useState(false);
+  const [createMsg, setCreateMsg] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,15 +76,25 @@ export function AdminLeitorPage() {
   }, []);
 
   async function lookup(barcode: string) {
-    if (!barcode.trim()) return;
+    const normalizedBarcode = barcode.trim();
+    if (!normalizedBarcode) return;
     setLoading(true);
     setError('');
     setResult(null);
     setLocalStock({});
+    setCreateMsg('');
+    setCreateError('');
+    setDeleteMsg('');
+    setDeleteError('');
+    setDeleteConfirmOpen(false);
+    setCreateForm((prev) => ({
+      ...DEFAULT_TEST_PRODUCT_FORM(normalizedBarcode),
+      name: prev.barcode === normalizedBarcode && prev.name.trim() ? prev.name : `Produto teste ${normalizedBarcode}`,
+    }));
 
     try {
       const { data } = await axios.get<ProductResult>(
-        `${ADMIN_API}/admin/products/reference/${encodeURIComponent(barcode.trim())}`,
+        `${ADMIN_API}/admin/products/reference/${encodeURIComponent(normalizedBarcode)}`,
         { headers }
       );
       setResult(data);
@@ -61,8 +103,8 @@ export function AdminLeitorPage() {
         data.product.variants.forEach((v) => { stock[v.id] = v.stock; });
         setLocalStock(stock);
         setHistory((prev) => [
-          { barcode: barcode.trim(), productName: data.product!.name, timestamp: new Date() },
-          ...prev.filter((h) => h.barcode !== barcode.trim()).slice(0, 9),
+          { barcode: normalizedBarcode, productName: data.product!.name, timestamp: new Date() },
+          ...prev.filter((h) => h.barcode !== normalizedBarcode).slice(0, 9),
         ]);
       } else {
         setError('Produto não encontrado para esse código.');
@@ -77,6 +119,73 @@ export function AdminLeitorPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     void lookup(query);
+  }
+
+  function updateCreateForm<K extends keyof CreateProductForm>(field: K, value: CreateProductForm[K]) {
+    setCreateForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function createProduct(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    setCreateMsg('');
+    setCreateError('');
+
+    try {
+      await axios.post(
+        `${ADMIN_API}/products`,
+        {
+          name: createForm.name.trim(),
+          description: createForm.description.trim(),
+          category: createForm.category.trim(),
+          costPrice: Number(createForm.costPrice),
+          markup: Number(createForm.markup),
+          size: createForm.size.trim(),
+          color: createForm.color.trim(),
+          barcode: createForm.barcode.trim(),
+          stock: Number(createForm.stock),
+        },
+        { headers }
+      );
+
+      setCreateMsg('Produto criado com sucesso.');
+      setQuery(createForm.barcode.trim());
+      await lookup(createForm.barcode.trim());
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setCreateError(err.response?.data?.error || 'Não foi possível criar o produto.');
+      } else {
+        setCreateError('Não foi possível criar o produto.');
+      }
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function deleteProduct() {
+    const productId = result?.product?.id;
+    if (!productId) return;
+
+    setDeleting(true);
+    setDeleteMsg('');
+    setDeleteError('');
+
+    try {
+      await axios.delete(`${ADMIN_API}/admin/products/${productId}`, { headers });
+      setDeleteMsg('Produto excluído com sucesso.');
+      setResult(null);
+      setLocalStock({});
+      setDeleteConfirmOpen(false);
+      setCreateForm(DEFAULT_TEST_PRODUCT_FORM(query.trim()));
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setDeleteError(err.response?.data?.error || 'Não foi possível excluir o produto.');
+      } else {
+        setDeleteError('Não foi possível excluir o produto.');
+      }
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function saveStock(variantId: string) {
@@ -150,13 +259,50 @@ export function AdminLeitorPage() {
       </form>
 
       {error && <p className="adm-message adm-message--error">{error}</p>}
+      {createMsg && <p className="adm-message adm-message--success">{createMsg}</p>}
+      {createError && <p className="adm-message adm-message--error">{createError}</p>}
+      {deleteMsg && <p className="adm-message adm-message--success">{deleteMsg}</p>}
+      {deleteError && <p className="adm-message adm-message--error">{deleteError}</p>}
 
       {/* Product result */}
       {result?.product && (
         <div className="adm-leitor-product">
           <div className="adm-leitor-product-hd">
-            <p className="adm-leitor-product-name">{result.product.name}</p>
-            <p className="adm-leitor-product-meta">{result.product.category} · {result.product.variants.length} variante(s)</p>
+            <div>
+              <p className="adm-leitor-product-name">{result.product.name}</p>
+              <p className="adm-leitor-product-meta">{result.product.category} · {result.product.variants.length} variante(s)</p>
+            </div>
+
+            <div className="adm-leitor-product-actions">
+              {deleteConfirmOpen ? (
+                <>
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn--danger"
+                    onClick={() => void deleteProduct()}
+                    disabled={deleting}
+                  >
+                    {deleting ? 'Excluindo...' : 'Confirmar exclusão'}
+                  </button>
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn--ghost"
+                    onClick={() => setDeleteConfirmOpen(false)}
+                    disabled={deleting}
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="adm-btn adm-btn--danger"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                >
+                  Excluir produto
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="adm-leitor-variants">
@@ -211,6 +357,143 @@ export function AdminLeitorPage() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {!result?.product && query.trim() && error.includes('não encontrado') && (
+        <div className="adm-leitor-create-card">
+          <div className="adm-leitor-create-head">
+            <div>
+              <p className="adm-leitor-create-title">Criar produto de teste</p>
+              <p className="adm-leitor-create-desc">Use o código lido para cadastrar um produto simples e depois excluí-lo pela própria tela.</p>
+            </div>
+          </div>
+
+          <form className="adm-leitor-create-form" onSubmit={createProduct}>
+            <div className="adm-leitor-create-grid adm-leitor-create-grid--double">
+              <label className="adm-field">
+                <span className="adm-label">Nome do produto</span>
+                <input
+                  type="text"
+                  className="adm-input"
+                  value={createForm.name}
+                  onChange={(e) => updateCreateForm('name', e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="adm-field">
+                <span className="adm-label">Categoria</span>
+                <input
+                  type="text"
+                  className="adm-input"
+                  value={createForm.category}
+                  onChange={(e) => updateCreateForm('category', e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+
+            <label className="adm-field">
+              <span className="adm-label">Descrição</span>
+              <textarea
+                className="adm-input adm-leitor-create-textarea"
+                value={createForm.description}
+                onChange={(e) => updateCreateForm('description', e.target.value)}
+                rows={3}
+              />
+            </label>
+
+            <div className="adm-leitor-create-grid adm-leitor-create-grid--triple">
+              <label className="adm-field">
+                <span className="adm-label">Cor</span>
+                <input
+                  type="text"
+                  className="adm-input"
+                  value={createForm.color}
+                  onChange={(e) => updateCreateForm('color', e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="adm-field">
+                <span className="adm-label">Tamanho</span>
+                <input
+                  type="text"
+                  className="adm-input"
+                  value={createForm.size}
+                  onChange={(e) => updateCreateForm('size', e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="adm-field">
+                <span className="adm-label">Estoque inicial</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="adm-input"
+                  value={createForm.stock}
+                  onChange={(e) => updateCreateForm('stock', e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="adm-leitor-create-grid adm-leitor-create-grid--triple">
+              <label className="adm-field">
+                <span className="adm-label">Código de barras</span>
+                <input
+                  type="text"
+                  className="adm-input adm-leitor-create-barcode"
+                  value={createForm.barcode}
+                  onChange={(e) => updateCreateForm('barcode', e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="adm-field">
+                <span className="adm-label">Custo</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  className="adm-input"
+                  value={createForm.costPrice}
+                  onChange={(e) => updateCreateForm('costPrice', e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="adm-field">
+                <span className="adm-label">Markup</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  className="adm-input"
+                  value={createForm.markup}
+                  onChange={(e) => updateCreateForm('markup', e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="adm-leitor-create-actions">
+              <button type="submit" className="adm-btn adm-btn--primary" disabled={creating}>
+                {creating ? 'Criando...' : 'Criar produto'}
+              </button>
+              <button
+                type="button"
+                className="adm-btn adm-btn--ghost"
+                onClick={() => setCreateForm(DEFAULT_TEST_PRODUCT_FORM(query.trim()))}
+                disabled={creating}
+              >
+                Restaurar padrão
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

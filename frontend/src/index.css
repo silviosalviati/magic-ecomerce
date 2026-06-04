@@ -8130,6 +8130,17 @@ textarea:focus-visible {
 .adm-leitor-product-hd {
   padding: 20px 22px;
   border-bottom: 0.5px solid var(--adm-border-sub);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.adm-leitor-product-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .adm-leitor-product-name {
   font-family: var(--adm-font-display);
@@ -8249,6 +8260,62 @@ textarea:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.adm-leitor-create-card {
+  background: linear-gradient(180deg, rgba(240,232,228,0.03) 0%, rgba(240,232,228,0.015) 100%);
+  border: 0.5px solid var(--adm-border);
+  padding: 22px;
+  margin-bottom: 24px;
+}
+.adm-leitor-create-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.adm-leitor-create-title {
+  margin: 0 0 6px;
+  font-family: var(--adm-font-display);
+  font-size: 18px;
+  color: var(--adm-text);
+}
+.adm-leitor-create-desc {
+  margin: 0;
+  font-family: var(--adm-font-ui);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--adm-text-2);
+}
+.adm-leitor-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.adm-leitor-create-grid {
+  display: grid;
+  gap: 14px;
+}
+.adm-leitor-create-grid--double {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.adm-leitor-create-grid--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.adm-leitor-create-textarea {
+  resize: vertical;
+  min-height: 88px;
+  font-family: var(--adm-font-ui);
+}
+.adm-leitor-create-barcode {
+  letter-spacing: 0.08em;
+  font-family: 'Courier New', monospace;
+}
+.adm-leitor-create-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
 
 /* Dashboard low-stock table */
 .adm-low-stock-section { margin-top: 36px; }
@@ -8284,10 +8351,24 @@ textarea:focus-visible {
   gap: 14px;
 }
 @media (max-width: 520px) {
+  .adm-leitor-product-hd {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .adm-leitor-product-actions {
+    justify-content: flex-start;
+  }
   .adm-coupons-row { flex-direction: column; gap: 0; }
 }
 
 /* Responsive */
+  .adm-leitor-create-grid--double,
+  .adm-leitor-create-grid--triple {
+    grid-template-columns: 1fr;
+  }
+  .adm-leitor-create-card {
+    padding: 18px;
+  }
 @media (max-width: 900px) {
   .adm-kpis {
     grid-template-columns: repeat(2, 1fr);
