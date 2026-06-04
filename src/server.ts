@@ -5,6 +5,7 @@ import { adminRouter } from './admin/admin.routes';
 import { checkoutRouter } from './checkout/checkout.routes';
 import { ordersRouter } from './orders/orders.routes';
 import { authRouter } from './auth/auth.routes';
+import { analyticsRouter } from './analytics/analytics.routes';
 import { prisma } from './config/database';
 import { cleanupNonVariantPhotos } from './admin/photo-cleanup.service';
 import { cleanupDuplicateProducts } from './products/product-merge-cleanup.service';
@@ -78,6 +79,7 @@ app.use('/admin', adminRouter);
 app.use('/checkout', checkoutRouter);
 app.use('/orders', ordersRouter);
 app.use('/auth', authRouter);
+app.use('/analytics', analyticsRouter);
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {

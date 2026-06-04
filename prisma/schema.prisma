@@ -114,3 +114,35 @@ model Coupon {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 }
+
+model AnalyticsSession {
+  sessionId   String           @id
+  firstSeen   DateTime         @default(now())
+  lastSeen    DateTime         @default(now())
+  pageCount   Int              @default(0)
+  linkedEmail String?
+  linkedCpf   String?
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  userAgent   String?
+  events      AnalyticsEvent[]
+
+  @@index([firstSeen])
+}
+
+model AnalyticsEvent {
+  id        Int              @id @default(autoincrement())
+  sessionId String
+  session   AnalyticsSession @relation(fields: [sessionId], references: [sessionId])
+  eventType String
+  page      String?
+  productId String?
+  payload   Json?
+  createdAt DateTime         @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@index([eventType])
+}
