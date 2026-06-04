@@ -180,7 +180,7 @@ export function CreditCardForm({
               const isSelected = data.installments === option.installments;
               const isVista = option.installments === 1;
               const hasInterest = isVista ? false : option.installments > noInterestLimit || option.hasInterest;
-              const tag = isVista ? 'À VISTA' : hasInterest ? 'COM JUROS EMBUTIDOS' : 'SEM JUROS';
+              const tag = isVista ? 'À VISTA' : hasInterest ? 'COM JUROS' : 'SEM JUROS';
               return (
                 <button
                   key={option.installments}

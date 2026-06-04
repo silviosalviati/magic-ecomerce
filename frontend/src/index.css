@@ -3731,9 +3731,9 @@ textarea:focus-visible {
 }
 
 .installment-tag.tag-juros {
-  background: rgba(245, 237, 232, 0.04);
-  color: rgba(245, 237, 232, 0.4);
-  border: 0.5px solid rgba(245, 237, 232, 0.1);
+  background: rgba(255, 138, 61, 0.14);
+  color: #FF8A3D;
+  border: 0.5px solid rgba(255, 138, 61, 0.35);
 }
 
 /* ── SHIPPING SELECTOR ── */
