@@ -36,13 +36,13 @@ const PAYMENT_LABELS: Record<string, string> = {
   CREDIT_CARD: 'Cartão de crédito',
 };
 
-// step index: how many steps are "done" (i < stepIdx = done, i === stepIdx = current)
+// step index: completed step for the current order status
 const STATUS_STEP_INDEX: Record<string, number> = {
-  PENDING:   1,
-  PAID:      2,
+  PENDING:   0,
+  PAID:      1,
   PREPARING: 2,
   SHIPPED:   3,
-  DELIVERED: 5,
+  DELIVERED: 4,
   CANCELLED: -1,
   OVERDUE:   -1,
   REFUNDED:  -1,
@@ -114,8 +114,9 @@ export function OrderCard({ order }: { order: Order }) {
         {!isTerminal && (
           <div className="oc-stepper" aria-label="Progresso do pedido">
             {STEPS.map((step, i) => {
-              const done    = i < stepIndex;
-              const current = i === stepIndex;
+              const done = i <= stepIndex;
+              const current = false;
+              const lineDone = i < stepIndex;
               return (
                 <div
                   key={step.key}
@@ -131,7 +132,7 @@ export function OrderCard({ order }: { order: Order }) {
                     )}
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div className={`oc-step-line ${done ? 'oc-step-line--done' : ''}`} aria-hidden="true" />
+                    <div className={`oc-step-line ${lineDone ? 'oc-step-line--done' : ''}`} aria-hidden="true" />
                   )}
                   <span className="oc-step-label">{step.label}</span>
                 </div>
