@@ -139,6 +139,9 @@ interface CreditCardInstallmentPlan {
   maxNoInterestInstallments: number;
 }
 
+const MARKET_INTEREST_RATE = 0.0299;
+const MARKET_FIXED_FEE = 0.49;
+
 function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -200,31 +203,39 @@ async function buildCreditCardInstallmentPlan(total: number): Promise<CreditCard
       continue;
     }
 
-    let simulatedTotal = total;
-    let installmentValue = roundCurrency(total / installments);
+    const compoundSteps = Math.max(1, installments - maxNoInterestInstallments);
+    const compoundedMarketTotal = roundCurrency(
+      (total + MARKET_FIXED_FEE) * Math.pow(1 + MARKET_INTEREST_RATE, compoundSteps)
+    );
+    let resolvedTotal = compoundedMarketTotal;
 
     try {
       const simulation = await simulateInstallments(total, installments);
       if (simulation) {
-        simulatedTotal = roundCurrency(simulation.totalValue);
-        installmentValue = roundCurrency(simulation.installmentValue);
+        const simulatedTotal = roundCurrency(simulation.totalValue);
+        if (simulatedTotal > resolvedTotal) {
+          resolvedTotal = simulatedTotal;
+        }
       }
     } catch {
-      // Fall through to a market-rate fallback below.
+      // Keep compounded market-rate fallback when simulation is unavailable.
     }
 
-    if (simulatedTotal <= total) {
-      const marketSurcharge = roundCurrency((total * 0.0299) + 0.49);
-      simulatedTotal = roundCurrency(total + marketSurcharge);
-      installmentValue = roundCurrency(simulatedTotal / installments);
+    if (options.length > 0) {
+      const previousTotal = options[options.length - 1].total;
+      if (resolvedTotal <= previousTotal) {
+        resolvedTotal = roundCurrency(previousTotal + 0.01);
+      }
     }
+
+    const installmentValue = roundCurrency(resolvedTotal / installments);
 
     options.push({
       installments,
       installmentValue,
-      total: simulatedTotal,
-      hasInterest: simulatedTotal > total,
-      interestAmount: roundCurrency(Math.max(0, simulatedTotal - total)),
+      total: resolvedTotal,
+      hasInterest: resolvedTotal > total,
+      interestAmount: roundCurrency(Math.max(0, resolvedTotal - total)),
     });
   }
 
