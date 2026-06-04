@@ -361,6 +361,7 @@ export function AdminOrdersPage() {
                 const isTerminal = ['CANCELLED', 'OVERDUE', 'REFUNDED'].includes(st);
                 const wfSteps    = getWorkflowSteps(sm);
                 const currentIdx = WORKFLOW_IDX[st] ?? -1;
+                const isWorkflowCompleted = st === 'DELIVERED';
 
                 return (
                   <div style={{ marginBottom: 22, paddingBottom: 22, borderBottom: '0.5px solid #1E1E1E' }}>
@@ -373,8 +374,8 @@ export function AdminOrdersPage() {
                     {!isTerminal && (
                       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 18 }}>
                         {wfSteps.map((step, i) => {
-                          const done    = i < currentIdx;
-                          const current = i === currentIdx;
+                          const done    = i < currentIdx || (isWorkflowCompleted && i === currentIdx);
+                          const current = i === currentIdx && !isWorkflowCompleted;
                           return (
                             <div key={step.status} style={{ display: 'flex', alignItems: 'flex-start', flex: i < wfSteps.length - 1 ? 1 : 0 }}>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
