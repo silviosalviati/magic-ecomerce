@@ -19,6 +19,7 @@ import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminOrdersPage } from './pages/AdminOrdersPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminCouponsPage } from './pages/AdminCouponsPage';
+import { AdminTrafficPage } from './pages/AdminTrafficPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -187,6 +188,7 @@ function App() {
             <Route path="/admin/leitor"    element={<AdminGuard><AdminLeitorPage /></AdminGuard>} />
             <Route path="/admin/usuarios"  element={<AdminGuard><AdminUsersPage /></AdminGuard>} />
             <Route path="/admin/cupons"    element={<AdminGuard><AdminCouponsPage /></AdminGuard>} />
+            <Route path="/admin/trafego"  element={<AdminGuard><AdminTrafficPage /></AdminGuard>} />
             <Route path="/admin/*"         element={<Navigate to="/admin/dashboard" replace />} />
           </Routes>
         </AdminProvider>
