@@ -136,6 +136,10 @@ export function ProductDetailsPage({
     setZoomedOpen(false);
   }, [product?.productId]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [productId]);
+
   // Escape key closes lightbox
   useEffect(() => {
     if (!zoomedOpen) return;
