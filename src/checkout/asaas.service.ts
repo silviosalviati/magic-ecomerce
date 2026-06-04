@@ -121,12 +121,22 @@ export async function findOrCreateCustomer(
   const search = await client.get<{ data: AsaasCustomer[] }>('/customers', {
     params: { cpfCnpj: clean },
   });
-  if (search.data.data.length > 0) return search.data.data[0];
+  if (search.data.data.length > 0) {
+    const existing = search.data.data[0];
+    const { data } = await client.put<AsaasCustomer>(`/customers/${existing.id}`, {
+      name,
+      email,
+      cpfCnpj: clean,
+      notificationDisabled: true,
+    });
+    return data;
+  }
 
   const { data } = await client.post<AsaasCustomer>('/customers', {
     name,
     email,
     cpfCnpj: clean,
+    notificationDisabled: true,
   });
   return data;
 }
