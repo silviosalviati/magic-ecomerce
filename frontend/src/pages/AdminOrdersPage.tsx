@@ -69,6 +69,7 @@ const SHIPPING_LABELS: Record<string, string> = {
 };
 
 const ALL_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
+const AUTO_REFRESH_INTERVAL_MS = 15000;
 
 function formatCurrency(value: number | string) { return formatCurrencyBRL(value); }
 
@@ -176,17 +177,42 @@ export function AdminOrdersPage() {
   const [advancing, setAdvancing] = useState(false);
   const [actionError, setActionError] = useState('');
 
-  async function fetchOrders() {
-    setLoading(true); setError('');
+  async function fetchOrders(options?: { silent?: boolean }) {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setLoading(true);
+    }
+    setError('');
     try {
       const params = filterStatus ? { status: filterStatus } : {};
       const { data } = await axios.get(`${ADMIN_API}/admin/orders`, { headers, params });
       setOrders(data.orders || []);
     } catch { setError('Erro ao carregar pedidos.'); }
-    finally { setLoading(false); }
+    finally {
+      if (!silent) {
+        setLoading(false);
+      }
+    }
   }
 
-  useEffect(() => { void fetchOrders(); }, [filterStatus]);
+  useEffect(() => {
+    void fetchOrders();
+
+    const refreshOrders = () => {
+      if (document.visibilityState !== 'visible') return;
+      void fetchOrders({ silent: true });
+    };
+
+    const intervalId = window.setInterval(refreshOrders, AUTO_REFRESH_INTERVAL_MS);
+    window.addEventListener('focus', refreshOrders);
+    document.addEventListener('visibilitychange', refreshOrders);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshOrders);
+      document.removeEventListener('visibilitychange', refreshOrders);
+    };
+  }, [filterStatus, headers]);
 
   async function openOrder(order: AdminOrder) {
     setSelected(order);
