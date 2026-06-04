@@ -3,6 +3,13 @@ import { AdminController } from './admin.controller';
 import { requireAdminAccess } from '../middlewares/auth.middleware';
 import { validateUpdateStock } from '../middlewares/validate.middleware';
 import { listOrders, getOrder, updateOrder, reconcileOrderPayment } from './orders.controller';
+import {
+  getOverview,
+  getFunnel,
+  getSources,
+  getTopProducts,
+  getSessions,
+} from '../analytics/analytics.admin.controller';
 
 const adminRouter = Router();
 const controller = new AdminController();
@@ -53,5 +60,12 @@ adminRouter.get('/coupons', (req: Request, res: Response) => controller.listCoup
 adminRouter.post('/coupons', (req: Request, res: Response) => controller.createCoupon(req, res));
 adminRouter.patch('/coupons/:id', (req: Request, res: Response) => controller.updateCoupon(req, res));
 adminRouter.delete('/coupons/:id', (req: Request, res: Response) => controller.deleteCoupon(req, res));
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+adminRouter.get('/analytics/overview', (req: Request, res: Response) => getOverview(req, res));
+adminRouter.get('/analytics/funnel', (req: Request, res: Response) => getFunnel(req, res));
+adminRouter.get('/analytics/sources', (req: Request, res: Response) => getSources(req, res));
+adminRouter.get('/analytics/products', (req: Request, res: Response) => getTopProducts(req, res));
+adminRouter.get('/analytics/sessions', (req: Request, res: Response) => getSessions(req, res));
 
 export { adminRouter };
