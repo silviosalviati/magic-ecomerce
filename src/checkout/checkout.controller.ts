@@ -13,6 +13,7 @@ import {
   createBoletoPayment,
   getBoletoData,
   createCreditCardPayment,
+  getPaymentById,
   getPaymentLimits,
   simulateInstallments,
   type CreditCardData,
@@ -749,21 +750,24 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
   };
 
   const eventMappedStatus = statusMap[event];
-  const paymentMappedStatus = paymentStatusMap[String(payment.status || '').toUpperCase()];
-
-  // Prefer the canonical payment.status when available; fallback to event map.
-  const newStatus = paymentMappedStatus || eventMappedStatus;
-  if (!newStatus) {
-    console.log('[webhook] event ignored', {
-      event,
-      paymentId: payment.id,
-      paymentStatus: payment.status,
-    });
-    res.sendStatus(200);
-    return;
-  }
 
   try {
+    const providerPayment = await getPaymentById(payment.id);
+    const providerStatus = String(providerPayment.status || '').toUpperCase();
+    const paymentMappedStatus = paymentStatusMap[providerStatus];
+
+    // Confirm the payment state with Asaas instead of trusting the inbound payload.
+    const newStatus = paymentMappedStatus || eventMappedStatus;
+    if (!newStatus) {
+      console.log('[webhook] event ignored', {
+        event,
+        paymentId: payment.id,
+        paymentStatus: providerStatus || payment.status,
+      });
+      res.sendStatus(200);
+      return;
+    }
+
     const orders = await prisma.order.findMany({
       where: { paymentId: payment.id },
       select: {

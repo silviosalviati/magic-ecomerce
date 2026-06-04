@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { ProductsController } from './products.controller';
-import { validateCreateProduct } from '../middlewares/validate.middleware';
+import { validateCreateProduct, validateUpdateStock } from '../middlewares/validate.middleware';
 import { requireAdminAccess } from '../middlewares/auth.middleware';
 
 const productsRouter = Router();
@@ -38,8 +38,11 @@ productsRouter.get('/barcode/:code', (req: Request, res: Response) =>
   controller.getByBarcode(req, res)
 );
 
-productsRouter.patch('/barcode/:code/stock', (req: Request, res: Response) =>
-  controller.updateStock(req, res)
+productsRouter.patch(
+  '/barcode/:code/stock',
+  requireAdminAccess,
+  validateUpdateStock,
+  (req: Request, res: Response) => controller.updateStock(req, res)
 );
 
 // POST /products/:barcode/generate-preview — gera preview com manequim

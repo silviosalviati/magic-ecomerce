@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function lookupOrders(req: Request, res: Response): Promise<void> {
   const { email, cpf } = req.query as { email?: string; cpf?: string };
 
@@ -11,6 +13,11 @@ export async function lookupOrders(req: Request, res: Response): Promise<void> {
 
   const cpfClean = String(cpf).replace(/\D/g, '');
   const emailClean = String(email).trim().toLowerCase();
+
+  if (cpfClean.length !== 11 || !EMAIL_RE.test(emailClean)) {
+    res.status(400).json({ message: 'Dados de consulta inválidos.' });
+    return;
+  }
 
   try {
     const orders = await prisma.order.findMany({

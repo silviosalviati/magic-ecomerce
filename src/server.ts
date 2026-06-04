@@ -8,10 +8,13 @@ import { authRouter } from './auth/auth.routes';
 import { prisma } from './config/database';
 import { cleanupNonVariantPhotos } from './admin/photo-cleanup.service';
 import { cleanupDuplicateProducts } from './products/product-merge-cleanup.service';
+import { addSecurityHeaders } from './middlewares/security.middleware';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
 const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT?.trim() || '30mb';
+
+app.disable('x-powered-by');
 const localApiOrigins = [
   `http://localhost:${PORT}`,
   `http://127.0.0.1:${PORT}`,
@@ -66,6 +69,7 @@ app.use(
 );
 
 // ─── Body parser com limite ───────────────────────────────────────────────────
+app.use(addSecurityHeaders);
 app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
 // ─── Rotas ───────────────────────────────────────────────────────────────────
