@@ -134,6 +134,11 @@ interface InstallmentOptionDto {
   interestAmount: number;
 }
 
+interface CreditCardInstallmentPlan {
+  options: InstallmentOptionDto[];
+  maxNoInterestInstallments: number;
+}
+
 function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -170,6 +175,62 @@ function buildFallbackInstallments(total: number): InstallmentOptionDto[] {
   });
 }
 
+function getNoInterestInstallmentLimit(total: number): number {
+  return total >= 500 ? 6 : 3;
+}
+
+async function buildCreditCardInstallmentPlan(total: number): Promise<CreditCardInstallmentPlan> {
+  const limits = await getPaymentLimits();
+  const maxInstallments = Math.max(1, Math.min(12, limits.maxInstallmentCount ?? 12));
+  const maxNoInterestInstallments = getNoInterestInstallmentLimit(total);
+
+  const options: InstallmentOptionDto[] = [];
+
+  for (let installments = 1; installments <= maxInstallments; installments += 1) {
+    const isNoInterest = installments <= maxNoInterestInstallments;
+
+    if (isNoInterest) {
+      options.push({
+        installments,
+        installmentValue: roundCurrency(total / installments),
+        total: roundCurrency(total),
+        hasInterest: false,
+        interestAmount: 0,
+      });
+      continue;
+    }
+
+    let simulatedTotal = total;
+    let installmentValue = roundCurrency(total / installments);
+
+    try {
+      const simulation = await simulateInstallments(total, installments);
+      if (simulation) {
+        simulatedTotal = roundCurrency(simulation.totalValue);
+        installmentValue = roundCurrency(simulation.installmentValue);
+      }
+    } catch {
+      // Fall through to a market-rate fallback below.
+    }
+
+    if (simulatedTotal <= total) {
+      const marketSurcharge = roundCurrency((total * 0.0299) + 0.49);
+      simulatedTotal = roundCurrency(total + marketSurcharge);
+      installmentValue = roundCurrency(simulatedTotal / installments);
+    }
+
+    options.push({
+      installments,
+      installmentValue,
+      total: simulatedTotal,
+      hasInterest: simulatedTotal > total,
+      interestAmount: roundCurrency(Math.max(0, simulatedTotal - total)),
+    });
+  }
+
+  return { options, maxNoInterestInstallments };
+}
+
 export async function getCheckoutInstallments(req: Request, res: Response): Promise<void> {
   const total = Number(req.query.total);
 
@@ -179,47 +240,20 @@ export async function getCheckoutInstallments(req: Request, res: Response): Prom
   }
 
   try {
-    const limits = await getPaymentLimits();
-    const maxInstallments = Math.max(1, Math.min(12, limits.maxInstallmentCount ?? 12));
-
-    const options: InstallmentOptionDto[] = [];
-    for (let installments = 1; installments <= maxInstallments; installments += 1) {
-      try {
-        const simulation = await simulateInstallments(total, installments);
-        if (!simulation) continue;
-
-        const simulatedTotal = roundCurrency(simulation.totalValue);
-        const installmentValue = roundCurrency(simulation.installmentValue);
-        const interestAmount = roundCurrency(Math.max(0, simulatedTotal - total));
-
-        options.push({
-          installments,
-          installmentValue,
-          total: simulatedTotal,
-          hasInterest: interestAmount > 0,
-          interestAmount,
-        });
-      } catch {
-        // Mantem resiliencia: se uma faixa falhar, continuamos nas outras.
-      }
-    }
+    const { options, maxNoInterestInstallments } = await buildCreditCardInstallmentPlan(total);
 
     if (options.length === 0) {
       const fallback = buildFallbackInstallments(total);
       res.json({
         currency: 'BRL',
         source: 'fallback',
-        maxNoInterestInstallments: fallback[fallback.length - 1].installments,
+        maxNoInterestInstallments: getNoInterestInstallmentLimit(total),
         options: fallback,
       });
       return;
     }
 
     options.sort((a, b) => a.installments - b.installments);
-
-    const maxNoInterestInstallments = options
-      .filter((option) => !option.hasInterest)
-      .reduce((max, option) => Math.max(max, option.installments), 1);
 
     res.json({
       currency: 'BRL',
@@ -406,6 +440,9 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
       }
     }
     const total = Math.max(0, Math.round((subtotal - discountAmount + shippingCostVal) * 100) / 100);
+    const creditCardInstallmentPlan = paymentMethod === 'CREDIT_CARD'
+      ? await buildCreditCardInstallmentPlan(total)
+      : null;
 
     const customer = await findOrCreateCustomer(name.trim(), email.trim(), cpfClean);
 
@@ -540,9 +577,10 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
     };
 
     const safeInstallments = Math.max(1, Math.min(12, Number(installments) || 1));
+    const installmentTotal = creditCardInstallmentPlan?.options.find((option) => option.installments === safeInstallments)?.total ?? total;
     const payment = await createCreditCardPayment(
       customer.id,
-      total,
+      installmentTotal,
       'Compra Vista Magic',
       cardData,
       holderInfo,

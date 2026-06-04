@@ -51,7 +51,7 @@ const METHODS: { id: PaymentMethod; label: string; sub: string; icon: React.Reac
   {
     id: 'CREDIT_CARD',
     label: 'Cartão',
-    sub: 'Até 12× sem juros',
+    sub: 'Parcelamento disponível',
     icon: <CardIcon />,
   },
   {

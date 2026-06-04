@@ -64,7 +64,7 @@ export function CreditCardForm({
   maxNoInterestInstallments,
 }: CreditCardFormProps) {
   const [cvvFlip, setCvvFlip] = useState(false);
-  const noInterestLimit = installmentSource === 'asaas' ? 6 : Number(maxNoInterestInstallments) || 6;
+  const noInterestLimit = Number(maxNoInterestInstallments) || 6;
 
   const brand = detectBrand(data.cardNumber);
   const brandLabel = BRAND_LABEL[brand];
@@ -179,7 +179,7 @@ export function CreditCardForm({
             {options.map((option) => {
               const isSelected = data.installments === option.installments;
               const isVista = option.installments === 1;
-              const hasInterest = isVista ? false : (installmentSource === 'asaas' ? option.installments > noInterestLimit || option.hasInterest : option.hasInterest);
+              const hasInterest = isVista ? false : option.installments > noInterestLimit || option.hasInterest;
               const tag = isVista ? 'À VISTA' : hasInterest ? 'COM JUROS EMBUTIDOS' : 'SEM JUROS';
               return (
                 <button
@@ -204,7 +204,7 @@ export function CreditCardForm({
           </div>
           {installmentSource === 'asaas' ? (
             <small className="field-hint">
-              Sem juros em até 6x. De 7x a 12x, juros já entram no valor total.
+              Sem juros em até {noInterestLimit}x. A partir da próxima parcela, juros de mercado já entram no valor total.
             </small>
           ) : Number(maxNoInterestInstallments) > 0 && (
             <small className="field-hint">
