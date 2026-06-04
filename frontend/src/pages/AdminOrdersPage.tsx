@@ -13,6 +13,7 @@ interface AdminOrder {
   guestName: string | null;
   guestEmail: string | null;
   shippingMethod: string | null;
+  shippingLabel?: string | null;
   trackingCode: string | null;
   itemCount: number;
 }
@@ -62,6 +63,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const SHIPPING_LABELS: Record<string, string> = {
+  PAC: 'Correios (PAC)',
+  SEDEX: 'Correios (SEDEX)',
   CORREIOS: 'Correios', UBER: 'Uber Flash', PICKUP: 'Retirada na loja',
 };
 
@@ -169,7 +172,7 @@ export function AdminOrdersPage() {
   const [updateMsg, setUpdateMsg] = useState('');
 
   // Workflow advance form
-  const [actionForm, setActionForm] = useState({ trackingCode: '', trackingUrl: '', responsible: '', note: '' });
+  const [actionForm, setActionForm] = useState({ trackingCode: '', trackingUrl: '', note: '' });
   const [advancing, setAdvancing] = useState(false);
   const [actionError, setActionError] = useState('');
 
@@ -191,7 +194,7 @@ export function AdminOrdersPage() {
     setLoadingDetail(true);
     setUpdateForm({ status: order.status, shippingMethod: order.shippingMethod || '', trackingCode: order.trackingCode || '', trackingUrl: '', note: '' });
     setUpdateMsg('');
-    setActionForm({ trackingCode: order.trackingCode || '', trackingUrl: '', responsible: '', note: '' });
+    setActionForm({ trackingCode: order.trackingCode || '', trackingUrl: '', note: '' });
     setActionError('');
 
     try {
@@ -215,7 +218,7 @@ export function AdminOrdersPage() {
   // Advance through the lifecycle with the right fields
   async function advanceOrder(
     nextStatus: string,
-    opts: { requireTracking?: boolean; requireUrl?: boolean; requireResponsible?: boolean; responsibleLabel?: string } = {}
+    opts: { requireTracking?: boolean; requireUrl?: boolean } = {}
   ) {
     if (!selected) return;
     if (opts.requireTracking && !actionForm.trackingCode.trim()) {
@@ -224,24 +227,16 @@ export function AdminOrdersPage() {
     if (opts.requireUrl && !actionForm.trackingUrl.trim()) {
       setActionError('Informe o link de rastreio Uber antes de continuar.'); return;
     }
-    if (opts.requireResponsible && !actionForm.responsible.trim()) {
-      setActionError('Informe o nome do responsável.'); return;
-    }
     setAdvancing(true); setActionError('');
     try {
-      const responsible = actionForm.responsible.trim();
-      let note = actionForm.note.trim();
-      if (responsible) {
-        const prefix = opts.responsibleLabel ?? 'Responsável';
-        note = note ? `${prefix}: ${responsible} · ${note}` : `${prefix}: ${responsible}`;
-      }
+      const note = actionForm.note.trim();
       await axios.patch(`${ADMIN_API}/admin/orders/${selected.id}`, {
         status: nextStatus,
         trackingCode: actionForm.trackingCode.trim() || undefined,
         trackingUrl: actionForm.trackingUrl.trim() || undefined,
         note: note || undefined,
       }, { headers });
-      setActionForm({ trackingCode: '', trackingUrl: '', responsible: '', note: '' });
+      setActionForm({ trackingCode: '', trackingUrl: '', note: '' });
       void fetchOrders();
       await openOrder({ ...selected, status: nextStatus });
     } catch { setActionError('Erro ao avançar pedido.'); }
@@ -361,7 +356,7 @@ export function AdminOrdersPage() {
                 const st = selected.status;
                 const sm = selectedDetail?.shippingMethod || selected.shippingMethod || '';
                 const isPickup   = sm === 'PICKUP';
-                const isCorreios = sm === 'CORREIOS';
+                const isCorreios = sm === 'CORREIOS' || sm === 'PAC' || sm === 'SEDEX';
                 const isUber     = sm === 'UBER';
                 const isTerminal = ['CANCELLED', 'OVERDUE', 'REFUNDED'].includes(st);
                 const wfSteps    = getWorkflowSteps(sm);
@@ -423,12 +418,6 @@ export function AdminOrdersPage() {
                             <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Iniciar separação do pedido
                             </p>
-                            <div className="adm-field" style={{ marginBottom: 10 }}>
-                              <label className="adm-label">Responsável pela separação</label>
-                              <input type="text" className="adm-input" placeholder="Nome de quem vai separar"
-                                value={actionForm.responsible}
-                                onChange={(e) => setActionForm((f) => ({ ...f, responsible: e.target.value }))} />
-                            </div>
                             <div className="adm-field" style={{ marginBottom: 12 }}>
                               <label className="adm-label">Nota (opcional)</label>
                               <input type="text" className="adm-input" placeholder="Observação interna"
@@ -437,7 +426,7 @@ export function AdminOrdersPage() {
                             </div>
                             {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
-                              onClick={() => void advanceOrder('PREPARING', { responsibleLabel: 'Separado por' })}>
+                              onClick={() => void advanceOrder('PREPARING')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
                                 : <><IconArrow />&nbsp;Iniciar separação</>}
                             </button>
@@ -507,15 +496,6 @@ export function AdminOrdersPage() {
                             <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Disponibilizar para retirada
                             </p>
-                            <div className="adm-field" style={{ marginBottom: 10 }}>
-                              <label className="adm-label">
-                                Separado por
-                                <span style={{ color: '#EF8BA0', marginLeft: 3 }}>*</span>
-                              </label>
-                              <input type="text" className="adm-input" placeholder="Nome do responsável pela separação"
-                                value={actionForm.responsible}
-                                onChange={(e) => setActionForm((f) => ({ ...f, responsible: e.target.value }))} />
-                            </div>
                             <div className="adm-field" style={{ marginBottom: 12 }}>
                               <label className="adm-label">Nota (opcional)</label>
                               <input type="text" className="adm-input" placeholder="Ex: Pacote na prateleira 3"
@@ -524,7 +504,7 @@ export function AdminOrdersPage() {
                             </div>
                             {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
-                              onClick={() => void advanceOrder('SHIPPED', { requireResponsible: true, responsibleLabel: 'Separado por' })}>
+                              onClick={() => void advanceOrder('SHIPPED')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
                                 : <><IconArrow />&nbsp;Disponibilizar para retirada</>}
                             </button>
@@ -567,15 +547,6 @@ export function AdminOrdersPage() {
                             <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, fontWeight: 600, color: '#C8C0BC', margin: '0 0 10px' }}>
                               Confirmar retirada na loja
                             </p>
-                            <div className="adm-field" style={{ marginBottom: 10 }}>
-                              <label className="adm-label">
-                                Retirado por
-                                <span style={{ color: '#EF8BA0', marginLeft: 3 }}>*</span>
-                              </label>
-                              <input type="text" className="adm-input" placeholder="Nome de quem retirou o pedido"
-                                value={actionForm.responsible}
-                                onChange={(e) => setActionForm((f) => ({ ...f, responsible: e.target.value }))} />
-                            </div>
                             <div className="adm-field" style={{ marginBottom: 12 }}>
                               <label className="adm-label">Nota (opcional)</label>
                               <input type="text" className="adm-input" placeholder="Ex: Documento verificado"
@@ -584,7 +555,7 @@ export function AdminOrdersPage() {
                             </div>
                             {actionError && <p style={{ fontFamily: 'Arial,sans-serif', fontSize: 11, color: '#EF8BA0', margin: '0 0 10px' }}>{actionError}</p>}
                             <button type="button" className="adm-btn adm-btn--primary" style={{ width: '100%' }} disabled={advancing}
-                              onClick={() => void advanceOrder('DELIVERED', { requireResponsible: true, responsibleLabel: 'Retirado por' })}>
+                              onClick={() => void advanceOrder('DELIVERED')}>
                               {advancing ? <span className="adm-spinner" style={{ borderTopColor: '#050505', borderColor: 'rgba(5,5,5,0.3)', width: 13, height: 13 }} />
                                 : <><IconCheck />&nbsp;Confirmar retirada</>}
                             </button>
@@ -648,6 +619,8 @@ export function AdminOrdersPage() {
                         value={updateForm.shippingMethod}
                         onChange={(e) => setUpdateForm((f) => ({ ...f, shippingMethod: e.target.value }))}>
                         <option value="">Não definido</option>
+                        <option value="PAC">Correios (PAC)</option>
+                        <option value="SEDEX">Correios (SEDEX)</option>
                         <option value="CORREIOS">Correios</option>
                         <option value="UBER">Uber Flash</option>
                         <option value="PICKUP">Retirada na loja</option>

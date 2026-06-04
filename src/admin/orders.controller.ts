@@ -3,7 +3,7 @@ import { prisma } from '../config/database';
 import { getPaymentById } from '../checkout/asaas.service';
 
 const VALID_STATUSES = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'OVERDUE', 'REFUNDED'];
-const VALID_SHIPPING = ['CORREIOS', 'UBER', 'PICKUP'];
+const VALID_SHIPPING = ['CORREIOS', 'PAC', 'SEDEX', 'UBER', 'PICKUP'];
 
 const PAYMENT_STATUS_MAP: Record<string, string> = {
   RECEIVED: 'PAID',

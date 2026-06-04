@@ -54,7 +54,75 @@ interface CheckoutBody {
   addressZip?: string;
 }
 
+type NormalizedShippingSelection = {
+  shippingMethod: string | null;
+  shippingLabel: string | null;
+  shippingCost: number;
+};
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeShippingSelection(params: {
+  shippingMethod?: string;
+  shippingLabel?: string;
+  shippingCost: number;
+}): NormalizedShippingSelection {
+  const methodRaw = String(params.shippingMethod || '').trim();
+  const labelRaw = String(params.shippingLabel || '').trim();
+  const methodUpper = methodRaw.toUpperCase();
+  const labelUpper = labelRaw.toUpperCase();
+
+  const isPickup =
+    methodUpper === 'RETIRADA' ||
+    methodUpper === 'PICKUP' ||
+    labelUpper.includes('RETIR');
+
+  if (isPickup) {
+    return {
+      shippingMethod: 'PICKUP',
+      shippingLabel: labelRaw || 'Retirar na loja',
+      shippingCost: 0,
+    };
+  }
+
+  if (methodUpper === 'UBER' || labelUpper.includes('UBER')) {
+    return {
+      shippingMethod: 'UBER',
+      shippingLabel: labelRaw || 'Uber Flash',
+      shippingCost: Math.max(0, params.shippingCost),
+    };
+  }
+
+  if (methodUpper === 'SEDEX' || methodUpper === '2' || labelUpper.includes('SEDEX')) {
+    return {
+      shippingMethod: 'SEDEX',
+      shippingLabel: labelRaw || 'SEDEX',
+      shippingCost: Math.max(0, params.shippingCost),
+    };
+  }
+
+  if (methodUpper === 'PAC' || methodUpper === '1' || labelUpper.includes('PAC')) {
+    return {
+      shippingMethod: 'PAC',
+      shippingLabel: labelRaw || 'PAC',
+      shippingCost: Math.max(0, params.shippingCost),
+    };
+  }
+
+  if (methodUpper.length > 0 || labelUpper.length > 0) {
+    return {
+      shippingMethod: 'CORREIOS',
+      shippingLabel: labelRaw || methodRaw,
+      shippingCost: Math.max(0, params.shippingCost),
+    };
+  }
+
+  return {
+    shippingMethod: null,
+    shippingLabel: null,
+    shippingCost: Math.max(0, params.shippingCost),
+  };
+}
 
 type AuthRequest = Request & { userId?: string };
 
@@ -235,8 +303,11 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
   } = req.body as CheckoutBody;
 
   const shippingCostVal = Math.max(0, Number(shippingCostRaw) || 0);
-  // NOTE: Shipping/address fields are intentionally not persisted here to keep
-  // checkout resilient when production schema is partially out-of-sync.
+  const normalizedShipping = normalizeShippingSelection({
+    shippingMethod,
+    shippingLabel,
+    shippingCost: shippingCostVal,
+  });
 
   // ── Input validation ──────────────────────────────────────────────────────
   if (!name?.trim() || !email?.trim() || !cpf || !Array.isArray(items) || items.length === 0) {
@@ -352,6 +423,16 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           guestName: name.trim(),
           guestEmail: email.trim(),
           guestCpf: cpfClean,
+          shippingMethod: normalizedShipping.shippingMethod,
+          shippingLabel: normalizedShipping.shippingLabel,
+          shippingCost: normalizedShipping.shippingCost,
+          addressStreet: addressStreet?.trim() || null,
+          addressNumber: addressNumber?.trim() || null,
+          addressComplement: addressComplement?.trim() || null,
+          addressNeighborhood: addressNeighborhood?.trim() || null,
+          addressCity: addressCity?.trim() || null,
+          addressState: addressState?.trim() || null,
+          addressZip: addressZip?.replace(/\D/g, '') || null,
           pixQrCode: pix.encodedImage,
           pixCopyPaste: pix.payload,
           pixExpiresAt: pix.expirationDate ? new Date(pix.expirationDate) : null,
@@ -397,6 +478,16 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
           guestName: name.trim(),
           guestEmail: email.trim(),
           guestCpf: cpfClean,
+          shippingMethod: normalizedShipping.shippingMethod,
+          shippingLabel: normalizedShipping.shippingLabel,
+          shippingCost: normalizedShipping.shippingCost,
+          addressStreet: addressStreet?.trim() || null,
+          addressNumber: addressNumber?.trim() || null,
+          addressComplement: addressComplement?.trim() || null,
+          addressNeighborhood: addressNeighborhood?.trim() || null,
+          addressCity: addressCity?.trim() || null,
+          addressState: addressState?.trim() || null,
+          addressZip: addressZip?.replace(/\D/g, '') || null,
           boletoUrl: boleto.bankSlipUrl,
           boletoBarcode: boleto.nossoNumero,
           boletoDueDate: boleto.dueDate ? new Date(boleto.dueDate) : null,
@@ -467,6 +558,16 @@ export async function createCheckout(req: Request, res: Response): Promise<void>
         guestName: name.trim(),
         guestEmail: email.trim(),
         guestCpf: cpfClean,
+        shippingMethod: normalizedShipping.shippingMethod,
+        shippingLabel: normalizedShipping.shippingLabel,
+        shippingCost: normalizedShipping.shippingCost,
+        addressStreet: addressStreet?.trim() || null,
+        addressNumber: addressNumber?.trim() || null,
+        addressComplement: addressComplement?.trim() || null,
+        addressNeighborhood: addressNeighborhood?.trim() || null,
+        addressCity: addressCity?.trim() || null,
+        addressState: addressState?.trim() || null,
+        addressZip: addressZip?.replace(/\D/g, '') || null,
         couponCode: appliedCouponCode,
         discountAmount: discountAmount > 0 ? discountAmount : null,
         ...(userId ? { userId } : {}),
