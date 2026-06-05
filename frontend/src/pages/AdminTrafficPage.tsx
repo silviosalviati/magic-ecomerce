@@ -37,6 +37,7 @@ interface Source      { source: string; sessions: number; percentage: number }
 interface TopProduct  { productId: string; name: string; views: number; addToCart: number; cartRate: number }
 interface Session     { sessionId: string; firstSeen: string; pageCount: number; source: string; linkedEmail: string | null; lastStage: string | null }
 interface SessionsPayload { total: number; page: number; pageSize: number; sessions: Session[] }
+const AUTO_REFRESH_INTERVAL_MS = 60_000;
 
 function formatSessionTime(iso: string, period: Period): string {
   const d = new Date(iso);
@@ -95,10 +96,19 @@ export function AdminTrafficPage() {
   const [products,  setProducts]  = useState<TopProduct[]>([]);
   const [sessions,  setSessions]  = useState<SessionsPayload | null>(null);
   const [sessPage,  setSessPage]  = useState(1);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState('');
   const [sessLoading,  setSessLoading]  = useState(false);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setRefreshTick((tick) => tick + 1);
+    }, AUTO_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   // Fetch overview + funnel + sources + products when period changes
   useEffect(() => {
@@ -122,7 +132,7 @@ export function AdminTrafficPage() {
       .catch(() => setError('Falha ao carregar dados de tráfego.'))
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, [period, refreshTick]);
 
   // Fetch sessions separately (pagination-aware)
   useEffect(() => {
@@ -133,7 +143,7 @@ export function AdminTrafficPage() {
       .catch(() => setSessions(null))
       .finally(() => setSessLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, sessPage]);
+  }, [period, sessPage, refreshTick]);
 
   const funnelMax = funnel[0]?.sessions ?? 1;
   const sessTotalPages = sessions ? Math.max(1, Math.ceil(sessions.total / sessions.pageSize)) : 1;

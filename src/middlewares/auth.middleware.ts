@@ -21,6 +21,7 @@ interface JwtPayload {
   userId: string;
   email: string;
   isAdmin?: boolean;
+  sessionId?: string;
 }
 
 function getJwtSecret(): string | null {
@@ -38,15 +39,23 @@ async function tryAuthorizeByJwt(req: Request): Promise<AdminPayload | null> {
   try {
     const token = header.slice(7);
     const payload = jwt.verify(token, secret) as JwtPayload;
-    if (!payload.userId) return null;
+    if (!payload.userId || !payload.sessionId) return null;
 
     // DB check keeps admin permission revocation immediate.
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, isAdmin: true },
+      select: { id: true, isAdmin: true, activeSessionId: true, activeSessionExpiresAt: true },
     });
 
     if (!user?.isAdmin) return null;
+    if (
+      user.activeSessionId !== payload.sessionId ||
+      !user.activeSessionExpiresAt ||
+      user.activeSessionExpiresAt.getTime() <= Date.now()
+    ) {
+      return null;
+    }
+
     return { id: user.id, role: 'admin', source: 'jwt' };
   } catch {
     return null;
