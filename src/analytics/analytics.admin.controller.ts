@@ -16,6 +16,66 @@ function getPeriodStart(period: string): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
+const SOURCE_ALIASES: Record<string, string> = {
+  ig: 'instagram',
+  insta: 'instagram',
+  instagram: 'instagram',
+  fb: 'facebook',
+  face: 'facebook',
+  facebook: 'facebook',
+  google: 'google',
+};
+
+const SOURCE_HOST_PATTERNS: [RegExp, string][] = [
+  [/instagram\.com/i, 'instagram'],
+  [/facebook\.com/i, 'facebook'],
+  [/fb\.com/i, 'facebook'],
+  [/google\./i, 'google'],
+];
+
+function hostToPrimaryLabel(hostname: string): string {
+  const clean = hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '').replace(/^l\./, '');
+  const parts = clean.split('.').filter(Boolean);
+  if (parts.length <= 1) return parts[0] || clean;
+
+  const last = parts[parts.length - 1];
+  const secondLast = parts[parts.length - 2];
+  const genericSecondLevel = new Set(['com', 'net', 'org', 'gov', 'edu']);
+
+  if (last.length === 2 && genericSecondLevel.has(secondLast) && parts.length >= 3) {
+    return parts[parts.length - 3];
+  }
+
+  return secondLast;
+}
+
+function normalizeSourceLabel(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const value = String(raw).trim().toLowerCase();
+  if (!value) return null;
+
+  if (SOURCE_ALIASES[value]) return SOURCE_ALIASES[value];
+
+  let hostCandidate = value;
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      hostCandidate = new URL(value).hostname;
+    } catch {
+      return value;
+    }
+  }
+
+  for (const [pattern, label] of SOURCE_HOST_PATTERNS) {
+    if (pattern.test(hostCandidate) || pattern.test(value)) return label;
+  }
+
+  if (hostCandidate.includes('.')) {
+    return hostToPrimaryLabel(hostCandidate);
+  }
+
+  return value;
+}
+
 export async function getOverview(req: Request, res: Response): Promise<void> {
   const periodStart = getPeriodStart(String(req.query.period ?? 'today'));
 
@@ -80,13 +140,7 @@ export async function getSources(req: Request, res: Response): Promise<void> {
   // Resolve label: utmSource → referrer domain → 'direto'
   const sourceCount = new Map<string, number>();
   for (const s of sessions) {
-    let label = s.utmSource ?? null;
-    if (!label && s.referrer) {
-      try {
-        const hostname = new URL(s.referrer).hostname.replace(/^www\./, '');
-        if (hostname) label = hostname;
-      } catch { /* ignore malformed */ }
-    }
+    const label = normalizeSourceLabel(s.utmSource) ?? normalizeSourceLabel(s.referrer);
     const key = label ?? 'direto';
     sourceCount.set(key, (sourceCount.get(key) ?? 0) + 1);
   }
@@ -186,7 +240,7 @@ export async function getSessions(req: Request, res: Response): Promise<void> {
       firstSeen: s.firstSeen,
       lastSeen: s.lastSeen,
       pageCount: s.pageCount,
-      source: s.utmSource ?? s.referrer ?? 'direto',
+      source: normalizeSourceLabel(s.utmSource) ?? normalizeSourceLabel(s.referrer) ?? 'direto',
       linkedEmail: s.linkedEmail,
       lastStage: s.events[0]?.eventType ?? null,
     })),

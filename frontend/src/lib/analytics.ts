@@ -4,6 +4,8 @@ const API_BASE =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
   'https://magic-ecomerce-api-731025483706.us-central1.run.app';
 
+const AUTH_TOKEN_KEY = 'magic.auth.token';
+
 // ── Session ID ────────────────────────────────────────────────────────────────
 
 function getSessionId(): string {
@@ -13,6 +15,29 @@ function getSessionId(): string {
     localStorage.setItem(SESSION_KEY, id);
   }
   return id;
+}
+
+function parseJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = atob(base64);
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function isAdminUserSession(): boolean {
+  try {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) return false;
+    const payload = parseJwtPayload(token);
+    return Boolean(payload?.isAdmin === true);
+  } catch {
+    return false;
+  }
 }
 
 // ── UTM / source helpers ──────────────────────────────────────────────────────
@@ -78,6 +103,10 @@ interface TrackPayload {
 }
 
 function send(data: TrackPayload): void {
+  if (location.pathname.startsWith('/admin') || isAdminUserSession()) {
+    return;
+  }
+
   const body = JSON.stringify({
     sessionId: getSessionId(),
     referrer: document.referrer || undefined,
