@@ -11,6 +11,8 @@ model User {
   password                 String
   name                     String
   isAdmin                  Boolean  @default(false)
+  activeSessionId          String?  @unique
+  activeSessionExpiresAt    DateTime?
   emailVerifiedAt          DateTime?
   emailVerificationToken   String?
   emailVerificationExpires DateTime?

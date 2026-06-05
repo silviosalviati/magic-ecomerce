@@ -7,7 +7,8 @@ import { sendEmailVerification, sendPasswordResetEmail, isMailerConfigured } fro
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SALT_ROUNDS = 10;
-const TOKEN_EXPIRY = '30d';
+const SESSION_TTL_MS = 5 * 60 * 60 * 1000;
+const TOKEN_EXPIRY = '5h';
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -18,10 +19,10 @@ function getJwtSecret(): string | null {
   return secret && secret.length > 0 ? secret : null;
 }
 
-function generateToken(userId: string, email: string, isAdmin: boolean): string {
+function generateToken(userId: string, email: string, isAdmin: boolean, sessionId: string): string {
   const secret = getJwtSecret();
   if (!secret) throw new Error('JWT_SECRET não configurado.');
-  return jwt.sign({ userId, email, isAdmin }, secret, { expiresIn: TOKEN_EXPIRY });
+  return jwt.sign({ userId, email, isAdmin, sessionId }, secret, { expiresIn: TOKEN_EXPIRY });
 }
 
 function normalizeEmail(email: string): string {
@@ -214,15 +215,19 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    const sessionId = crypto.randomUUID();
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
         failedLoginAttempts: 0,
         lockedUntil: null,
+        activeSessionId: sessionId,
+        activeSessionExpiresAt: new Date(Date.now() + SESSION_TTL_MS),
       },
     });
 
-    const token = generateToken(user.id, user.email, user.isAdmin);
+    const token = generateToken(user.id, user.email, user.isAdmin, sessionId);
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, isAdmin: user.isAdmin } });
   } catch (error) {
     console.error('[auth/login]', error);
@@ -359,6 +364,8 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
         passwordResetExpires: null,
         failedLoginAttempts: 0,
         lockedUntil: null,
+        activeSessionId: null,
+        activeSessionExpiresAt: null,
       },
     });
 

@@ -15,6 +15,7 @@ import type {
 
 const TOKEN_KEY = 'magic.auth.token';
 const IMAGE_WATERMARK_VERSION = '20260602';
+const AUTH_INVALIDATED_EVENT = 'magic-auth-invalidated';
 
 const api = axios.create({
   baseURL:
@@ -34,6 +35,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      window.dispatchEvent(new Event(AUTH_INVALIDATED_EVENT));
+    }
+
     const message =
       (error.response?.data as { message?: string } | undefined)?.message || error.message;
     return Promise.reject(new Error(message));

@@ -4,6 +4,7 @@ import { authMe } from '../lib/api';
 import type { AuthUser } from '../types';
 
 const TOKEN_KEY = 'magic.auth.token';
+const AUTH_INVALIDATED_EVENT = 'magic-auth-invalidated';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -42,6 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(TOKEN_KEY);
       })
       .finally(() => setLoading(false));
+
+    function onAuthInvalidated() {
+      localStorage.removeItem(TOKEN_KEY);
+      setToken(null);
+      setUser(null);
+    }
+
+    window.addEventListener(AUTH_INVALIDATED_EVENT, onAuthInvalidated);
+    return () => window.removeEventListener(AUTH_INVALIDATED_EVENT, onAuthInvalidated);
   }, []);
 
   function login(newToken: string, newUser: AuthUser) {
