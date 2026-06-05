@@ -14,4 +14,4 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-CMD npx prisma migrate deploy && npm run start
+CMD ["npm", "run", "start"]
