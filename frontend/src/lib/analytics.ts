@@ -15,12 +15,46 @@ function getSessionId(): string {
   return id;
 }
 
-// ── UTM helpers ───────────────────────────────────────────────────────────────
+// ── UTM / source helpers ──────────────────────────────────────────────────────
+
+const REFERRER_MAP: [RegExp, string][] = [
+  [/instagram\.com/i,  'instagram'],
+  [/facebook\.com/i,   'facebook'],
+  [/fb\.com/i,         'facebook'],
+  [/wa\.me/i,          'whatsapp'],
+  [/whatsapp\.com/i,   'whatsapp'],
+  [/tiktok\.com/i,     'tiktok'],
+  [/youtube\.com/i,    'youtube'],
+  [/youtu\.be/i,       'youtube'],
+  [/pinterest\.com/i,  'pinterest'],
+  [/twitter\.com/i,    'twitter'],
+  [/x\.com/i,          'twitter'],
+  [/google\./i,        'google'],
+  [/bing\.com/i,       'bing'],
+  [/yahoo\.com/i,      'yahoo'],
+  [/t\.co\//i,         'twitter'],
+  [/linktree/i,        'linktree'],
+];
+
+function inferSourceFromReferrer(referrer: string): string | undefined {
+  if (!referrer) return undefined;
+  try {
+    const hostname = new URL(referrer).hostname.replace(/^www\./, '');
+    for (const [pattern, label] of REFERRER_MAP) {
+      if (pattern.test(referrer)) return label;
+    }
+    // Return the bare domain as fallback (e.g. "loja.parceiro.com.br")
+    return hostname || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function getUtmParams(): Record<string, string | undefined> {
   const params = new URLSearchParams(location.search);
+  const utmSource = params.get('utm_source') ?? inferSourceFromReferrer(document.referrer);
   return {
-    utmSource: params.get('utm_source') ?? undefined,
+    utmSource: utmSource ?? undefined,
     utmMedium: params.get('utm_medium') ?? undefined,
     utmCampaign: params.get('utm_campaign') ?? undefined,
   };

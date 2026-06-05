@@ -72,21 +72,35 @@ export async function getFunnel(req: Request, res: Response): Promise<void> {
 export async function getSources(req: Request, res: Response): Promise<void> {
   const periodStart = getPeriodStart(String(req.query.period ?? 'today'));
 
-  const groups = await prisma.analyticsSession.groupBy({
-    by: ['utmSource'],
-    _count: { sessionId: true },
+  const sessions = await prisma.analyticsSession.findMany({
     where: { firstSeen: { gte: periodStart } },
-    orderBy: { _count: { sessionId: 'desc' } },
-    take: 10,
+    select: { utmSource: true, referrer: true },
   });
 
-  const total = groups.reduce((sum, g) => sum + g._count.sessionId, 0);
+  // Resolve label: utmSource → referrer domain → 'direto'
+  const sourceCount = new Map<string, number>();
+  for (const s of sessions) {
+    let label = s.utmSource ?? null;
+    if (!label && s.referrer) {
+      try {
+        const hostname = new URL(s.referrer).hostname.replace(/^www\./, '');
+        if (hostname) label = hostname;
+      } catch { /* ignore malformed */ }
+    }
+    const key = label ?? 'direto';
+    sourceCount.set(key, (sourceCount.get(key) ?? 0) + 1);
+  }
+
+  const total = sessions.length;
+  const sorted = [...sourceCount.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
 
   res.json(
-    groups.map((g) => ({
-      source: g.utmSource ?? 'direto',
-      sessions: g._count.sessionId,
-      percentage: total > 0 ? +((g._count.sessionId / total) * 100).toFixed(1) : 0,
+    sorted.map(([source, count]) => ({
+      source,
+      sessions: count,
+      percentage: total > 0 ? +((count / total) * 100).toFixed(1) : 0,
     }))
   );
 }
