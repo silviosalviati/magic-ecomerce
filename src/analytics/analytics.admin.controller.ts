@@ -24,6 +24,20 @@ const SOURCE_ALIASES: Record<string, string> = {
   face: 'facebook',
   facebook: 'facebook',
   google: 'google',
+  wa: 'whatsapp',
+  wpp: 'whatsapp',
+  whatsapp: 'whatsapp',
+  tiktok: 'tiktok',
+  youtube: 'youtube',
+  yt: 'youtube',
+  twitter: 'twitter',
+  x: 'twitter',
+  pinterest: 'pinterest',
+  yahoo: 'yahoo',
+  bing: 'bing',
+  linktree: 'linktree',
+  direct: 'direto',
+  direto: 'direto',
 };
 
 const SOURCE_HOST_PATTERNS: [RegExp, string][] = [
@@ -31,7 +45,29 @@ const SOURCE_HOST_PATTERNS: [RegExp, string][] = [
   [/facebook\.com/i, 'facebook'],
   [/fb\.com/i, 'facebook'],
   [/google\./i, 'google'],
+  [/wa\.me/i, 'whatsapp'],
+  [/whatsapp\.com/i, 'whatsapp'],
+  [/tiktok\.com/i, 'tiktok'],
+  [/youtube\.com/i, 'youtube'],
+  [/youtu\.be/i, 'youtube'],
+  [/twitter\.com/i, 'twitter'],
+  [/x\.com/i, 'twitter'],
+  [/pinterest\.com/i, 'pinterest'],
+  [/bing\.com/i, 'bing'],
+  [/yahoo\.com/i, 'yahoo'],
+  [/linktree/i, 'linktree'],
 ];
+
+function normalizeToken(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9._-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
 
 function hostToPrimaryLabel(hostname: string): string {
   const clean = hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '').replace(/^l\./, '');
@@ -51,10 +87,13 @@ function hostToPrimaryLabel(hostname: string): string {
 
 function normalizeSourceLabel(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const value = String(raw).trim().toLowerCase();
+  const value = normalizeToken(String(raw));
   if (!value) return null;
 
   if (SOURCE_ALIASES[value]) return SOURCE_ALIASES[value];
+
+  const firstToken = value.split(/[._-]/)[0];
+  if (SOURCE_ALIASES[firstToken]) return SOURCE_ALIASES[firstToken];
 
   let hostCandidate = value;
   if (value.startsWith('http://') || value.startsWith('https://')) {

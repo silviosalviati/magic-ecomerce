@@ -42,6 +42,28 @@ function isAdminUserSession(): boolean {
 
 // ── UTM / source helpers ──────────────────────────────────────────────────────
 
+const SOURCE_ALIASES: Record<string, string> = {
+  ig: 'instagram',
+  insta: 'instagram',
+  instagram: 'instagram',
+  fb: 'facebook',
+  face: 'facebook',
+  facebook: 'facebook',
+  google: 'google',
+  wa: 'whatsapp',
+  wpp: 'whatsapp',
+  whatsapp: 'whatsapp',
+  tiktok: 'tiktok',
+  youtube: 'youtube',
+  yt: 'youtube',
+  twitter: 'twitter',
+  x: 'twitter',
+  pinterest: 'pinterest',
+  yahoo: 'yahoo',
+  bing: 'bing',
+  linktree: 'linktree',
+};
+
 const REFERRER_MAP: [RegExp, string][] = [
   [/instagram\.com/i,  'instagram'],
   [/facebook\.com/i,   'facebook'],
@@ -61,27 +83,77 @@ const REFERRER_MAP: [RegExp, string][] = [
   [/linktree/i,        'linktree'],
 ];
 
+function normalizeToken(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9._-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function hostToPrimaryLabel(hostname: string): string {
+  const clean = hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '').replace(/^l\./, '');
+  const parts = clean.split('.').filter(Boolean);
+  if (parts.length <= 1) return parts[0] || clean;
+
+  const last = parts[parts.length - 1];
+  const secondLast = parts[parts.length - 2];
+  const genericSecondLevel = new Set(['com', 'net', 'org', 'gov', 'edu']);
+
+  if (last.length === 2 && genericSecondLevel.has(secondLast) && parts.length >= 3) {
+    return parts[parts.length - 3];
+  }
+
+  return secondLast;
+}
+
+function normalizeSourceLabel(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  const value = normalizeToken(String(raw));
+  if (!value) return undefined;
+
+  if (SOURCE_ALIASES[value]) return SOURCE_ALIASES[value];
+
+  const firstToken = value.split(/[._-]/)[0];
+  if (SOURCE_ALIASES[firstToken]) return SOURCE_ALIASES[firstToken];
+
+  let hostCandidate = value;
+  if (String(raw).startsWith('http://') || String(raw).startsWith('https://')) {
+    try {
+      hostCandidate = new URL(String(raw)).hostname;
+    } catch {
+      return value;
+    }
+  }
+
+  for (const [pattern, label] of REFERRER_MAP) {
+    if (pattern.test(String(raw)) || pattern.test(hostCandidate)) return label;
+  }
+
+  if (hostCandidate.includes('.')) {
+    return normalizeToken(hostToPrimaryLabel(hostCandidate));
+  }
+
+  return value;
+}
+
 function inferSourceFromReferrer(referrer: string): string | undefined {
   if (!referrer) return undefined;
-  try {
-    const hostname = new URL(referrer).hostname.replace(/^www\./, '');
-    for (const [pattern, label] of REFERRER_MAP) {
-      if (pattern.test(referrer)) return label;
-    }
-    // Return the bare domain as fallback (e.g. "loja.parceiro.com.br")
-    return hostname || undefined;
-  } catch {
-    return undefined;
-  }
+  return normalizeSourceLabel(referrer);
 }
 
 function getUtmParams(): Record<string, string | undefined> {
   const params = new URLSearchParams(location.search);
-  const utmSource = params.get('utm_source') ?? inferSourceFromReferrer(document.referrer);
+  const utmSource =
+    normalizeSourceLabel(params.get('utm_source')) ??
+    inferSourceFromReferrer(document.referrer);
   return {
     utmSource: utmSource ?? undefined,
-    utmMedium: params.get('utm_medium') ?? undefined,
-    utmCampaign: params.get('utm_campaign') ?? undefined,
+    utmMedium: normalizeToken(params.get('utm_medium') ?? '' ) || undefined,
+    utmCampaign: normalizeToken(params.get('utm_campaign') ?? '' ) || undefined,
   };
 }
 
