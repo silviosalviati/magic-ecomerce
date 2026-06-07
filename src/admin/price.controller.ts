@@ -6,6 +6,18 @@ function clientError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function isPriceHistoryMissingTable(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const maybeMessage = (error as { message?: unknown }).message;
+  const message = typeof maybeMessage === 'string' ? maybeMessage : '';
+
+  return (
+    message.includes('public.PriceHistory') ||
+    message.includes('The table `public.PriceHistory` does not exist')
+  );
+}
+
 export async function updateProductPrice(req: Request, res: Response) {
   const id = String(req.params.id);
   const { costPrice, markup, basePrice, reason } = req.body;
@@ -43,12 +55,13 @@ export async function updateProductPrice(req: Request, res: Response) {
       return;
     }
 
-    const [updated] = await prisma.$transaction([
-      prisma.product.update({
-        where: { id },
-        data: { costPrice: costPriceNum, markup: markupNum, basePrice: basePriceNum },
-      }),
-      prisma.priceHistory.create({
+    const updated = await prisma.product.update({
+      where: { id },
+      data: { costPrice: costPriceNum, markup: markupNum, basePrice: basePriceNum },
+    });
+
+    try {
+      await prisma.priceHistory.create({
         data: {
           productId: id,
           oldCostPrice: product.costPrice,
@@ -60,8 +73,11 @@ export async function updateProductPrice(req: Request, res: Response) {
           changedBy,
           reason: reason ?? null,
         },
-      }),
-    ]);
+      });
+    } catch (historyError) {
+      if (!isPriceHistoryMissingTable(historyError)) throw historyError;
+      console.error('price_history_table_missing', historyError);
+    }
 
     res.json({ product: updated });
   } catch (err) {
@@ -104,20 +120,21 @@ export async function bulkUpdatePrice(req: Request, res: Response) {
       return;
     }
 
-    await prisma.$transaction(
-      products.flatMap((p) => {
+    await prisma.$transaction(async (tx) => {
+      for (const p of products) {
         const newMarkup =
           markupDelta !== undefined
             ? Number((Number(p.markup) + markupDelta).toFixed(6))
             : Number(markup!);
         const newBasePrice = Number((Number(p.costPrice) * newMarkup).toFixed(2));
 
-        return [
-          prisma.product.update({
-            where: { id: p.id },
-            data: { markup: newMarkup, basePrice: newBasePrice },
-          }),
-          prisma.priceHistory.create({
+        await tx.product.update({
+          where: { id: p.id },
+          data: { markup: newMarkup, basePrice: newBasePrice },
+        });
+
+        try {
+          await tx.priceHistory.create({
             data: {
               productId: p.id,
               oldCostPrice: p.costPrice,
@@ -129,10 +146,13 @@ export async function bulkUpdatePrice(req: Request, res: Response) {
               changedBy,
               reason: reason ?? null,
             },
-          }),
-        ];
-      })
-    );
+          });
+        } catch (historyError) {
+          if (!isPriceHistoryMissingTable(historyError)) throw historyError;
+          console.error('price_history_table_missing', historyError);
+        }
+      }
+    });
 
     res.json({ updated: products.length });
   } catch (err) {
