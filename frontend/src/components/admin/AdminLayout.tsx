@@ -67,6 +67,14 @@ function IconTraffic() {
     </svg>
   );
 }
+function IconPrice() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  );
+}
 function IconLogout() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -88,6 +96,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/pedidos',   label: 'Pedidos',   icon: <IconOrders /> },
   { to: '/admin/foto',      label: 'Foto',      icon: <IconCamera /> },
   { to: '/admin/leitor',    label: 'Leitor',    icon: <IconBarcode /> },
+  { to: '/admin/precos',    label: 'Preços',    icon: <IconPrice /> },
   { to: '/admin/usuarios',  label: 'Usuários',  icon: <IconUsers /> },
   { to: '/admin/cupons',    label: 'Cupons',    icon: <IconCoupon /> },
   { to: '/admin/trafego',   label: 'Tráfego',   icon: <IconTraffic /> },

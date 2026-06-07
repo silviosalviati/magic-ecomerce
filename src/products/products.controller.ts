@@ -318,15 +318,6 @@ export class ProductsController {
             });
 
         if (existingProduct) {
-          const existingCost = Number(existingProduct.costPrice);
-          const existingMarkup = Number(existingProduct.markup);
-          const costDiff = Math.abs(existingCost - costPriceNumber);
-          const markupDiff = Math.abs(existingMarkup - markupNumber);
-
-          if (costDiff > 0.0001 || markupDiff > 0.0001) {
-            throw new Error('PRODUCT_PRICE_MISMATCH');
-          }
-
           if (
             (!existingProduct.description || String(existingProduct.description).trim().length === 0) &&
             normalizedDescription

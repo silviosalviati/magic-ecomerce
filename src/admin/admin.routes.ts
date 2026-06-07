@@ -3,6 +3,7 @@ import { AdminController } from './admin.controller';
 import { requireAdminAccess } from '../middlewares/auth.middleware';
 import { validateUpdateStock } from '../middlewares/validate.middleware';
 import { listOrders, getOrder, updateOrder, reconcileOrderPayment } from './orders.controller';
+import { updateProductPrice, bulkUpdatePrice, getPriceHistory } from './price.controller';
 import {
   getOverview,
   getFunnel,
@@ -42,6 +43,11 @@ adminRouter.patch(
   validateUpdateStock,
   (req: Request, res: Response) => controller.updateStock(req, res)
 );
+
+// ── Pricing ───────────────────────────────────────────────────────────────────
+adminRouter.post('/products/bulk-price', (req: Request, res: Response) => bulkUpdatePrice(req, res));
+adminRouter.patch('/products/:id/price', (req: Request, res: Response) => updateProductPrice(req, res));
+adminRouter.get('/products/:id/price-history', (req: Request, res: Response) => getPriceHistory(req, res));
 
 // ── Orders ───────────────────────────────────────────────────────────────────
 adminRouter.get('/orders', (req: Request, res: Response) => listOrders(req, res));
