@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 
+const BRAZIL_TZ = 'America/Sao_Paulo';
+
 const FUNNEL_STAGES = [
   'page_view',
   'product_view',
@@ -13,7 +15,47 @@ function getPeriodStart(period: string): Date {
   const now = new Date();
   if (period === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   if (period === '30d') return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return getStartOfTodayInTimezone(BRAZIL_TZ, now);
+}
+
+function getStartOfTodayInTimezone(timeZone: string, now: Date): Date {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+
+  const year = Number(parts.find((p) => p.type === 'year')?.value ?? '0');
+  const month = Number(parts.find((p) => p.type === 'month')?.value ?? '1');
+  const day = Number(parts.find((p) => p.type === 'day')?.value ?? '1');
+
+  const utcMidnightGuess = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  const offsetMs = getTimeZoneOffsetMs(utcMidnightGuess, timeZone);
+  return new Date(utcMidnightGuess.getTime() - offsetMs);
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date);
+
+  const year = Number(parts.find((p) => p.type === 'year')?.value ?? '0');
+  const month = Number(parts.find((p) => p.type === 'month')?.value ?? '1');
+  const day = Number(parts.find((p) => p.type === 'day')?.value ?? '1');
+  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0');
+  const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0');
+  const second = Number(parts.find((p) => p.type === 'second')?.value ?? '0');
+
+  const asUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  return asUtc - date.getTime();
 }
 
 const SOURCE_ALIASES: Record<string, string> = {

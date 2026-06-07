@@ -38,12 +38,29 @@ interface TopProduct  { productId: string; name: string; views: number; addToCar
 interface Session     { sessionId: string; firstSeen: string; pageCount: number; source: string; linkedEmail: string | null; lastStage: string | null }
 interface SessionsPayload { total: number; page: number; pageSize: number; sessions: Session[] }
 const AUTO_REFRESH_INTERVAL_MS = 60_000;
+const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 function formatSessionTime(iso: string, period: Period): string {
   const d = new Date(iso);
-  if (period === 'today') return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' +
-    d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  if (period === 'today') {
+    return d.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: BRAZIL_TIMEZONE,
+    });
+  }
+
+  return d.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: BRAZIL_TIMEZONE,
+  }) +
+    ' ' +
+    d.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: BRAZIL_TIMEZONE,
+    });
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
