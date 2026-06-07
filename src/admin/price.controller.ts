@@ -120,39 +120,46 @@ export async function bulkUpdatePrice(req: Request, res: Response) {
       return;
     }
 
-    await prisma.$transaction(async (tx) => {
-      for (const p of products) {
-        const newMarkup =
-          markupDelta !== undefined
-            ? Number((Number(p.markup) + markupDelta).toFixed(6))
-            : Number(markup!);
-        const newBasePrice = Number((Number(p.costPrice) * newMarkup).toFixed(2));
+    const nextValues = products.map((p) => {
+      const newMarkup =
+        markupDelta !== undefined
+          ? Number((Number(p.markup) + markupDelta).toFixed(6))
+          : Number(markup!);
+      const newBasePrice = Number((Number(p.costPrice) * newMarkup).toFixed(2));
 
-        await tx.product.update({
-          where: { id: p.id },
-          data: { markup: newMarkup, basePrice: newBasePrice },
-        });
-
-        try {
-          await tx.priceHistory.create({
-            data: {
-              productId: p.id,
-              oldCostPrice: p.costPrice,
-              oldMarkup: p.markup,
-              oldBasePrice: p.basePrice,
-              newCostPrice: p.costPrice,
-              newMarkup,
-              newBasePrice,
-              changedBy,
-              reason: reason ?? null,
-            },
-          });
-        } catch (historyError) {
-          if (!isPriceHistoryMissingTable(historyError)) throw historyError;
-          console.error('price_history_table_missing', historyError);
-        }
-      }
+      return { product: p, newMarkup, newBasePrice };
     });
+
+    await prisma.$transaction(
+      nextValues.map((entry) =>
+        prisma.product.update({
+          where: { id: entry.product.id },
+          data: { markup: entry.newMarkup, basePrice: entry.newBasePrice },
+        })
+      )
+    );
+
+    for (const entry of nextValues) {
+      try {
+        await prisma.priceHistory.create({
+          data: {
+            productId: entry.product.id,
+            oldCostPrice: entry.product.costPrice,
+            oldMarkup: entry.product.markup,
+            oldBasePrice: entry.product.basePrice,
+            newCostPrice: entry.product.costPrice,
+            newMarkup: entry.newMarkup,
+            newBasePrice: entry.newBasePrice,
+            changedBy,
+            reason: reason ?? null,
+          },
+        });
+      } catch (historyError) {
+        if (!isPriceHistoryMissingTable(historyError)) throw historyError;
+        console.error('price_history_table_missing', historyError);
+        break;
+      }
+    }
 
     res.json({ updated: products.length });
   } catch (err) {
@@ -169,6 +176,10 @@ export async function getPriceHistory(req: Request, res: Response) {
     });
     res.json({ history });
   } catch (err) {
+    if (isPriceHistoryMissingTable(err)) {
+      res.json({ history: [] });
+      return;
+    }
     res.status(500).json({ error: clientError(err) });
   }
 }
