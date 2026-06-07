@@ -27,6 +27,8 @@ interface PriceHistoryEntry {
   changedAt: string;
 }
 
+type ProductsResponse = Product[] | { products?: Product[] };
+
 function n(v: number | string) {
   return Number(v);
 }
@@ -88,11 +90,16 @@ export function AdminPrecosPage() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await axios.get<{ products: Product[] }>(
+      const { data } = await axios.get<ProductsResponse>(
         `${ADMIN_API}/admin/products`,
         { headers }
       );
-      const list = data.products ?? [];
+      const rawList = Array.isArray(data) ? data : data.products ?? [];
+      const list = rawList.map((p) => ({
+        ...p,
+        category: p.category?.trim() ? p.category : 'Sem categoria',
+      }));
+
       setProducts(list);
       const cats = Array.from(new Set(list.map((p) => p.category))).sort();
       setCategories(cats);
