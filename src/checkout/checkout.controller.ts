@@ -716,12 +716,22 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
     }
   }
 
-  const { event, payment } = req.body as {
-    event: string;
-    payment?: { id: string; status: string };
-  };
+  const body = (req.body && typeof req.body === 'object')
+    ? (req.body as Record<string, unknown>)
+    : {};
+  const event = typeof body.event === 'string' ? body.event : '';
+  const payment =
+    body.payment && typeof body.payment === 'object'
+      ? (body.payment as { id?: unknown; status?: unknown })
+      : undefined;
 
-  if (!payment?.id) {
+  const paymentId = typeof payment?.id === 'string' ? payment.id.trim() : '';
+  const payloadPaymentStatus = typeof payment?.status === 'string'
+    ? payment.status.toUpperCase()
+    : '';
+
+  if (!paymentId) {
+    console.log('[webhook] payload sem payment.id, ignorado', { event });
     res.sendStatus(200);
     return;
   }
@@ -752,24 +762,44 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
   const eventMappedStatus = statusMap[event];
 
   try {
-    const providerPayment = await getPaymentById(payment.id);
-    const providerStatus = String(providerPayment.status || '').toUpperCase();
+    let providerStatus = '';
+
+    try {
+      const providerPayment = await getPaymentById(paymentId);
+      providerStatus = String(providerPayment.status || '').toUpperCase();
+    } catch (lookupError) {
+      if (axios.isAxiosError(lookupError)) {
+        const lookupStatus = Number(lookupError.response?.status || 0);
+
+        // Use payload as fallback when provider lookup is unavailable.
+        console.warn('[webhook] falha ao consultar pagamento no Asaas; usando payload do webhook', {
+          event,
+          paymentId,
+          asaasStatusCode: lookupStatus || null,
+          asaasError: lookupError.message,
+        });
+      } else {
+        throw lookupError;
+      }
+    }
+
     const paymentMappedStatus = paymentStatusMap[providerStatus];
+    const payloadMappedStatus = paymentStatusMap[payloadPaymentStatus];
 
     // Confirm the payment state with Asaas instead of trusting the inbound payload.
-    const newStatus = paymentMappedStatus || eventMappedStatus;
+    const newStatus = paymentMappedStatus || payloadMappedStatus || eventMappedStatus;
     if (!newStatus) {
       console.log('[webhook] event ignored', {
         event,
-        paymentId: payment.id,
-        paymentStatus: providerStatus || payment.status,
+        paymentId,
+        paymentStatus: providerStatus || payloadPaymentStatus || null,
       });
       res.sendStatus(200);
       return;
     }
 
     const orders = await prisma.order.findMany({
-      where: { paymentId: payment.id },
+      where: { paymentId },
       select: {
         id: true,
         status: true,
@@ -787,16 +817,35 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
       },
     });
 
+    if (orders.length === 0) {
+      console.log('[webhook] nenhum pedido encontrado para paymentId', { paymentId, event, newStatus });
+      res.sendStatus(200);
+      return;
+    }
+
     for (const order of orders) {
       const statusChanged = order.status !== newStatus;
       if (statusChanged) {
         await prisma.$transaction(async (tx) => {
-          await syncOrderStockForStatusTransition(tx, {
-            orderId: order.id,
-            previousStatus: order.status,
-            nextStatus: newStatus,
-            items: order.items,
-          });
+          let transitionNote: string | null = null;
+
+          try {
+            await syncOrderStockForStatusTransition(tx, {
+              orderId: order.id,
+              previousStatus: order.status,
+              nextStatus: newStatus,
+              items: order.items,
+            });
+          } catch (stockError) {
+            transitionNote = 'Status atualizado via webhook; falha ao sincronizar estoque automaticamente.';
+            console.error('[webhook][stock-sync]', {
+              orderId: order.id,
+              paymentId,
+              previousStatus: order.status,
+              nextStatus: newStatus,
+              error: stockError instanceof Error ? stockError.message : stockError,
+            });
+          }
 
           await tx.order.update({
             where: { id: order.id },
@@ -804,15 +853,24 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
           });
 
           await tx.orderStatusUpdate.create({
-            data: { orderId: order.id, status: newStatus },
+            data: { orderId: order.id, status: newStatus, note: transitionNote },
           });
         });
       }
 
-      if (newStatus === 'PAID' && order.status !== 'PAID') {
-        await sendPaidOrderNotifications(order.id);
-      } else if (statusChanged) {
-        await sendCustomerStatusEmail(order.id, newStatus);
+      try {
+        if (newStatus === 'PAID' && order.status !== 'PAID') {
+          await sendPaidOrderNotifications(order.id);
+        } else if (statusChanged) {
+          await sendCustomerStatusEmail(order.id, newStatus);
+        }
+      } catch (notificationError) {
+        console.error('[webhook][notifications]', {
+          orderId: order.id,
+          paymentId,
+          status: newStatus,
+          error: notificationError instanceof Error ? notificationError.message : notificationError,
+        });
       }
     }
 
